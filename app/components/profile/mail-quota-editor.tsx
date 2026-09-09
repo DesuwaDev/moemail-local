@@ -1,8 +1,8 @@
 "use client"
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, BarChart3, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react"
-import { useTranslations } from "next-intl"
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react"
+import { ArrowRight, BarChart3, ChevronDown, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, RotateCcw, Search, Trash2, X } from "lucide-react"
+import { useFormatter, useTranslations } from "next-intl"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +28,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { normalizeMailboxCreationName } from "@/lib/email-address"
 import { analyzeMailQuotaRuleRelations } from "@/lib/mail-quota-rule-relations"
+import { appendMailQuotaRuleBatch, planMailQuotaRuleBatch } from "@/lib/mail-quota-rule-batch"
 import { ROLES, type Role } from "@/lib/permissions"
 import { MailQuotaCompatibility, MailQuotaRuleGuide } from "./mail-quota-rule-guide"
 import { SearchableUserSelect, type SearchableUser } from "./searchable-user-select"
@@ -173,9 +174,11 @@ export function MailQuotaRuleEditor({ rules, domains, users, onChange, onUserRes
 }) {
   const t = useTranslations("admin.access.mailQuota")
   const tRoles = useTranslations("profile.card.roles")
+  const format = useFormatter()
+  const roleSelectionHelpId = useId()
   const [direction, setDirection] = useState<MailDirection>("send")
   const [subjectType, setSubjectType] = useState<MailQuotaSubject["type"]>("all")
-  const [subjectRole, setSubjectRole] = useState<Role>(ROLES.DUKE)
+  const [subjectRoles, setSubjectRoles] = useState<Role[]>([ROLES.DUKE])
   const [subjectUserId, setSubjectUserId] = useState("")
   const [targetType, setTargetType] = useState<MailQuotaTarget["type"]>("all")
   const [targetDomain, setTargetDomain] = useState("")
@@ -195,17 +198,22 @@ export function MailQuotaRuleEditor({ rules, domains, users, onChange, onUserRes
   const userNames = useMemo(() => new Map(users.map(user => [user.id, identity(user)])), [users])
   const mailboxName = normalizeMailboxCreationName(mailboxLocalPart)
   const mailboxDomain = targetDomain || domains[0] || ""
-  const subject = useMemo<MailQuotaSubject>(() => subjectType === "all"
-    ? { type: "all" }
-    : subjectType === "role" ? { type: "role", role: subjectRole } : { type: "user", userId: subjectUserId }, [subjectRole, subjectType, subjectUserId])
+  const subjects = useMemo<MailQuotaSubject[]>(() => subjectType === "all"
+    ? [{ type: "all" }]
+    : subjectType === "role"
+      ? roles.filter(role => subjectRoles.includes(role)).map(role => ({ type: "role", role }))
+      : [{ type: "user", userId: subjectUserId }], [subjectRoles, subjectType, subjectUserId])
   const target = useMemo<MailQuotaTarget>(() => targetType === "all"
     ? { type: "all" }
     : targetType === "domain" ? { type: "domain", domain: targetDomain || domains[0] || "" } : { type: "mailbox", address: `${mailboxName}@${mailboxDomain}` }, [domains, mailboxDomain, mailboxName, targetDomain, targetType])
-  const draft = useMemo(() => ({ direction, subject, target }), [direction, subject, target])
-  const draftRelations = useMemo(() => analyzeMailQuotaRuleRelations(draft, rules), [draft, rules])
-  const duplicate = Boolean(draftRelations.duplicateId)
-  const maximumReached = rules.length >= 2_000
-  const valid = (subjectType !== "user" || Boolean(subjectUserId))
+  const batchSettings = useMemo(() => ({ direction, target, rolling, lifetimeLimit, shareWithinRole, ignoreEmperor }), [direction, target, rolling, lifetimeLimit, shareWithinRole, ignoreEmperor])
+  const batch = useMemo(() => planMailQuotaRuleBatch(batchSettings, subjects, rules), [batchSettings, subjects, rules])
+  const duplicate = batch.conflicts.length > 0
+  const maximumReached = rules.length >= 2_000 || batch.exceedsCapacity
+  const emptyRoleSelection = subjectType === "role" && subjects.length === 0
+  const conflictingRoles = new Set(batch.conflicts.flatMap(({ draft }) => draft.subject.type === "role" ? [draft.subject.role] : []))
+  const valid = !emptyRoleSelection
+    && (subjectType !== "user" || Boolean(subjectUserId))
     && (targetType === "all" || Boolean(mailboxDomain))
     && (targetType !== "mailbox" || Boolean(mailboxName))
     && validQuotaRule(rolling)
@@ -293,21 +301,15 @@ export function MailQuotaRuleEditor({ rules, domains, users, onChange, onUserRes
     requestAnimationFrame(() => editorRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" }))
   }
   const addRule = () => {
-    if (!valid || duplicate || maximumReached) return
-    const newRule: MailQuotaAssignment = {
-      id: crypto.randomUUID(),
-      ...draft,
-      rolling: { ...rolling },
-      lifetimeLimit: target.type === "mailbox" ? lifetimeLimit : -1,
-      shareWithinRole: subject.type === "role" && shareWithinRole,
-      ignoreEmperor: subject.type === "all" && ignoreEmperor,
-    }
-    onChange([...rules, newRule])
+    if (!valid) return
+    const nextRules = appendMailQuotaRuleBatch(rules, batchSettings, subjects)
+    if (!nextRules) return
+    onChange(nextRules)
     setQuery("")
     setSubjectFilter("any")
     setTargetFilter("any")
     setQuotaFilter("any")
-    setPage(Math.ceil((directionRules.length + 1) / RULES_PER_PAGE))
+    setPage(Math.ceil((directionRules.length + nextRules.length - rules.length) / RULES_PER_PAGE))
     closeEditor()
   }
   const applyEdit = () => {
@@ -352,19 +354,64 @@ export function MailQuotaRuleEditor({ rules, domains, users, onChange, onUserRes
           <div className="grid gap-3 lg:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <Label className="text-xs">{t("subject")}</Label>
-              <div className="grid min-w-0 gap-2 md:grid-cols-2"><Select value={subjectType} onValueChange={value => setSubjectType(value as MailQuotaSubject["type"])}><SelectTrigger className={compactSelectTrigger}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("subjects.all")}</SelectItem><SelectItem value="role">{t("subjects.role")}</SelectItem><SelectItem value="user">{t("subjects.user")}</SelectItem></SelectContent></Select>{subjectType === "role" ? <Select value={subjectRole} onValueChange={value => setSubjectRole(value as Role)}><SelectTrigger className={compactSelectTrigger}><SelectValue /></SelectTrigger><SelectContent>{roles.map(role => <SelectItem key={role} value={role}>{tRoles(roleTranslationKeys[role])}</SelectItem>)}</SelectContent></Select> : subjectType === "user" ? <SearchableUserSelect value={subjectUserId} onValueChange={setSubjectUserId} knownUsers={users} onUserResolved={onUserResolved} /> : <p className="min-w-0 self-center text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{t("subjects.allHelp")}</p>}</div>
+              <div className={`grid min-w-0 gap-2 ${subjectType === "role" ? "" : "md:grid-cols-2"}`}>
+                <Select value={subjectType} onValueChange={value => setSubjectType(value as MailQuotaSubject["type"])}>
+                  <SelectTrigger className={compactSelectTrigger} aria-label={t("subject")}><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">{t("subjects.all")}</SelectItem><SelectItem value="role">{t("subjects.role")}</SelectItem><SelectItem value="user">{t("subjects.user")}</SelectItem></SelectContent>
+                </Select>
+                {subjectType === "user" ? <SearchableUserSelect value={subjectUserId} onValueChange={setSubjectUserId} knownUsers={users} onUserResolved={onUserResolved} /> : subjectType === "all" ? <p className="min-w-0 self-center text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{t("subjects.allHelp")}</p> : null}
+              </div>
             </div>
             <div className="min-w-0 space-y-2">
               <Label className="text-xs">{t("target")}</Label>
               <div className="grid min-w-0 gap-2 md:grid-cols-2"><Select value={targetType} onValueChange={value => setTargetType(value as MailQuotaTarget["type"])}><SelectTrigger className={compactSelectTrigger}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("targets.all")}</SelectItem><SelectItem value="domain">{t("targets.domain")}</SelectItem><SelectItem value="mailbox">{t("targets.mailbox")}</SelectItem></SelectContent></Select>{targetType === "domain" ? <Select value={targetDomain || domains[0] || ""} onValueChange={setTargetDomain}><SelectTrigger className={compactSelectTrigger}><SelectValue placeholder={t("targets.selectDomain")} /></SelectTrigger><SelectContent>{domains.map(domain => <SelectItem key={domain} value={domain}>{domain}</SelectItem>)}</SelectContent></Select> : targetType === "mailbox" ? <div className="grid min-w-0 gap-2 min-[520px]:grid-cols-2"><Input className="h-8 min-w-0" value={mailboxLocalPart} onChange={event => setMailboxLocalPart(event.target.value.split("@", 1)[0].slice(0, 64))} placeholder={t("targets.localPart")} /><Select value={mailboxDomain} onValueChange={setTargetDomain}><SelectTrigger className={compactSelectTrigger}><SelectValue /></SelectTrigger><SelectContent>{domains.map(domain => <SelectItem key={domain} value={domain}>{domain}</SelectItem>)}</SelectContent></Select></div> : <p className="min-w-0 self-center text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{t("targets.allHelp")}</p>}</div>
             </div>
           </div>
+          {subjectType === "role" && (
+            <fieldset className="min-w-0 space-y-2 rounded-md border bg-background/70 p-3" aria-describedby={roleSelectionHelpId}>
+              <legend className="px-1 text-xs font-medium">{t("batch.roles")}</legend>
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground" aria-live="polite">{t("batch.selected", { count: subjects.length })}</span>
+                <div className="flex shrink-0 gap-1">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={subjectRoles.length === roles.length} onClick={() => setSubjectRoles([...roles])}>{t("batch.selectAll")}</Button>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={subjectRoles.length === 0} onClick={() => setSubjectRoles([])}>{t("batch.clear")}</Button>
+                </div>
+              </div>
+              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
+                {roles.map(role => (
+                  <label key={role} className={`flex min-h-10 min-w-0 cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-xs transition-colors ${conflictingRoles.has(role) ? "border-destructive/60 bg-destructive/5" : subjectRoles.includes(role) ? "border-primary/50 bg-primary/5" : "hover:bg-muted/50"}`}>
+                    <Checkbox checked={subjectRoles.includes(role)} onChange={checked => setSubjectRoles(previous => checked ? [...new Set([...previous, role])] : previous.filter(item => item !== role))} />
+                    <span className="min-w-0 leading-relaxed [overflow-wrap:anywhere]">{tRoles(roleTranslationKeys[role])}</span>
+                  </label>
+                ))}
+              </div>
+              <p id={roleSelectionHelpId} className="text-xs leading-relaxed text-muted-foreground">{t("batch.help")}</p>
+            </fieldset>
+          )}
           <div className={`grid min-w-0 gap-3 ${targetType === "mailbox" ? "lg:grid-cols-[minmax(0,1fr)_minmax(12rem,.65fr)]" : ""}`}><MailQuotaRuleFields id="new-mail-quota" rule={rolling} onChange={setRolling} />{targetType === "mailbox" && <LifetimeQuotaField id="new-mail-quota-lifetime" value={lifetimeLimit} onChange={setLifetimeLimit} />}</div>
           {subjectType === "all" && <QuotaToggle checked={ignoreEmperor} onChange={setIgnoreEmperor} label={t("ignoreEmperor")} help={t("ignoreEmperorHelp")} />}
-          {subjectType === "role" && <QuotaToggle checked={shareWithinRole} onChange={setShareWithinRole} label={t("shareWithinRole")} help={t("shareWithinRoleHelp")} />}
-          <p className={`min-w-0 text-xs leading-relaxed [overflow-wrap:anywhere] ${duplicate || maximumReached ? "text-destructive" : "text-muted-foreground"}`}>{maximumReached ? t("manager.maximum") : duplicate ? t("duplicate") : t("ruleHelp")}</p>
-          <MailQuotaCompatibility relations={draftRelations} unlimitedOverride={rolling.limit < 0 && draftRelations.overrides > 0} />
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="outline" size="sm" onClick={closeEditor}>{t("manager.cancel")}</Button><Button type="button" size="sm" disabled={!valid || duplicate || maximumReached} onClick={addRule}><Plus className="mr-1 h-4 w-4" />{t("add")}</Button></div>
+          {subjectType === "role" && <QuotaToggle checked={shareWithinRole} onChange={setShareWithinRole} label={t("batch.shareWithinRole")} help={t(shareWithinRole ? "batch.perRole" : "batch.perUser")} />}
+          <p aria-live="polite" className={`min-w-0 text-xs leading-relaxed [overflow-wrap:anywhere] ${duplicate || maximumReached || emptyRoleSelection ? "text-destructive" : "text-muted-foreground"}`}>
+            {emptyRoleSelection ? t("batch.empty") : maximumReached ? t("batch.capacity", { count: batch.entries.length, remaining: batch.remaining }) : duplicate ? subjectType === "role" ? t("batch.conflicts", { roles: format.list([...conflictingRoles].map(role => tRoles(roleTranslationKeys[role])), { type: "conjunction" }) }) : t("duplicate") : batch.entries.length > 1 ? t("batch.summary", { count: batch.entries.length }) : t("ruleHelp")}
+          </p>
+          {batch.entries.length > 1 && !duplicate && rolling.limit < 0 && batch.entries.some(entry => entry.relations.overrides > 0) && <p role="status" className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs leading-relaxed text-amber-800 dark:text-amber-200">{t("compatibility.unlimitedOverride")}</p>}
+          {batch.entries.length === 1 ? <MailQuotaCompatibility relations={batch.entries[0].relations} unlimitedOverride={rolling.limit < 0 && batch.entries[0].relations.overrides > 0} /> : batch.entries.length > 1 ? (
+            <details className="group min-w-0 rounded-md border bg-background/70">
+              <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0 leading-relaxed">{t("batch.preview")}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="grid min-w-0 gap-3 border-t p-3 lg:grid-cols-2">
+                {batch.entries.map(({ draft, relations }) => (
+                  <div key={subjectKey(draft.subject)} className="min-w-0 space-y-1.5">
+                    <p className="text-xs font-medium">{subjectLabel(draft.subject)}</p>
+                    <MailQuotaCompatibility relations={relations} unlimitedOverride={rolling.limit < 0 && relations.overrides > 0} />
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="outline" size="sm" onClick={closeEditor}>{t("manager.cancel")}</Button><Button type="button" size="sm" disabled={!valid || !batch.canAdd} onClick={addRule}><Plus className="mr-1 h-4 w-4 shrink-0" />{batch.entries.length > 1 ? t("batch.add", { count: batch.entries.length }) : t("add")}</Button></div>
         </> : editingRule && <>
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-muted/50 p-2.5 text-sm"><span className="min-w-0 font-medium [overflow-wrap:anywhere]">{subjectLabel(editingRule.subject)}</span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 break-all font-mono text-xs">{targetLabel(editingRule.target)}</span></div>
           <div className={`grid min-w-0 gap-3 ${editingRule.target.type === "mailbox" ? "lg:grid-cols-[minmax(0,1fr)_minmax(12rem,.65fr)]" : ""}`}><MailQuotaRuleFields id={`edit-mail-quota-${editingRule.id}`} rule={editingRule.rolling} onChange={rollingRule => setEditingRule(current => current ? { ...current, rolling: rollingRule } : null)} />{editingRule.target.type === "mailbox" && <LifetimeQuotaField id={`edit-mail-quota-${editingRule.id}-lifetime`} value={editingRule.lifetimeLimit} onChange={value => setEditingRule(current => current ? { ...current, lifetimeLimit: value } : null)} />}</div>

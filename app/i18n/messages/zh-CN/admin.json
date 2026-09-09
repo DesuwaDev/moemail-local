@@ -222,6 +222,22 @@
         "unlimitedOverride": "当前选择“不限”，会豁免上述同一对象层的较宽限制；另一对象层的全站或用户/角色额度仍照常检查。",
         "independent": "未发现重叠规则；本规则独立覆盖所选对象与地址范围。"
       },
+      "batch": {
+        "roles": "选择用户组（可多选）",
+        "selected": "已选 {count} 个组",
+        "selectAll": "全选",
+        "clear": "清空",
+        "help": "一次为所选组分别创建相同设置的规则，每组保留独立记录。",
+        "empty": "请至少选择一个用户组。",
+        "conflicts": "这些组已有相同方向和范围的规则：{roles}。请取消选择或编辑已有规则。",
+        "capacity": "本次将新增 {count} 条规则，当前仅可再添加 {remaining} 条。",
+        "add": "添加 {count} 条规则",
+        "perUser": "所选组中的每个用户分别计算额度。",
+        "perRole": "每个组内共享额度，组与组之间独立计算。",
+        "preview": "各组与现有规则的关系",
+        "summary": "将新增 {count} 条独立规则，保存本页设置后生效。",
+        "shareWithinRole": "各组内共享额度"
+      },
       "manager": {
         "limitMode": "滚动额度方式",
         "lifetimeMode": "累计额度方式",

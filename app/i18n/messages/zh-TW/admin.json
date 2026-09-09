@@ -205,6 +205,22 @@
         "unlimitedOverride": "目前選擇「不限」，會豁免上述同一對象層的較寬限制；另一對象層的全站或使用者／角色額度仍照常檢查。",
         "independent": "未發現重疊規則；本規則獨立涵蓋所選對象與地址範圍。"
       },
+      "batch": {
+        "roles": "選擇使用者群組（可複選）",
+        "selected": "已選 {count} 個群組",
+        "selectAll": "全選",
+        "clear": "清空",
+        "help": "一次為所選群組分別建立相同設定的規則，各群組保留獨立記錄。",
+        "empty": "請至少選擇一個使用者群組。",
+        "conflicts": "這些群組已有相同方向和範圍的規則：{roles}。請取消選取或編輯既有規則。",
+        "capacity": "本次將新增 {count} 條規則，目前僅可再新增 {remaining} 條。",
+        "add": "新增 {count} 條規則",
+        "perUser": "所選群組中的每位使用者分別計算額度。",
+        "perRole": "各群組內共享額度，群組之間獨立計算。",
+        "preview": "各群組與既有規則的關係",
+        "summary": "將新增 {count} 條獨立規則，儲存本頁設定後生效。",
+        "shareWithinRole": "各群組內共享額度"
+      },
       "manager": {
         "limitMode": "滾動額度方式",
         "lifetimeMode": "累計額度方式",

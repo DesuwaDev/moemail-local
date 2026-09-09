@@ -222,6 +222,22 @@
         "unlimitedOverride": "Unlimited exempts the broader limits above in this same subject layer. The other site-wide or user/role layer is still checked normally.",
         "independent": "No overlapping rule was found. This rule independently covers the selected subject and address range."
       },
+      "batch": {
+        "roles": "Select roles (multiple allowed)",
+        "selected": "{count, plural, one {# role selected} other {# roles selected}}",
+        "selectAll": "Select all",
+        "clear": "Clear",
+        "help": "Create a separate rule with the same settings for each selected role.",
+        "empty": "Select at least one role.",
+        "conflicts": "These roles already have a rule for this direction and range: {roles}. Deselect them or edit the existing rules.",
+        "capacity": "This batch adds {count} rules, but only {remaining} more can be added.",
+        "add": "{count, plural, one {Add # rule} other {Add # rules}}",
+        "perUser": "Each member of the selected roles has an independent quota.",
+        "perRole": "Members share a pool within each role. Different roles have separate pools.",
+        "preview": "Check each role against existing rules",
+        "summary": "{count, plural, one {# independent rule will be added. Save this page to apply it.} other {# independent rules will be added. Save this page to apply them.}}",
+        "shareWithinRole": "Share quota within each role"
+      },
       "manager": {
         "limitMode": "Rolling quota mode",
         "lifetimeMode": "Lifetime quota mode",
