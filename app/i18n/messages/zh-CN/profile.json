@@ -165,6 +165,9 @@
       },
       "providerLabel": "验证码提供商",
       "providerHint": "切换提供商时会保留各自已填写的密钥。",
+      "fallbackLabel": "备用渠道",
+      "fallbackOff": "不启用",
+      "fallbackHint": "主渠道加载不出来时自动顶上，需单独填密钥。",
       "openConsole": "打开提供商控制台",
       "showSecret": "显示密钥",
       "hideSecret": "隐藏密钥",
@@ -180,7 +183,8 @@
         "secretKey": "私密密钥",
         "threshold": "分数阈值",
         "theme": "主题",
-        "size": "组件尺寸"
+        "size": "组件尺寸",
+        "endpoint": "服务域名"
       },
       "placeholders": {
         "siteKey": "在浏览器中公开渲染的密钥",
@@ -195,12 +199,20 @@
         "normal": "标准",
         "compact": "紧凑"
       },
+      "endpoints": {
+        "auto": "自动",
+        "global": "全球",
+        "china": "中国大陆镜像"
+      },
       "scopes": {
         "login": "登录",
         "register": "注册"
       },
       "hints": {
         "threshold": "该渠道全程无感运行并返回 0 到 1 的分数，低于阈值的请求会被拒绝。",
+        "endpoint": "中国大陆无法访问 google.com，Google 为此提供了 recaptcha.net 镜像，两个域名共用同一套密钥。选「自动」时，每位访客会先探测全球域名、失败再走镜像，服务端也会用当时能连通的域名校验。",
+        "keysMissing": "站点密钥与私密密钥都填好，这个渠道才会真正启用。",
+        "fallback": "访客浏览器加载不出主渠道的脚本（域名被拦、密钥失效、插件拦截）时，登录页会自动换成备用渠道，无需刷新页面；两个渠道签发的令牌服务端都认。备用渠道需要在自己的控制台单独申请密钥，留空则视为未配置。",
         "scopes": "验证仅作用于用户名与密码表单，第三方登录不受影响。"
       }
     },

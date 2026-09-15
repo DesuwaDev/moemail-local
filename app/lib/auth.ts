@@ -196,6 +196,7 @@ export const {
         username: { label: "USERNAME", type: "text", placeholder: "USERNAME" },
         password: { label: "PASSWORD", type: "password", placeholder: "PASSWORD" },
         captchaToken: { label: "CAPTCHA_TOKEN", type: "hidden" },
+        captchaProvider: { label: "CAPTCHA_PROVIDER", type: "hidden" },
         registrationTicket: { label: "REGISTRATION_TICKET", type: "hidden" },
       },
       async authorize(credentials) {
@@ -207,6 +208,7 @@ export const {
           username,
           password,
           captchaToken,
+          captchaProvider,
           registrationTicket,
         } = credentials as Record<string, string | undefined>
 
@@ -216,6 +218,7 @@ export const {
             username,
             password,
             captchaToken,
+            captchaProvider,
             registrationTicket,
           })
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -228,7 +231,11 @@ export const {
           parsedCredentials.username,
         )
         if (!registrationLogin) {
-          const verification = await verifyCaptchaToken("login", parsedCredentials.captchaToken)
+          const verification = await verifyCaptchaToken(
+            "login",
+            parsedCredentials.captchaToken,
+            parsedCredentials.captchaProvider,
+          )
           if (!verification.success) {
             if (verification.reason === "missing-token") {
               throw new CaptchaRequiredError()

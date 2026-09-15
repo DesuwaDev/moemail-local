@@ -165,6 +165,9 @@
       },
       "providerLabel": "Verification provider",
       "providerHint": "Switching providers keeps the keys already entered for each one.",
+      "fallbackLabel": "Backup channel",
+      "fallbackOff": "Not used",
+      "fallbackHint": "Takes over when the main channel fails to load; needs its own keys.",
       "openConsole": "Open provider console",
       "showSecret": "Show secret",
       "hideSecret": "Hide secret",
@@ -180,7 +183,8 @@
         "secretKey": "Secret Key",
         "threshold": "Score threshold",
         "theme": "Theme",
-        "size": "Widget size"
+        "size": "Widget size",
+        "endpoint": "Service domain"
       },
       "placeholders": {
         "siteKey": "Public key rendered in the browser",
@@ -195,12 +199,20 @@
         "normal": "Normal",
         "compact": "Compact"
       },
+      "endpoints": {
+        "auto": "Automatic",
+        "global": "Global",
+        "china": "Mainland China mirror"
+      },
       "scopes": {
         "login": "Sign-in",
         "register": "Registration"
       },
       "hints": {
         "threshold": "This channel runs invisibly and returns a score between 0 and 1; requests below the threshold are rejected.",
+        "endpoint": "google.com is unreachable from mainland China, so Google mirrors reCAPTCHA on recaptcha.net; both accept the same key pair. Automatic probes the global domain per visitor and falls back to the mirror, and the server verifies against whichever domain answers.",
+        "keysMissing": "A channel only goes live once both the site key and the secret are filled in.",
+        "fallback": "When a visitor's browser cannot load the main channel's script — a blocked domain, a dead key, a blocking extension — the sign-in page switches to the backup channel without a reload, and the server accepts tokens from either one. The backup needs its own key pair from its own console; leaving it empty counts as unconfigured.",
         "scopes": "Verification only applies to username and password forms. Social sign-in is unaffected."
       }
     },

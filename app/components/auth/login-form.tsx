@@ -57,9 +57,11 @@ export function LoginForm({ captcha }: LoginFormProps) {
 
   // Widget providers hand back the token the visitor already solved; reCAPTCHA
   // v3 mints one here, so this is awaited at submit time rather than tracked in
-  // state.
-  const collectCaptchaToken = async () => {
-    const token = await captchaRef.current?.ensureToken(activeTab) ?? ""
+  // state. The channel travels with it because the visitor may have been moved
+  // to the backup, and the server verifies against the key pair that minted it.
+  const collectCaptchaSolution = async () => {
+    const solution = await captchaRef.current?.ensureToken(activeTab)
+    const token = solution?.token ?? ""
     if (captchaRequired && !token) {
       toast({
         title: t("toast.captchaRequired"),
@@ -68,7 +70,7 @@ export function LoginForm({ captcha }: LoginFormProps) {
       })
       return null
     }
-    return token
+    return { captchaToken: token, captchaProvider: solution?.provider ?? "" }
   }
 
   const clearForm = () => {
@@ -118,15 +120,15 @@ export function LoginForm({ captcha }: LoginFormProps) {
 
   const handleLogin = async () => {
     if (!validateLoginForm()) return
-    const captchaToken = await collectCaptchaToken()
-    if (captchaToken === null) return
+    const captcha = await collectCaptchaSolution()
+    if (captcha === null) return
 
     setLoading(true)
     try {
       const result = await signIn("credentials", {
         username,
         password,
-        captchaToken,
+        ...captcha,
         redirect: false,
       })
 
@@ -161,8 +163,8 @@ export function LoginForm({ captcha }: LoginFormProps) {
 
   const handleRegister = async () => {
     if (!validateRegisterForm()) return
-    const captchaToken = await collectCaptchaToken()
-    if (captchaToken === null) return
+    const captcha = await collectCaptchaSolution()
+    if (captcha === null) return
 
     setLoading(true)
     let registrationCompleted = false
@@ -170,7 +172,7 @@ export function LoginForm({ captcha }: LoginFormProps) {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, captchaToken }),
+        body: JSON.stringify({ username, password, ...captcha }),
       })
 
       if (!response.ok) {

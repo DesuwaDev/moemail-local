@@ -9,7 +9,11 @@ export const authSchema = z.object({
   password: z.string()
     .min(8, "PASSWORD_TOO_SHORT")
     .max(256, "PASSWORD_TOO_LONG"),
-  captchaToken: z.string().max(8_192).optional()
+  captchaToken: z.string().max(8_192).optional(),
+  // Which channel minted the token. Only a hint for ordering the verification
+  // attempts, so it is accepted as free text and checked against the configured
+  // channels rather than against the provider list.
+  captchaProvider: z.string().max(32).optional(),
 })
 
 export type AuthSchema = z.infer<typeof authSchema>

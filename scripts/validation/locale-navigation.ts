@@ -245,6 +245,8 @@ const websiteConfigSource = readFileSync(join(process.cwd(), "app/components/pro
 const captchaWidgetSource = readFileSync(join(process.cwd(), "app/components/auth/captcha.tsx"), "utf8")
 const captchaRegistrySource = readFileSync(join(process.cwd(), "app/lib/captcha/providers.ts"), "utf8")
 const captchaVerifySource = readFileSync(join(process.cwd(), "app/lib/captcha/verify.ts"), "utf8")
+const globalsCssSource = readFileSync(join(process.cwd(), "app/globals.css"), "utf8")
+const homeContentSource = readFileSync(join(process.cwd(), "app/components/home/home-content.tsx"), "utf8")
 // Google mints a site key as either v2 or v3 and refuses the other generation
 // with "Invalid key type", so the two are separate channels with their own key
 // pairs instead of one channel with a mode switch.
@@ -257,20 +259,30 @@ assert.doesNotMatch(captchaRegistrySource, /mode: normalizeOption/u)
 assert.match(captchaRegistrySource, /function migrateRecaptchaGenerations/u)
 assert.match(captchaRegistrySource, /recaptcha: undefined, recaptchaV3: providers\.recaptcha/u)
 assert.match(captchaVerifySource, /if \(descriptor\.scoreBased\) \{/u)
-assert.match(captchaWidgetSource, /config\.provider === "recaptchaV3"/u)
+assert.match(captchaRegistrySource, /channel\.provider === "recaptchaV3"/u)
 assert.match(captchaWidgetSource, /const invisible = CAPTCHA_PROVIDERS\[provider\]\.scoreBased/u)
+// google.com is unreachable from mainland China, so both the browser and the
+// server pick between it and the mirror Google publishes instead of one region
+// being pinned for everyone.
+assert.match(captchaRegistrySource, /"auto", \.\.\.CAPTCHA_REGIONS/u)
+assert.match(captchaRegistrySource, /china: "https:\/\/www\.recaptcha\.net"/u)
+assert.match(captchaRegistrySource, /function candidateOrigins/u)
+assert.match(captchaVerifySource, /lastAnsweringUrl\.set\(provider, url\)/u)
+assert.match(captchaWidgetSource, /mode: "no-cors"/u)
+assert.match(captchaWidgetSource, /originProbes\.clear\(\)/u)
+assert.match(websiteConfigSource, /optionFields\.includes\("endpoint"\)/u)
 // The panel drives the live runtime through the shared registry, so provider,
 // option and scope lists must stay derived rather than hand-maintained here.
 assert.match(websiteConfigSource, /from "@\/lib\/captcha\/providers"/u)
 assert.match(websiteConfigSource, /CAPTCHA_PROVIDER_IDS\.map\(id => \{/u)
-assert.match(websiteConfigSource, /captchaOptionFields\(provider\)/u)
+assert.match(websiteConfigSource, /captchaOptionFields\(id\)/u)
 // The Cloud console issues an Enterprise credential by default, so the
 // reCAPTCHA channels explain which secret belongs in the field.
-assert.match(websiteConfigSource, /t\.has\(`captcha\.providers\.\$\{provider\}\.keyHint`/u)
+assert.match(websiteConfigSource, /t\.has\(`captcha\.providers\.\$\{id\}\.keyHint`/u)
 assert.match(websiteConfigSource, /CAPTCHA_SCOPES\.map\(scope => \(/u)
 assert.match(websiteConfigSource, /<SelectContent className="max-h-\[var\(--radix-select-content-available-height\)\]">/u)
 assert.match(websiteConfigSource, /aria-labelledby="captcha-provider-label captcha-provider-value"/u)
-assert.match(websiteConfigSource, /aria-labelledby="captcha-provider-value"/u)
+assert.match(websiteConfigSource, /aria-labelledby=\{`captcha-\$\{role\}-heading`\}/u)
 assert.match(websiteConfigSource, /<div className="grid gap-3 sm:grid-cols-2">/u)
 assert.match(websiteConfigSource, /<Label htmlFor="website-default-role"/u)
 assert.match(websiteConfigSource, /<SelectTrigger id="website-default-role">/u)
@@ -318,16 +330,48 @@ assert.match(captchaWidgetSource, /height: Math\.ceil\(naturalHeight \* scale\)/
 // Vendors refuse to re-render into a container they already used.
 assert.match(captchaWidgetSource, /frame\.replaceChildren\(host\)/u)
 // The v3 badge is hidden because it lands on top of the floating corner button,
-// so the attribution Google requires has to ship with the form instead.
+// so the attribution Google requires has to ship with the form instead. The
+// rule has to stay unlayered — anchored at column 0 here — because Tailwind
+// strips a custom utility whose class it cannot find in the scanned source, and
+// this one only ever exists in the DOM Google injects.
 assert.match(captchaWidgetSource, /https:\/\/policies\.google\.com\/privacy/u)
 assert.match(captchaWidgetSource, /https:\/\/policies\.google\.com\/terms/u)
 assert.match(
-  readFileSync(join(process.cwd(), "app/globals.css"), "utf8"),
-  /\.grecaptcha-badge \{\s*visibility: hidden;/u,
+  globalsCssSource,
+  /^\.grecaptcha-badge \{\s+visibility: hidden !important;/mu,
 )
+// Same trap, other direction: an opacity modifier on a custom utility makes the
+// class name unrecognizable to Tailwind, so the home page backdrop has to carry
+// its alpha inside the gradient and be referenced by its bare class name.
+assert.match(globalsCssSource, /linear-gradient\(hsl\(var\(--primary\) \/ 0\.05\) 1px/u)
+assert.match(homeContentSource, /-z-10 bg-grid-primary"/u)
+assert.doesNotMatch(homeContentSource, /bg-grid-primary\//u)
 assert.match(loginFormSource, /<Captcha\s+ref=\{captchaRef\}/u)
-assert.match(loginFormSource, /const captchaToken = await collectCaptchaToken\(\)/u)
+assert.match(loginFormSource, /const captcha = await collectCaptchaSolution\(\)/u)
 assert.doesNotMatch(loginFormSource, /turnstile/iu)
+
+// A vendor bundle that never arrives leaves the form unsubmittable, and a retry
+// against the same origin cannot fix it, so the operator can name a second
+// channel the page switches to on its own.
+assert.match(captchaRegistrySource, /const CAPTCHA_FALLBACK_OFF = "none"/u)
+// A channel standing in for itself would repeat the load that just failed, and
+// an unusable backup would turn a load failure into a rejection.
+assert.match(captchaRegistrySource, /fallback === provider \? CAPTCHA_FALLBACK_OFF : fallback/u)
+assert.match(captchaRegistrySource, /export function captchaFallbackProvider/u)
+assert.match(captchaRegistrySource, /captchaProviderReady\(config\.providers\[config\.fallback\]\)/u)
+assert.match(captchaWidgetSource, /const canFallBack = !usingFallback && config\.fallback !== null/u)
+assert.match(captchaWidgetSource, /const giveUp = \(\) => \{/u)
+assert.match(captchaWidgetSource, /setUsingFallback\(false\)/u)
+assert.match(captchaWidgetSource, /t\("fallbackNotice"\)/u)
+// Both channels are operator-configured, so the browser's claim about which one
+// minted the token only orders the attempts; it can never widen what is
+// accepted.
+assert.match(captchaWidgetSource, /token: tokenRef\.current, provider/u)
+assert.match(captchaVerifySource, /channels\.filter\(id => id !== mintedBy\)/u)
+assert.match(captchaVerifySource, /for \(const provider of ordered\)/u)
+assert.match(websiteConfigSource, /renderChannelPanel\(fallback, "fallback"\)/u)
+assert.match(websiteConfigSource, /CAPTCHA_PROVIDER_IDS\.filter\(id => id !== provider\)/u)
+assert.match(websiteConfigSource, /captchaProviderReady\(settings\)/u)
 
 console.log(JSON.stringify({
   localePrefixHidden: true,
@@ -367,4 +411,8 @@ console.log(JSON.stringify({
   captchaLiveStateDistinguishedFromDraft: true,
   captchaPanelCompactOnPhones: true,
   recaptchaGenerationsHoldSeparateKeys: true,
+  recaptchaReachesFilteredNetworksThroughMirror: true,
+  vendorBadgeHiddenWithAttributionShipped: true,
+  customUtilitiesSurviveThePurge: true,
+  captchaFallsBackToASecondChannel: true,
 }))

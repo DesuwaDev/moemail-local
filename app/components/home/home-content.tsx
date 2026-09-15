@@ -11,7 +11,7 @@ export function HomeContent({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <main className="pt-16">
       <div className="relative flex h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden px-2 text-center">
-        <div className="absolute inset-0 -z-10 bg-grid-primary/5" />
+        <div className="absolute inset-0 -z-10 bg-grid-primary" />
         <div className="mx-auto w-full max-w-3xl space-y-6 py-4 sm:space-y-8">
           <div className="space-y-2 sm:space-y-3">
             <h1 className="text-3xl font-bold tracking-wider sm:text-4xl md:text-5xl">

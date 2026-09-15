@@ -29,14 +29,18 @@ import {
 import { readApiErrorCode } from "@/lib/api-error-client"
 import { LocalizedUiError, localizedUiErrorMessage } from "@/lib/localized-ui-error"
 import {
+  CAPTCHA_ENDPOINTS,
+  CAPTCHA_FALLBACK_OFF,
   CAPTCHA_PROVIDERS,
   CAPTCHA_PROVIDER_IDS,
   CAPTCHA_SCOPES,
   CAPTCHA_SIZES,
   CAPTCHA_THEMES,
   captchaOptionFields,
+  captchaProviderReady,
   normalizeCaptchaConfig,
   type CaptchaConfig,
+  type CaptchaFallback,
   type CaptchaOptionField,
   type CaptchaProviderId,
   type CaptchaProviderSettings,
@@ -59,15 +63,16 @@ const CAPTCHA_OFF = "off"
 const OPTION_CHOICES = {
   theme: CAPTCHA_THEMES,
   size: CAPTCHA_SIZES,
+  endpoint: CAPTCHA_ENDPOINTS,
 } as const
 
 const OPTION_CATALOGS = {
   theme: "themes",
   size: "sizes",
+  endpoint: "endpoints",
 } as const
 
-// Risk scores range over 0..1; these are the useful stops, and any hand-tuned
-// value already in storage is folded in so it stays selectable.
+// Risk scores range over 0..1; these are the useful stops.
 const THRESHOLD_PRESETS = [0.3, 0.5, 0.7, 0.9]
 
 // Paired option selects get narrow on a phone, so the value shrinks and clips
@@ -155,31 +160,34 @@ export function WebsiteConfigPanel() {
   }
 
   const provider = captcha.provider
-  const settings = captcha.providers[provider]
+  const fallback = captcha.fallback
   const enabled = captcha.enabled
   const ChannelIcon = enabled ? PROVIDER_ICONS[provider] : ShieldOff
   const channelLabel = enabled ? t(`captcha.providers.${provider}.name` as never) : t("captcha.off")
-  const optionFields = captchaOptionFields(provider)
+  const FallbackIcon = fallback === CAPTCHA_FALLBACK_OFF ? ShieldOff : PROVIDER_ICONS[fallback]
+  const fallbackLabel = fallback === CAPTCHA_FALLBACK_OFF
+    ? t("captcha.fallbackOff")
+    : t(`captcha.providers.${fallback}.name` as never)
   // `normalizeCaptchaConfig` builds both documents from the same constant key
   // order, so serialising is a sound deep comparison here.
   const pendingChanges = JSON.stringify(captcha) !== JSON.stringify(liveCaptcha)
   const liveChannelLabel = liveCaptcha.enabled
     ? t(`captcha.providers.${liveCaptcha.provider}.name` as never)
     : t("captcha.off")
-  const thresholdChoices = [...new Set([...THRESHOLD_PRESETS, settings.threshold])].sort((a, b) => a - b)
 
-  const patchSettings = (patch: Partial<CaptchaProviderSettings>) => {
+  const patchSettings = (id: CaptchaProviderId, patch: Partial<CaptchaProviderSettings>) => {
     setCaptcha(current => ({
       ...current,
       providers: {
         ...current.providers,
-        [current.provider]: { ...current.providers[current.provider], ...patch },
+        [id]: { ...current.providers[id], ...patch },
       },
     }))
   }
 
-  const renderOptionField = (field: CaptchaOptionField) => {
-    const fieldId = `captcha-${field}`
+  const renderOptionField = (id: CaptchaProviderId, field: CaptchaOptionField) => {
+    const settings = captcha.providers[id]
+    const fieldId = `captcha-${id}-${field}`
     const label = (
       <Label htmlFor={fieldId} className="text-xs font-medium">
         {t(`captcha.fields.${field}` as never)}
@@ -187,18 +195,21 @@ export function WebsiteConfigPanel() {
     )
 
     if (field === "threshold") {
+      // Risk scores range over 0..1; the presets are the useful stops, and any
+      // hand-tuned value already in storage is folded in so it stays selectable.
+      const choices = [...new Set([...THRESHOLD_PRESETS, settings.threshold])].sort((a, b) => a - b)
       return (
         <div key={field} className="min-w-0 space-y-1.5">
           {label}
           <Select
             value={settings.threshold.toFixed(2)}
-            onValueChange={value => patchSettings({ threshold: Number(value) })}
+            onValueChange={value => patchSettings(id, { threshold: Number(value) })}
           >
             <SelectTrigger id={fieldId} className={COMPACT_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
-              {thresholdChoices.map(choice => (
+              {choices.map(choice => (
                 <SelectItem key={choice} value={choice.toFixed(2)}>
                   {choice.toFixed(2)}
                 </SelectItem>
@@ -215,7 +226,7 @@ export function WebsiteConfigPanel() {
         {label}
         <Select
           value={settings[field]}
-          onValueChange={value => patchSettings({ [field]: value } as Partial<CaptchaProviderSettings>)}
+          onValueChange={value => patchSettings(id, { [field]: value } as Partial<CaptchaProviderSettings>)}
         >
           <SelectTrigger id={fieldId} className={COMPACT_TRIGGER}>
             <SelectValue />
@@ -229,6 +240,114 @@ export function WebsiteConfigPanel() {
           </SelectContent>
         </Select>
       </div>
+    )
+  }
+
+  // One panel shape for both roles: the backup is a full channel with its own
+  // key pair and its own options, not a switch on the primary one.
+  const renderChannelPanel = (id: CaptchaProviderId, role: "primary" | "fallback") => {
+    const settings = captcha.providers[id]
+    const optionFields = captchaOptionFields(id)
+    const Icon = PROVIDER_ICONS[id]
+    return (
+      <section
+        key={`${role}-${id}`}
+        id={`captcha-${role}-panel`}
+        role="region"
+        aria-labelledby={`captcha-${role}-heading`}
+        className="animate-in space-y-3 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none sm:rounded-md sm:border sm:bg-card/30 sm:p-4"
+      >
+        <div className="flex items-center gap-3 border-b pb-2.5">
+          <span id={`captcha-${role}-heading`} className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium">
+            <Icon className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">{t(`captcha.providers.${id}.name` as never)}</span>
+          </span>
+          <p className="hidden min-w-0 flex-1 text-[11px] leading-relaxed text-muted-foreground sm:block">
+            {t(`captcha.providers.${id}.description` as never)}
+          </p>
+          <a
+            href={CAPTCHA_PROVIDERS[id].consoleUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+          >
+            {t("captcha.openConsole")}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor={`captcha-${id}-site-key`} className="text-xs font-medium">
+              {t("captcha.fields.siteKey")}
+            </Label>
+            <Input
+              id={`captcha-${id}-site-key`}
+              className="font-mono"
+              autoComplete="off"
+              spellCheck={false}
+              value={settings.siteKey}
+              onChange={e => patchSettings(id, { siteKey: e.target.value })}
+              placeholder={t("captcha.placeholders.siteKey")}
+            />
+          </div>
+
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor={`captcha-${id}-secret-key`} className="text-xs font-medium">
+              {t("captcha.fields.secretKey")}
+            </Label>
+            <SecretInput
+              id={`captcha-${id}-secret-key`}
+              autoComplete="new-password"
+              showLabel={t("captcha.showSecret")}
+              hideLabel={t("captcha.hideSecret")}
+              value={settings.secretKey}
+              onChange={e => patchSettings(id, { secretKey: e.target.value })}
+              placeholder={t("captcha.placeholders.secretKey")}
+            />
+          </div>
+        </div>
+
+        {/* A half-filled channel verifies nothing: the primary one opens the
+            gate instead of locking everyone out, and the backup is simply never
+            offered. Neither is obvious from an empty box. */}
+        {!captchaProviderReady(settings) && (
+          <p className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+            {t("captcha.hints.keysMissing")}
+          </p>
+        )}
+
+        {/* Only the channels whose console hands out a credential that
+            needs explaining carry this note, so the catalog decides where
+            it appears instead of a provider test hard-coded here. */}
+        {t.has(`captcha.providers.${id}.keyHint` as never) && (
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            {t(`captcha.providers.${id}.keyHint` as never)}
+          </p>
+        )}
+
+        {/* An odd number of options stretches the last cell instead of
+            leaving a hole next to it. The compact selects pair up from
+            380px — the common phone widths are 390-412 — so a portrait
+            screen no longer gets one long column of boxes. */}
+        <div className="grid gap-3 min-[380px]:grid-cols-2 min-[380px]:[&>*:nth-child(odd):last-child]:col-span-2">
+          {optionFields.map(field => renderOptionField(id, field))}
+        </div>
+
+        {CAPTCHA_PROVIDERS[id].scoreBased && (
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            {t("captcha.hints.threshold")}
+          </p>
+        )}
+
+        {/* Only a channel that actually has a mirror explains one, which
+            the option list already decides. */}
+        {optionFields.includes("endpoint") && (
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            {t("captcha.hints.endpoint")}
+          </p>
+        )}
+      </section>
     )
   }
 
@@ -305,7 +424,14 @@ export function WebsiteConfigPanel() {
                 value={enabled ? provider : CAPTCHA_OFF}
                 onValueChange={value => setCaptcha(current => value === CAPTCHA_OFF
                   ? { ...current, enabled: false }
-                  : { ...current, enabled: true, provider: value as CaptchaProviderId })}
+                  : {
+                      ...current,
+                      enabled: true,
+                      provider: value as CaptchaProviderId,
+                      // Promoting the backup leaves the site without one rather
+                      // than with a channel standing in for itself.
+                      fallback: current.fallback === value ? CAPTCHA_FALLBACK_OFF : current.fallback,
+                    })}
               >
                 <SelectTrigger
                   aria-labelledby="captcha-provider-label captcha-provider-value"
@@ -365,84 +491,85 @@ export function WebsiteConfigPanel() {
               </p>
             )}
 
+            {enabled && renderChannelPanel(provider, "primary")}
+
             {enabled && (
-            <section
-              key={provider}
-              id="captcha-provider-panel"
-              role="region"
-              aria-labelledby="captcha-provider-value"
-              className="animate-in space-y-3 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none sm:rounded-md sm:border sm:bg-card/30 sm:p-4"
-            >
-              <div className="flex items-center gap-3 border-b pb-2.5">
-                <p className="hidden min-w-0 flex-1 text-[11px] leading-relaxed text-muted-foreground sm:block">
-                  {t(`captcha.providers.${provider}.description` as never)}
-                </p>
-                <a
-                  href={CAPTCHA_PROVIDERS[provider].consoleUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                >
-                  {t("captcha.openConsole")}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
+              <>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span id="captcha-fallback-label" className="shrink-0 text-xs font-medium">
+                    {t("captcha.fallbackLabel")}
+                  </span>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="min-w-0 space-y-1.5">
-                  <Label htmlFor="captcha-site-key" className="text-xs font-medium">
-                    {t("captcha.fields.siteKey")}
-                  </Label>
-                  <Input
-                    id="captcha-site-key"
-                    className="font-mono"
-                    autoComplete="off"
-                    spellCheck={false}
-                    value={settings.siteKey}
-                    onChange={e => patchSettings({ siteKey: e.target.value })}
-                    placeholder={t("captcha.placeholders.siteKey")}
-                  />
+                  <Select
+                    value={fallback}
+                    onValueChange={value => setCaptcha(current => ({
+                      ...current,
+                      fallback: value as CaptchaFallback,
+                    }))}
+                  >
+                    <SelectTrigger
+                      aria-labelledby="captcha-fallback-label captcha-fallback-value"
+                      className="w-full gap-2 sm:w-64 [&>svg]:shrink-0"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <FallbackIcon className={`h-4 w-4 shrink-0 ${
+                          fallback === CAPTCHA_FALLBACK_OFF ? "text-muted-foreground" : "text-primary"
+                        }`} />
+                        <span
+                          id="captcha-fallback-value"
+                          className={`truncate ${fallback === CAPTCHA_FALLBACK_OFF ? "text-muted-foreground" : ""}`}
+                        >
+                          {fallbackLabel}
+                        </span>
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
+                      <SelectItem
+                        value={CAPTCHA_FALLBACK_OFF}
+                        className="pr-2 [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
+                      >
+                        <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                          <ShieldOff className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{t("captcha.fallbackOff")}</span>
+                        </span>
+                      </SelectItem>
+                      {/* The live channel is not offered as its own understudy. */}
+                      {CAPTCHA_PROVIDER_IDS.filter(id => id !== provider).map(id => {
+                        const Icon = PROVIDER_ICONS[id]
+                        return (
+                          <SelectItem
+                            key={id}
+                            value={id}
+                            className="pr-2 [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <Icon className="h-4 w-4 shrink-0 text-primary" />
+                              <span className="truncate">
+                                {t(`captcha.providers.${id}.name` as never)}
+                              </span>
+                            </span>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+
+                  <span className="hidden min-w-0 flex-1 truncate text-[11px] text-muted-foreground md:block">
+                    {t("captcha.fallbackHint")}
+                  </span>
                 </div>
 
-                <div className="min-w-0 space-y-1.5">
-                  <Label htmlFor="captcha-secret-key" className="text-xs font-medium">
-                    {t("captcha.fields.secretKey")}
-                  </Label>
-                  <SecretInput
-                    id="captcha-secret-key"
-                    autoComplete="new-password"
-                    showLabel={t("captcha.showSecret")}
-                    hideLabel={t("captcha.hideSecret")}
-                    value={settings.secretKey}
-                    onChange={e => patchSettings({ secretKey: e.target.value })}
-                    placeholder={t("captcha.placeholders.secretKey")}
-                  />
-                </div>
-              </div>
-
-              {/* Only the channels whose console hands out a credential that
-                  needs explaining carry this note, so the catalog decides where
-                  it appears instead of a provider test hard-coded here. */}
-              {t.has(`captcha.providers.${provider}.keyHint` as never) && (
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  {t(`captcha.providers.${provider}.keyHint` as never)}
+                  {t("captcha.hints.fallback")}
                 </p>
-              )}
+              </>
+            )}
 
-              {/* An odd number of options stretches the last cell instead of
-                  leaving a hole next to it. The compact selects pair up from
-                  380px — the common phone widths are 390-412 — so a portrait
-                  screen no longer gets one long column of boxes. */}
-              <div className="grid gap-3 min-[380px]:grid-cols-2 min-[380px]:[&>*:nth-child(odd):last-child]:col-span-2">
-                {optionFields.map(renderOptionField)}
-              </div>
+            {enabled && fallback !== CAPTCHA_FALLBACK_OFF && renderChannelPanel(fallback, "fallback")}
 
-              {CAPTCHA_PROVIDERS[provider].scoreBased && (
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  {t("captcha.hints.threshold")}
-                </p>
-              )}
-
+            {/* Which forms are protected is a property of the gate, not of a
+                channel, so it stays outside both panels. */}
+            {enabled && (
               <div className="space-y-1.5 border-t pt-3">
                 <span className="text-xs font-medium">{t("captcha.scopesLabel")}</span>
                 <div className="grid gap-2 min-[380px]:grid-cols-2">
@@ -470,7 +597,6 @@ export function WebsiteConfigPanel() {
                   {t("captcha.hints.scopes")}
                 </p>
               </div>
-            </section>
             )}
           </div>
         </section>

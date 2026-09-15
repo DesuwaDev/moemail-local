@@ -165,6 +165,9 @@
       },
       "providerLabel": "驗證碼提供商",
       "providerHint": "切換提供商時會保留各自已填寫的金鑰。",
+      "fallbackLabel": "備用管道",
+      "fallbackOff": "不啟用",
+      "fallbackHint": "主管道載入不出來時自動頂上，需另外填金鑰。",
       "openConsole": "開啟提供商主控台",
       "showSecret": "顯示密鑰",
       "hideSecret": "隱藏密鑰",
@@ -180,7 +183,8 @@
         "secretKey": "私密金鑰",
         "threshold": "分數門檻",
         "theme": "主題",
-        "size": "元件尺寸"
+        "size": "元件尺寸",
+        "endpoint": "服務網域"
       },
       "placeholders": {
         "siteKey": "在瀏覽器中公開呈現的金鑰",
@@ -195,12 +199,20 @@
         "normal": "標準",
         "compact": "緊湊"
       },
+      "endpoints": {
+        "auto": "自動",
+        "global": "全球",
+        "china": "中國大陸鏡像"
+      },
       "scopes": {
         "login": "登入",
         "register": "註冊"
       },
       "hints": {
         "threshold": "該管道全程無感執行並回傳 0 到 1 的分數，低於門檻的要求會被拒絕。",
+        "endpoint": "中國大陸無法連線 google.com，Google 為此提供 recaptcha.net 鏡像，兩個網域共用同一組金鑰。選「自動」時，每位訪客會先偵測全球網域、失敗再改走鏡像，伺服器端也會用當時連得上的網域驗證。",
+        "keysMissing": "站台金鑰與私密金鑰都填好，這個管道才會真正啟用。",
+        "fallback": "訪客瀏覽器載入不到主管道的指令碼（網域被擋、金鑰失效、擴充套件攔截）時，登入頁會自動改用備用管道，不必重新整理；兩個管道簽發的權杖伺服器端都接受。備用管道需在自己的主控台另外申請金鑰，留空即視為未設定。",
         "scopes": "驗證僅作用於使用者名稱與密碼表單，第三方登入不受影響。"
       }
     },

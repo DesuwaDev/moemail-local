@@ -121,9 +121,11 @@
 }
 
 @layer utilities {
+  /* 透明度写死在渐变里：自定义工具类不支持 `/5` 这类透明度修饰符，
+     带修饰符的类名反而会被 Tailwind 当成未知候选词丢掉 */
   .bg-grid-primary {
-    background-image: linear-gradient(var(--primary) 1px, transparent 1px),
-      linear-gradient(90deg, var(--primary) 1px, transparent 1px);
+    background-image: linear-gradient(hsl(var(--primary) / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.05) 1px, transparent 1px);
     background-size: 20px 20px;
   }
 
@@ -157,12 +159,19 @@
   .dark * {
     scrollbar-color: hsl(var(--primary) / 0.3) transparent;
   }
+}
 
-  /* reCAPTCHA v3 pins its own badge to the bottom-right corner at a z-index no
-     page style can outrank, right on top of the floating GitHub button. Google
-     allows hiding it as long as the attribution stays visible, which the login
-     form renders next to the sign-in button. */
-  .grecaptcha-badge {
-    visibility: hidden;
-  }
+/* reCAPTCHA v3 pins its own badge to the bottom-right corner at a z-index no
+   page style can outrank, right on top of the floating GitHub button. Google
+   allows hiding it as long as the attribution stays visible, which the login
+   form renders next to the sign-in button.
+
+   Two details keep this working. It sits outside `@layer utilities` because
+   Tailwind keeps a custom utility only when it finds the class name in the
+   scanned source, and this class exists nowhere but the DOM Google injects at
+   runtime — inside the layer the rule is stripped from the production build.
+   And it is `!important` because the vendor styles the badge from a sheet it
+   appends after ours, and from inline styles on the element itself. */
+.grecaptcha-badge {
+  visibility: hidden !important;
 }

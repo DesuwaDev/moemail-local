@@ -16,14 +16,52 @@ export type CaptchaSize = (typeof CAPTCHA_SIZES)[number]
 export const CAPTCHA_SCOPES = ["login", "register"] as const
 export type CaptchaScope = (typeof CAPTCHA_SCOPES)[number]
 
-export const CAPTCHA_OPTION_FIELDS = ["threshold", "theme", "size"] as const
+export const CAPTCHA_OPTION_FIELDS = ["threshold", "theme", "size", "endpoint"] as const
 export type CaptchaOptionField = (typeof CAPTCHA_OPTION_FIELDS)[number]
+
+// Some providers publish the same service on a second origin for networks that
+// cannot reach the first. Both fronts share one backend, so a token minted
+// through either verifies through either.
+export const CAPTCHA_REGIONS = ["global", "china"] as const
+export type CaptchaRegion = (typeof CAPTCHA_REGIONS)[number]
+
+// Pinning a region forces every visitor and the server onto one origin, which
+// is only right when the whole audience sits on one side of a filter. `auto`
+// lets each side settle it for itself and is the default.
+export const CAPTCHA_ENDPOINTS = ["auto", ...CAPTCHA_REGIONS] as const
+export type CaptchaEndpoint = (typeof CAPTCHA_ENDPOINTS)[number]
+
+// A vendor bundle that never arrives — a filtered origin, a dead key, an
+// extension that blocks the host — leaves the form unsubmittable, and a retry
+// on the same channel cannot help. The operator can name a second channel the
+// login page switches to on its own; "none" keeps the single-channel behaviour.
+export const CAPTCHA_FALLBACK_OFF = "none"
+export type CaptchaFallback = CaptchaProviderId | typeof CAPTCHA_FALLBACK_OFF
+export const CAPTCHA_FALLBACK_CHOICES = [CAPTCHA_FALLBACK_OFF, ...CAPTCHA_PROVIDER_IDS] as const
 
 export const DEFAULT_SCORE_THRESHOLD = 0.5
 
+// Google publishes recaptcha.net for networks where google.com is unreachable;
+// it serves the same api.js and the same siteverify backend.
+const RECAPTCHA_ORIGINS: Record<CaptchaRegion, string> = {
+  global: "https://www.google.com",
+  china: "https://www.recaptcha.net",
+}
+
+// A provider with no regional mirror answers from one origin everywhere, so it
+// repeats it and callers never branch on whether a mirror exists.
+function everywhere(origin: string): Record<CaptchaRegion, string> {
+  return { global: origin, china: origin }
+}
+
 interface CaptchaProviderDescriptor {
   id: CaptchaProviderId
-  siteverifyUrl: string
+  // Origin fronting the verification backend, per region.
+  apiOrigins: Record<CaptchaRegion, string>
+  siteverifyPath: string
+  // Origin serving the browser bundle, per region. hCaptcha splits the two;
+  // the rest reuse one host.
+  scriptOrigins: Record<CaptchaRegion, string>
   // Where the operator creates a site key pair.
   consoleUrl: string
   // Options the provider actually honours, in display order.
@@ -38,7 +76,9 @@ interface CaptchaProviderDescriptor {
 export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescriptor> = {
   turnstile: {
     id: "turnstile",
-    siteverifyUrl: "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    apiOrigins: everywhere("https://challenges.cloudflare.com"),
+    siteverifyPath: "/turnstile/v0/siteverify",
+    scriptOrigins: everywhere("https://challenges.cloudflare.com"),
     consoleUrl: "https://dash.cloudflare.com/?to=/:account/turnstile",
     optionFields: ["theme", "size"],
     sendsSiteKeyOnVerify: false,
@@ -50,23 +90,29 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
   // between them would guarantee that error on every switch.
   recaptcha: {
     id: "recaptcha",
-    siteverifyUrl: "https://www.google.com/recaptcha/api/siteverify",
+    apiOrigins: RECAPTCHA_ORIGINS,
+    siteverifyPath: "/recaptcha/api/siteverify",
+    scriptOrigins: RECAPTCHA_ORIGINS,
     consoleUrl: "https://www.google.com/recaptcha/admin",
-    optionFields: ["theme", "size"],
+    optionFields: ["theme", "size", "endpoint"],
     sendsSiteKeyOnVerify: false,
     scoreBased: false,
   },
   recaptchaV3: {
     id: "recaptchaV3",
-    siteverifyUrl: "https://www.google.com/recaptcha/api/siteverify",
+    apiOrigins: RECAPTCHA_ORIGINS,
+    siteverifyPath: "/recaptcha/api/siteverify",
+    scriptOrigins: RECAPTCHA_ORIGINS,
     consoleUrl: "https://www.google.com/recaptcha/admin",
-    optionFields: ["threshold"],
+    optionFields: ["threshold", "endpoint"],
     sendsSiteKeyOnVerify: false,
     scoreBased: true,
   },
   hcaptcha: {
     id: "hcaptcha",
-    siteverifyUrl: "https://api.hcaptcha.com/siteverify",
+    apiOrigins: everywhere("https://api.hcaptcha.com"),
+    siteverifyPath: "/siteverify",
+    scriptOrigins: everywhere("https://js.hcaptcha.com"),
     consoleUrl: "https://dashboard.hcaptcha.com/sites",
     optionFields: ["theme", "size"],
     sendsSiteKeyOnVerify: true,
@@ -80,24 +126,35 @@ export interface CaptchaProviderSettings {
   theme: CaptchaTheme
   size: CaptchaSize
   threshold: number
+  endpoint: CaptchaEndpoint
 }
 
 export interface CaptchaConfig {
   enabled: boolean
   provider: CaptchaProviderId
+  fallback: CaptchaFallback
   scopes: Record<CaptchaScope, boolean>
   providers: Record<CaptchaProviderId, CaptchaProviderSettings>
 }
 
-// Everything the browser needs to render a challenge, and nothing else: the
-// secret never leaves the server.
-export interface CaptchaClientConfig {
-  enabled: boolean
+// What the browser needs to mint a token with one channel. The login page holds
+// two of these at once, so it is named apart from the document below.
+export interface CaptchaChannelConfig {
   provider: CaptchaProviderId
   siteKey: string
   theme: CaptchaTheme
   size: CaptchaSize
+  endpoint: CaptchaEndpoint
+}
+
+// Everything the browser needs to render a challenge, and nothing else: the
+// secret never leaves the server.
+export interface CaptchaClientConfig extends CaptchaChannelConfig {
+  enabled: boolean
   scopes: Record<CaptchaScope, boolean>
+  // The channel to switch to when the first one never loads, or null when the
+  // operator configured none — an unusable one is never advertised.
+  fallback: CaptchaChannelConfig | null
 }
 
 const DEFAULT_PROVIDER: CaptchaProviderId = "turnstile"
@@ -131,6 +188,7 @@ function normalizeSettings(value: unknown): CaptchaProviderSettings {
     theme: normalizeOption(source.theme, CAPTCHA_THEMES, "auto"),
     size: normalizeOption(source.size, CAPTCHA_SIZES, "normal"),
     threshold: normalizeThreshold(source.threshold),
+    endpoint: normalizeOption(source.endpoint, CAPTCHA_ENDPOINTS, "auto"),
   }
 }
 
@@ -152,10 +210,17 @@ export function normalizeCaptchaConfig(value: unknown): CaptchaConfig {
   const stored = asRecord(source.providers)
   const providers = migrateRecaptchaGenerations(stored)
   const scopes = asRecord(source.scopes)
+  const migrated = providers !== stored
   const selected = normalizeOption(source.provider, CAPTCHA_PROVIDER_IDS, DEFAULT_PROVIDER)
+  const provider = migrated && selected === "recaptcha" ? "recaptchaV3" : selected
+  const declared = normalizeOption(source.fallback, CAPTCHA_FALLBACK_CHOICES, CAPTCHA_FALLBACK_OFF)
+  const fallback = migrated && declared === "recaptcha" ? "recaptchaV3" : declared
   return {
     enabled: source.enabled === true,
-    provider: providers !== stored && selected === "recaptcha" ? "recaptchaV3" : selected,
+    provider,
+    // A channel cannot stand in for itself: the second attempt would repeat the
+    // load that just failed, with the same key, against the same origin.
+    fallback: fallback === provider ? CAPTCHA_FALLBACK_OFF : fallback,
     scopes: Object.fromEntries(
       CAPTCHA_SCOPES.map(scope => [scope, scopes[scope] !== false]),
     ) as Record<CaptchaScope, boolean>,
@@ -176,14 +241,71 @@ export function captchaOptionFields(provider: CaptchaProviderId): readonly Captc
   return CAPTCHA_PROVIDERS[provider].optionFields
 }
 
-export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig {
-  const settings = config.providers[config.provider]
+// Candidate origins in the order they should be tried. A pinned region yields
+// exactly one; `auto` leads with the global origin and keeps the mirror behind
+// it, deduplicated so a provider without a mirror is never tried twice.
+function candidateOrigins(origins: Record<CaptchaRegion, string>, endpoint: CaptchaEndpoint) {
+  if (endpoint !== "auto") return [origins[endpoint]]
+  return [...new Set([origins.global, origins.china])]
+}
+
+export function captchaScriptUrls(channel: CaptchaChannelConfig, locale: string): string[] {
+  const descriptor = CAPTCHA_PROVIDERS[channel.provider]
+  return candidateOrigins(descriptor.scriptOrigins, channel.endpoint)
+    .map(origin => vendorScriptUrl(channel, locale, origin))
+}
+
+export function captchaSiteverifyUrls(
+  provider: CaptchaProviderId,
+  endpoint: CaptchaEndpoint,
+): string[] {
+  const descriptor = CAPTCHA_PROVIDERS[provider]
+  return candidateOrigins(descriptor.apiOrigins, endpoint)
+    .map(origin => `${origin}${descriptor.siteverifyPath}`)
+}
+
+// reCAPTCHA takes its language from the script URL, and the score-based
+// generation binds the site key there instead of at render time.
+function vendorScriptUrl(channel: CaptchaChannelConfig, locale: string, origin: string) {
+  const language = encodeURIComponent(locale)
+  if (channel.provider === "recaptchaV3") {
+    return `${origin}/recaptcha/api.js?render=${encodeURIComponent(channel.siteKey)}&hl=${language}`
+  }
+  if (channel.provider === "recaptcha") {
+    return `${origin}/recaptcha/api.js?render=explicit&hl=${language}`
+  }
+  if (channel.provider === "hcaptcha") return `${origin}/1/api.js?render=explicit`
+  return `${origin}/turnstile/v0/api.js?render=explicit`
+}
+
+function channelConfig(
+  provider: CaptchaProviderId,
+  settings: CaptchaProviderSettings,
+): CaptchaChannelConfig {
   return {
-    enabled: config.enabled && captchaProviderReady(settings),
-    provider: config.provider,
+    provider,
     siteKey: settings.siteKey,
     theme: settings.theme,
     size: settings.size,
+    endpoint: settings.endpoint,
+  }
+}
+
+// The configured backup, or null when there is none — a channel missing either
+// half of its key pair cannot verify anything, so offering it would only turn a
+// load failure into a rejection.
+export function captchaFallbackProvider(config: CaptchaConfig): CaptchaProviderId | null {
+  if (config.fallback === CAPTCHA_FALLBACK_OFF) return null
+  return captchaProviderReady(config.providers[config.fallback]) ? config.fallback : null
+}
+
+export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig {
+  const settings = config.providers[config.provider]
+  const fallback = captchaFallbackProvider(config)
+  return {
+    ...channelConfig(config.provider, settings),
+    enabled: config.enabled && captchaProviderReady(settings),
     scopes: config.scopes,
+    fallback: fallback ? channelConfig(fallback, config.providers[fallback]) : null,
   }
 }

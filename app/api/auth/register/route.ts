@@ -37,12 +37,12 @@ export async function POST(request: Request) {
     return apiError("INVALID_AUTH_INPUT", 400)
   }
 
-  const { username, password, captchaToken } = parsed.data
+  const { username, password, captchaToken, captchaProvider } = parsed.data
   const { register, UsernameAlreadyExistsError } = await import("@/lib/auth")
   const { verifyCaptchaToken } = await import("@/lib/captcha/verify")
 
   try {
-    const verification = await verifyCaptchaToken("register", captchaToken)
+    const verification = await verifyCaptchaToken("register", captchaToken, captchaProvider)
     if (!verification.success) {
       return apiError(
         verification.reason === "missing-token"
