@@ -113,6 +113,9 @@ for (const locale of locales.filter(locale => locale !== "en")) {
 // not merely copied into a locale-specific JSON file.
 const invariantCatalogValues = new Set([
   "MoeMail",
+  "Cloudflare Turnstile",
+  "Google reCAPTCHA",
+  "hCaptcha",
   "Cloudflare Email Worker",
   "Resend",
   "TLS",

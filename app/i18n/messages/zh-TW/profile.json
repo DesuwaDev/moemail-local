@@ -150,20 +150,61 @@
     "title": "網站設定",
     "description": "設定網站選項（僅皇帝可用）",
     "defaultRole": "新使用者預設角色",
-    "emailDomains": "郵箱網域",
-    "emailDomainsPlaceholder": "多個網域以逗號分隔",
+    "defaultRolePlaceholder": "請選擇角色",
     "adminContact": "管理員聯絡方式",
     "adminContactPlaceholder": "郵箱或其他聯絡方式",
-    "maxEmails": "每個使用者最大郵箱數",
-    "turnstile": {
-      "enable": "啟用 Cloudflare Turnstile",
-      "enableDescription": "啟用後，使用者名稱與密碼的登入／註冊需要通過 Turnstile 驗證",
-      "siteKey": "站台金鑰",
-      "siteKeyPlaceholder": "輸入 Turnstile Site Key",
-      "secretKey": "私密金鑰",
-      "secretKeyPlaceholder": "輸入 Turnstile Secret Key",
-      "secretKeyDescription": "請先在 Cloudflare 建立 Turnstile 並填寫上述必填參數後再啟用"
+    "captcha": {
+      "title": "人機驗證",
+      "description": "選擇用於保護登入與註冊的驗證提供商，並填入其主控台核發的金鑰。",
+      "enable": "啟用驗證",
+      "enabled": "目前已啟用",
+      "disabled": "目前未啟用",
+      "providerLabel": "驗證碼提供商",
+      "providerHint": "切換提供商時會保留各自已填寫的金鑰。",
+      "openConsole": "開啟提供商主控台",
+      "showSecret": "顯示密鑰",
+      "hideSecret": "隱藏密鑰",
+      "scopesLabel": "保護的表單",
+      "providers": {
+        "turnstile": { "name": "Cloudflare Turnstile", "description": "無感驗證體驗，多數訪客不會看到任何挑戰。" },
+        "recaptcha": { "name": "Google reCAPTCHA", "description": "支援 v2 核取方塊元件與 v3 無感評分模型。" },
+        "hcaptcha": { "name": "hCaptcha", "description": "重視隱私的驗證挑戰，擁有獨立的站台金鑰與元件樣式。" }
+      },
+      "fields": {
+        "siteKey": "站台金鑰",
+        "secretKey": "私密金鑰",
+        "mode": "驗證模式",
+        "threshold": "分數門檻",
+        "theme": "主題",
+        "size": "元件尺寸"
+      },
+      "placeholders": {
+        "siteKey": "在瀏覽器中公開呈現的金鑰",
+        "secretKey": "伺服器端驗證時使用的金鑰"
+      },
+      "modes": {
+        "v2": "v2（核取方塊）",
+        "v3": "v3（評分）"
+      },
+      "themes": {
+        "auto": "自動",
+        "light": "淺色",
+        "dark": "深色"
+      },
+      "sizes": {
+        "normal": "標準",
+        "compact": "緊湊"
+      },
+      "scopes": {
+        "login": "登入",
+        "register": "註冊"
+      },
+      "hints": {
+        "threshold": "reCAPTCHA v3 全程無感執行並回傳 0 到 1 的分數，低於門檻的要求會被拒絕。",
+        "scopes": "驗證僅作用於使用者名稱與密碼表單，第三方登入不受影響。"
+      }
     },
+    "loadFailed": "讀取設定失敗",
     "save": "儲存設定",
     "saving": "儲存中...",
     "saveSuccess": "設定儲存成功",

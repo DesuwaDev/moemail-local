@@ -150,20 +150,61 @@
     "title": "サイト設定",
     "description": "サイトの設定を管理（皇帝のみ利用可能）",
     "defaultRole": "新規ユーザーのデフォルトロール",
-    "emailDomains": "メールボックスドメイン",
-    "emailDomainsPlaceholder": "複数のドメインはカンマで区切ります",
+    "defaultRolePlaceholder": "ロールを選択",
     "adminContact": "管理者連絡先",
     "adminContactPlaceholder": "メールまたはその他の連絡先",
-    "maxEmails": "ユーザーあたりの最大メールボックス数",
-    "turnstile": {
-      "enable": "Cloudflare Turnstile を有効化",
-      "enableDescription": "有効にすると、ユーザー名とパスワードでのログイン・登録に Turnstile 認証が必要になります",
-      "siteKey": "サイトキー",
-      "siteKeyPlaceholder": "Turnstile Site Key を入力",
-      "secretKey": "シークレットキー",
-      "secretKeyPlaceholder": "Turnstile Secret Key を入力",
-      "secretKeyDescription": "Cloudflare で Turnstile を作成し、必須のキーを入力してから有効化してください"
+    "captcha": {
+      "title": "人間確認",
+      "description": "ログインと登録を保護するプロバイダーを選び、そのコンソールで発行されたキーを入力します。",
+      "enable": "認証を有効化",
+      "enabled": "現在有効",
+      "disabled": "現在無効",
+      "providerLabel": "認証プロバイダー",
+      "providerHint": "プロバイダーを切り替えても、それぞれに入力したキーは保持されます。",
+      "openConsole": "プロバイダーのコンソールを開く",
+      "showSecret": "シークレットを表示",
+      "hideSecret": "シークレットを隠す",
+      "scopesLabel": "保護するフォーム",
+      "providers": {
+        "turnstile": { "name": "Cloudflare Turnstile", "description": "摩擦の少ない認証で、ほとんどの訪問者はパズルを見ることがありません。" },
+        "recaptcha": { "name": "Google reCAPTCHA", "description": "v2 のチェックボックスと、画面に表示されない v3 のスコアリングに対応します。" },
+        "hcaptcha": { "name": "hCaptcha", "description": "プライバシーを重視したチャレンジで、独自のキーと表示スタイルを持ちます。" }
+      },
+      "fields": {
+        "siteKey": "サイトキー",
+        "secretKey": "シークレットキー",
+        "mode": "認証モード",
+        "threshold": "スコア閾値",
+        "theme": "テーマ",
+        "size": "ウィジェットサイズ"
+      },
+      "placeholders": {
+        "siteKey": "ブラウザーに公開されるキー",
+        "secretKey": "サーバー側の検証に使うキー"
+      },
+      "modes": {
+        "v2": "v2（チェックボックス）",
+        "v3": "v3（スコア）"
+      },
+      "themes": {
+        "auto": "自動",
+        "light": "ライト",
+        "dark": "ダーク"
+      },
+      "sizes": {
+        "normal": "標準",
+        "compact": "コンパクト"
+      },
+      "scopes": {
+        "login": "ログイン",
+        "register": "新規登録"
+      },
+      "hints": {
+        "threshold": "reCAPTCHA v3 は画面に表示されず 0〜1 のスコアを返します。閾値を下回るリクエストは拒否されます。",
+        "scopes": "認証はユーザー名とパスワードのフォームにのみ適用され、ソーシャルログインには影響しません。"
+      }
     },
+    "loadFailed": "設定の読み込みに失敗しました",
     "save": "設定を保存",
     "saving": "保存中...",
     "saveSuccess": "設定を保存しました",

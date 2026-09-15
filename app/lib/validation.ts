@@ -9,7 +9,7 @@ export const authSchema = z.object({
   password: z.string()
     .min(8, "PASSWORD_TOO_SHORT")
     .max(256, "PASSWORD_TOO_LONG"),
-  turnstileToken: z.string().optional()
+  captchaToken: z.string().max(8_192).optional()
 })
 
 export type AuthSchema = z.infer<typeof authSchema>

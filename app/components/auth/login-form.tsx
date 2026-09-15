@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, type FormEvent } from "react"
+import { useCallback, useRef, useState, type FormEvent } from "react"
 import { signIn } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import { useToast } from "@/components/ui/use-toast"
@@ -21,17 +21,13 @@ import {
 } from "@/components/ui/tabs"
 import { Github, Loader2, KeyRound, User2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Turnstile } from "@/components/auth/turnstile"
+import { Captcha, type CaptchaHandle } from "@/components/auth/captcha"
+import type { CaptchaClientConfig, CaptchaScope } from "@/lib/captcha/providers"
 import { useRuntimeConfig } from "@/providers"
 import { readApiErrorCode } from "@/lib/api-error-client"
 
-interface TurnstileConfigProps {
-  enabled: boolean
-  siteKey: string
-}
-
 interface LoginFormProps {
-  turnstile?: TurnstileConfigProps
+  captcha: CaptchaClientConfig
 }
 
 interface FormErrors {
@@ -40,38 +36,39 @@ interface FormErrors {
   confirmPassword?: string
 }
 
-export function LoginForm({ turnstile }: LoginFormProps) {
+export function LoginForm({ captcha }: LoginFormProps) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
-  const [turnstileToken, setTurnstileToken] = useState("")
-  const [turnstileResetCounter, setTurnstileResetCounter] = useState(0)
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login")
+  const [activeTab, setActiveTab] = useState<CaptchaScope>("login")
+  const captchaRef = useRef<CaptchaHandle | null>(null)
   const { toast } = useToast()
   const t = useTranslations("auth.loginForm")
   const tApi = useTranslations("api")
   const { oauth } = useRuntimeConfig()
 
-  const turnstileSiteKey = turnstile?.siteKey ?? ""
-  const turnstileEnabled = Boolean(turnstile?.enabled && turnstileSiteKey)
+  const captchaRequired = captcha.enabled && captcha.scopes[activeTab]
 
-  const resetTurnstile = useCallback(() => {
-    setTurnstileToken("")
-    setTurnstileResetCounter((prev) => prev + 1)
+  const resetCaptcha = useCallback(() => {
+    captchaRef.current?.reset()
   }, [])
 
-  const ensureTurnstileSolved = () => {
-    if (!turnstileEnabled) return true
-    if (turnstileToken) return true
-
-    toast({
-      title: t("toast.turnstileRequired"),
-      description: t("toast.turnstileRequiredDesc"),
-      variant: "destructive",
-    })
-    return false
+  // Widget providers hand back the token the visitor already solved; reCAPTCHA
+  // v3 mints one here, so this is awaited at submit time rather than tracked in
+  // state.
+  const collectCaptchaToken = async () => {
+    const token = await captchaRef.current?.ensureToken(activeTab) ?? ""
+    if (captchaRequired && !token) {
+      toast({
+        title: t("toast.captchaRequired"),
+        description: t("toast.captchaRequiredDesc"),
+        variant: "destructive",
+      })
+      return null
+    }
+    return token
   }
 
   const clearForm = () => {
@@ -89,11 +86,11 @@ export function LoginForm({ turnstile }: LoginFormProps) {
       variant: "destructive",
     })
     setLoading(false)
-    resetTurnstile()
+    resetCaptcha()
   }
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value as "login" | "register")
+    setActiveTab(value as CaptchaScope)
     clearForm()
   }
 
@@ -121,27 +118,31 @@ export function LoginForm({ turnstile }: LoginFormProps) {
 
   const handleLogin = async () => {
     if (!validateLoginForm()) return
-    if (!ensureTurnstileSolved()) return
+    const captchaToken = await collectCaptchaToken()
+    if (captchaToken === null) return
 
     setLoading(true)
     try {
       const result = await signIn("credentials", {
         username,
         password,
-        turnstileToken,
+        captchaToken,
         redirect: false,
       })
 
       if (result?.error) {
+        // Codes travel back from the credentials provider (ban, captcha); the
+        // generic copy stays for anything the catalog does not describe.
+        const code = result.code
         toast({
           title: t("toast.loginFailed"),
-          description: result.code === "USER_BANNED"
-            ? tApi("USER_BANNED")
+          description: code && tApi.has(code as never)
+            ? tApi(code as never)
             : t("toast.loginFailedDesc"),
           variant: "destructive",
         })
         setLoading(false)
-        resetTurnstile()
+        resetCaptcha()
         return
       }
 
@@ -154,13 +155,14 @@ export function LoginForm({ turnstile }: LoginFormProps) {
         variant: "destructive",
       })
       setLoading(false)
-      resetTurnstile()
+      resetCaptcha()
     }
   }
 
   const handleRegister = async () => {
     if (!validateRegisterForm()) return
-    if (!ensureTurnstileSolved()) return
+    const captchaToken = await collectCaptchaToken()
+    if (captchaToken === null) return
 
     setLoading(true)
     let registrationCompleted = false
@@ -168,7 +170,7 @@ export function LoginForm({ turnstile }: LoginFormProps) {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, turnstileToken }),
+        body: JSON.stringify({ username, password, captchaToken }),
       })
 
       if (!response.ok) {
@@ -179,7 +181,7 @@ export function LoginForm({ turnstile }: LoginFormProps) {
           variant: "destructive",
         })
         setLoading(false)
-        resetTurnstile()
+        resetCaptcha()
         return
       }
 
@@ -190,7 +192,7 @@ export function LoginForm({ turnstile }: LoginFormProps) {
         return
       }
 
-      // 注册成功后自动登录
+      // Sign the new account in straight away.
       const result = await signIn("credentials", {
         username,
         password,
@@ -216,7 +218,7 @@ export function LoginForm({ turnstile }: LoginFormProps) {
         variant: "destructive",
       })
       setLoading(false)
-      resetTurnstile()
+      resetCaptcha()
     }
   }
 
@@ -356,15 +358,12 @@ export function LoginForm({ turnstile }: LoginFormProps) {
               </div>
             </TabsContent>
 
-            {turnstileEnabled && turnstileSiteKey && (
-              <Turnstile
-                siteKey={turnstileSiteKey}
-                onVerify={setTurnstileToken}
-                onExpire={resetTurnstile}
-                resetSignal={turnstileResetCounter}
-                className="mt-4 min-h-[65px] items-center"
-              />
-            )}
+            <Captcha
+              ref={captchaRef}
+              config={captcha}
+              scope={activeTab}
+              className="mt-4 min-h-[65px]"
+            />
 
             <Button
               type="submit"

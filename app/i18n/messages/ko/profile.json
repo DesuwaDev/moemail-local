@@ -150,20 +150,61 @@
     "title": "웹사이트 설정",
     "description": "웹사이트 설정 구성 (황제 전용)",
     "defaultRole": "새 사용자의 기본 역할",
-    "emailDomains": "이메일 도메인",
-    "emailDomainsPlaceholder": "쉼표로 여러 도메인 구분",
+    "defaultRolePlaceholder": "역할 선택",
     "adminContact": "관리자 연락처",
     "adminContactPlaceholder": "이메일 또는 기타 연락 방법",
-    "maxEmails": "사용자당 최대 이메일 수",
-    "turnstile": {
-      "enable": "Cloudflare Turnstile 활성화",
-      "enableDescription": "활성화되면 사용자 이름/비밀번호 로그인 및 회원가입에 Turnstile 인증이 필요합니다",
-      "siteKey": "사이트 키",
-      "siteKeyPlaceholder": "Turnstile Site Key 입력",
-      "secretKey": "비밀 키",
-      "secretKeyPlaceholder": "Turnstile Secret Key 입력",
-      "secretKeyDescription": "활성화하기 전에 Cloudflare에서 Turnstile 애플리케이션을 설정하고 필요한 키를 제공하세요"
+    "captcha": {
+      "title": "사람 인증",
+      "description": "로그인과 회원가입을 보호할 제공자를 선택하고 해당 콘솔에서 발급한 키를 입력하세요.",
+      "enable": "인증 활성화",
+      "enabled": "현재 활성화됨",
+      "disabled": "현재 비활성화됨",
+      "providerLabel": "인증 제공자",
+      "providerHint": "제공자를 전환해도 각각 입력한 키는 그대로 유지됩니다.",
+      "openConsole": "제공자 콘솔 열기",
+      "showSecret": "비밀 값 표시",
+      "hideSecret": "비밀 값 숨기기",
+      "scopesLabel": "보호할 양식",
+      "providers": {
+        "turnstile": { "name": "Cloudflare Turnstile", "description": "마찰이 적은 인증으로 대부분의 방문자는 퍼즐을 보지 않습니다." },
+        "recaptcha": { "name": "Google reCAPTCHA", "description": "v2 체크박스 위젯과 화면에 보이지 않는 v3 점수 모델을 지원합니다." },
+        "hcaptcha": { "name": "hCaptcha", "description": "개인정보를 중시하는 인증으로 별도의 사이트 키와 위젯 스타일을 사용합니다." }
+      },
+      "fields": {
+        "siteKey": "사이트 키",
+        "secretKey": "비밀 키",
+        "mode": "인증 모드",
+        "threshold": "점수 임계값",
+        "theme": "테마",
+        "size": "위젯 크기"
+      },
+      "placeholders": {
+        "siteKey": "브라우저에 공개되는 키",
+        "secretKey": "서버에서 검증에 사용하는 키"
+      },
+      "modes": {
+        "v2": "v2(체크박스)",
+        "v3": "v3(점수)"
+      },
+      "themes": {
+        "auto": "자동",
+        "light": "밝게",
+        "dark": "어둡게"
+      },
+      "sizes": {
+        "normal": "표준",
+        "compact": "작게"
+      },
+      "scopes": {
+        "login": "로그인",
+        "register": "회원가입"
+      },
+      "hints": {
+        "threshold": "reCAPTCHA v3는 화면에 표시되지 않으며 0에서 1 사이의 점수를 반환하고, 임계값보다 낮은 요청은 거부됩니다.",
+        "scopes": "인증은 사용자 이름과 비밀번호 양식에만 적용되며 소셜 로그인에는 영향을 주지 않습니다."
+      }
     },
+    "loadFailed": "설정을 불러오지 못했습니다",
     "save": "설정 저장",
     "saving": "저장 중...",
     "saveSuccess": "설정이 성공적으로 저장되었습니다",

@@ -99,7 +99,11 @@ assert.match(currentOriginSignOutSource, /window\.location\.replace\(new URL\("\
 assert.doesNotMatch(`${signButtonSource}\n${profileSource}`, /callbackUrl/u)
 assert.match(authSource, /class UserBannedCredentialsError extends CredentialsSignin/u)
 assert.match(authSource, /session\.user\.bannedAt = targetUser\?\.bannedAt \?\? null/u)
-assert.match(loginFormSource, /result\.code === "USER_BANNED"/u)
+// The ban notice now travels through the shared API catalog together with the
+// captcha codes, so the login toast maps whatever code the provider returned.
+assert.match(authSource, /class CaptchaRequiredError extends CredentialsSignin/u)
+assert.match(authSource, /class CaptchaFailedError extends CredentialsSignin/u)
+assert.match(loginFormSource, /tApi\.has\(code as never\)\s*\n\s*\? tApi\(code as never\)/u)
 assert.match(sessionStatusGuardSource, /signOut\(\{ redirect: false \}\)/u)
 assert.match(sessionStatusGuardSource, /sessionStorage\.removeItem\(BANNED_NOTICE_KEY\)/u)
 assert.match(sessionStatusGuardSource, /window\.location\.replace\(new URL\("\/", window\.location\.origin\)\.href\)/u)
@@ -109,7 +113,10 @@ assert.match(apiErrorClientSource, /code === "USER_BANNED"[\s\S]*dispatchEvent/u
 assert.doesNotMatch(loginFormSource, /min-h-\[220px\]/u)
 assert.match(loginFormSource, /grid gap-3 min-\[480px\]:grid-cols-2/u)
 assert.match(loginFormSource, /usernameField\("min-\[480px\]:col-span-2"\)/u)
-assert.match(loginFormSource, /className="mt-4 min-h-\[65px\] items-center"/u)
+// The slot reserves the widget's height so the card cannot jump while the
+// vendor script loads. Vertical centring is deliberately absent: the widget
+// scales from its top edge when the viewport is narrower than it is.
+assert.match(loginFormSource, /className="mt-4 min-h-\[65px\]"/u)
 assert.match(loginFormSource, /type="submit"/u)
 assert.match(loginFormSource, /activeTab === "login" \? t\("actions\.login"\) : t\("actions\.register"\)/u)
 assert.match(loginFormSource, /max-w-lg/u)
@@ -234,6 +241,44 @@ assert.match(mailuPanelSource, /integration\.imap\.realtime\.reconnectMaxSeconds
 assert.match(mailuPanelSource, /sm:grid-cols-2 xl:grid-cols-5/u)
 assert.doesNotMatch(mailuPanelSource, /<fieldset/u)
 
+const websiteConfigSource = readFileSync(join(process.cwd(), "app/components/profile/website-config-panel.tsx"), "utf8")
+const captchaWidgetSource = readFileSync(join(process.cwd(), "app/components/auth/captcha.tsx"), "utf8")
+// The panel drives the live runtime through the shared registry, so provider,
+// option and scope lists must stay derived rather than hand-maintained here.
+assert.match(websiteConfigSource, /from "@\/lib\/captcha\/providers"/u)
+assert.match(websiteConfigSource, /CAPTCHA_PROVIDER_IDS\.map\(id => \{/u)
+assert.match(websiteConfigSource, /captchaOptionFields\(provider, settings\.mode\)/u)
+assert.match(websiteConfigSource, /CAPTCHA_SCOPES\.map\(scope => \(/u)
+assert.match(websiteConfigSource, /<SelectContent className="max-h-\[var\(--radix-select-content-available-height\)\]">/u)
+assert.match(websiteConfigSource, /aria-labelledby="captcha-provider-label captcha-provider-value"/u)
+assert.match(websiteConfigSource, /aria-labelledby="captcha-provider-value"/u)
+assert.match(websiteConfigSource, /<div className="grid gap-3 sm:grid-cols-2">/u)
+assert.match(websiteConfigSource, /<Label htmlFor="website-default-role"/u)
+assert.match(websiteConfigSource, /<SelectTrigger id="website-default-role">/u)
+assert.match(websiteConfigSource, /<Label htmlFor="website-admin-contact"/u)
+// An odd option count stretches the trailing cell instead of leaving a hole.
+assert.match(websiteConfigSource, /sm:\[&>\*:nth-child\(odd\):last-child\]:col-span-2/u)
+assert.match(websiteConfigSource, /motion-reduce:animate-none/u)
+// A failed load must not let the panel save its empty defaults over storage.
+assert.match(websiteConfigSource, /disabled=\{loading \|\| !loaded\}/u)
+assert.doesNotMatch(websiteConfigSource, /overflow-x-auto/u)
+assert.doesNotMatch(websiteConfigSource, /aria-pressed=/u)
+assert.doesNotMatch(websiteConfigSource, /connectedToRuntime|previewNotice|previewValues|uiOnly/u)
+
+// Vendor widgets ship fixed pixel widths (~300px) that overflow a 320px
+// viewport, so the mount is measured and scaled inside a clipped wrapper
+// rather than wrapping, stretching the card, or scrolling the page sideways.
+assert.match(captchaWidgetSource, /new ResizeObserver\(measure\)/u)
+assert.match(captchaWidgetSource, /flex w-full items-start justify-center overflow-hidden/u)
+assert.match(captchaWidgetSource, /className="shrink-0 origin-top"/u)
+assert.match(captchaWidgetSource, /transform: `scale\(\$\{scale\}\)`/u)
+assert.match(captchaWidgetSource, /height: Math\.ceil\(naturalHeight \* scale\)/u)
+// Vendors refuse to re-render into a container they already used.
+assert.match(captchaWidgetSource, /frame\.replaceChildren\(host\)/u)
+assert.match(loginFormSource, /<Captcha\s+ref=\{captchaRef\}/u)
+assert.match(loginFormSource, /const captchaToken = await collectCaptchaToken\(\)/u)
+assert.doesNotMatch(loginFormSource, /turnstile/iu)
+
 console.log(JSON.stringify({
   localePrefixHidden: true,
   legacyLocaleLinksCanonicalized: true,
@@ -265,4 +310,7 @@ console.log(JSON.stringify({
   imapAdvancedSettingsResponsive: true,
   htmlMessageFrameMountAndSizingGuarded: true,
   compactAdvancedAppearanceResponsive: true,
+  scalableCaptchaProviderPicker: true,
+  captchaRuntimeWiredForEveryProvider: true,
+  captchaWidgetFitsNarrowViewports: true,
 }))

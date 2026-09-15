@@ -35,12 +35,21 @@ declare module "next-intl" {
 }
 
 declare global {
+  // Turnstile, reCAPTCHA and hCaptcha all expose the same explicit-render
+  // surface; only reCAPTCHA v3 adds the invisible `ready`/`execute` pair, and
+  // reCAPTCHA has no `remove`, so callers fall back to `reset`.
+  interface CaptchaVendorApi {
+    render: (element: HTMLElement | string, options: Record<string, unknown>) => string | number
+    reset: (widgetId?: string | number) => void
+    remove?: (widgetId: string | number) => void
+    ready?: (callback: () => void) => void
+    execute?: (siteKey: string, options: { action: string }) => Promise<string>
+  }
+
   interface Window {
-    turnstile?: {
-      render: (element: HTMLElement | string, options: Record<string, unknown>) => string
-      reset: (widgetId?: string) => void
-      remove: (widgetId: string) => void
-    }
+    turnstile?: CaptchaVendorApi
+    grecaptcha?: CaptchaVendorApi
+    hcaptcha?: CaptchaVendorApi
   }
 
 }

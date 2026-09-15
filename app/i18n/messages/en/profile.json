@@ -150,20 +150,61 @@
     "title": "Website Configuration",
     "description": "Configure website settings (Emperor only)",
     "defaultRole": "Default Role for New Users",
-    "emailDomains": "Email Domains",
-    "emailDomainsPlaceholder": "Separate multiple domains with commas",
+    "defaultRolePlaceholder": "Select a role",
     "adminContact": "Admin Contact",
     "adminContactPlaceholder": "Email or other contact method",
-    "maxEmails": "Max Emails per User",
-    "turnstile": {
-      "enable": "Enable Cloudflare Turnstile",
-      "enableDescription": "When enabled, username/password login and registration require Turnstile verification",
-      "siteKey": "Site Key",
-      "siteKeyPlaceholder": "Enter Turnstile Site Key",
-      "secretKey": "Secret Key",
-      "secretKeyPlaceholder": "Enter Turnstile Secret Key",
-      "secretKeyDescription": "Set up a Turnstile application in Cloudflare and provide the required keys before enabling"
+    "captcha": {
+      "title": "Human verification",
+      "description": "Choose the provider that protects sign-in and registration, then paste the keys issued by its console.",
+      "enable": "Enable verification",
+      "enabled": "Currently enabled",
+      "disabled": "Currently disabled",
+      "providerLabel": "Verification provider",
+      "providerHint": "Switching providers keeps the keys already entered for each one.",
+      "openConsole": "Open provider console",
+      "showSecret": "Show secret",
+      "hideSecret": "Hide secret",
+      "scopesLabel": "Protected forms",
+      "providers": {
+        "turnstile": { "name": "Cloudflare Turnstile", "description": "Low-friction verification; most visitors never see a puzzle." },
+        "recaptcha": { "name": "Google reCAPTCHA", "description": "Supports the v2 checkbox widget and the invisible v3 scoring model." },
+        "hcaptcha": { "name": "hCaptcha", "description": "Privacy-focused challenges with independent site keys and widget styling." }
+      },
+      "fields": {
+        "siteKey": "Site Key",
+        "secretKey": "Secret Key",
+        "mode": "Verification mode",
+        "threshold": "Score threshold",
+        "theme": "Theme",
+        "size": "Widget size"
+      },
+      "placeholders": {
+        "siteKey": "Public key rendered in the browser",
+        "secretKey": "Server-side key used for verification"
+      },
+      "modes": {
+        "v2": "v2 (checkbox)",
+        "v3": "v3 (score)"
+      },
+      "themes": {
+        "auto": "Auto",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "sizes": {
+        "normal": "Normal",
+        "compact": "Compact"
+      },
+      "scopes": {
+        "login": "Sign-in",
+        "register": "Registration"
+      },
+      "hints": {
+        "threshold": "reCAPTCHA v3 runs invisibly and returns a score between 0 and 1; requests below the threshold are rejected.",
+        "scopes": "Verification only applies to username and password forms. Social sign-in is unaffected."
+      }
     },
+    "loadFailed": "Failed to load configuration",
     "save": "Save Configuration",
     "saving": "Saving...",
     "saveSuccess": "Configuration saved successfully",

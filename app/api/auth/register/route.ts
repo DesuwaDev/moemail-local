@@ -37,17 +37,17 @@ export async function POST(request: Request) {
     return apiError("INVALID_AUTH_INPUT", 400)
   }
 
-  const { username, password, turnstileToken } = parsed.data
+  const { username, password, captchaToken } = parsed.data
   const { register, UsernameAlreadyExistsError } = await import("@/lib/auth")
-  const { verifyTurnstileToken } = await import("@/lib/turnstile")
+  const { verifyCaptchaToken } = await import("@/lib/captcha/verify")
 
   try {
-    const verification = await verifyTurnstileToken(turnstileToken)
+    const verification = await verifyCaptchaToken("register", captchaToken)
     if (!verification.success) {
       return apiError(
         verification.reason === "missing-token"
-          ? "TURNSTILE_REQUIRED"
-          : "TURNSTILE_FAILED",
+          ? "CAPTCHA_REQUIRED"
+          : "CAPTCHA_FAILED",
         400,
       )
     }

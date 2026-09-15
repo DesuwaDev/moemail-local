@@ -17,7 +17,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { hashPassword, verifyPassword } from "@/lib/password"
 import { credentialsAuthSchema, CredentialsAuthSchema } from "@/lib/validation"
 import { generateAvatarUrl } from "./avatar"
-import { verifyTurnstileToken } from "./turnstile"
+import { verifyCaptchaToken } from "./captcha/verify"
 import { CONFIG_KEYS, getConfigValue } from "./config-store"
 import { AuthWorkloadOverloadedError } from "./auth-abuse-guard"
 import { getConfig } from "./config/runtime"
@@ -29,6 +29,17 @@ class AuthenticationTemporarilyUnavailableError extends CredentialsSignin {
 
 class UserBannedCredentialsError extends CredentialsSignin {
   code = "USER_BANNED"
+}
+
+// Only `CredentialsSignin` subclasses carry their code back to the browser, and
+// the visitor has to be told to redo the challenge rather than to retype their
+// password.
+class CaptchaRequiredError extends CredentialsSignin {
+  code = "CAPTCHA_REQUIRED"
+}
+
+class CaptchaFailedError extends CredentialsSignin {
+  code = "CAPTCHA_FAILED"
 }
 
 const getDefaultRole = async (): Promise<Role> => {
@@ -184,7 +195,7 @@ export const {
       credentials: {
         username: { label: "USERNAME", type: "text", placeholder: "USERNAME" },
         password: { label: "PASSWORD", type: "password", placeholder: "PASSWORD" },
-        turnstileToken: { label: "TURNSTILE_TOKEN", type: "hidden" },
+        captchaToken: { label: "CAPTCHA_TOKEN", type: "hidden" },
         registrationTicket: { label: "REGISTRATION_TICKET", type: "hidden" },
       },
       async authorize(credentials) {
@@ -195,7 +206,7 @@ export const {
         const {
           username,
           password,
-          turnstileToken,
+          captchaToken,
           registrationTicket,
         } = credentials as Record<string, string | undefined>
 
@@ -204,7 +215,7 @@ export const {
           parsedCredentials = credentialsAuthSchema.parse({
             username,
             password,
-            turnstileToken,
+            captchaToken,
             registrationTicket,
           })
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -217,12 +228,12 @@ export const {
           parsedCredentials.username,
         )
         if (!registrationLogin) {
-          const verification = await verifyTurnstileToken(parsedCredentials.turnstileToken)
+          const verification = await verifyCaptchaToken("login", parsedCredentials.captchaToken)
           if (!verification.success) {
             if (verification.reason === "missing-token") {
-              throw new Error("TURNSTILE_REQUIRED")
+              throw new CaptchaRequiredError()
             }
-            throw new Error("TURNSTILE_FAILED")
+            throw new CaptchaFailedError()
           }
         }
 

@@ -9,6 +9,8 @@ import {
   saveDomainPolicies,
 } from "@/lib/domain-policies"
 import { apiError } from "@/lib/api-response"
+import { getCaptchaConfig, saveCaptchaConfig } from "@/lib/captcha/config"
+import { CAPTCHA_SCOPES, captchaProviderReady, normalizeCaptchaConfig } from "@/lib/captcha/providers"
 
 export const runtime = "nodejs"
 
@@ -17,16 +19,14 @@ export async function GET(request: Request) {
   if (!authorization.ok) return authorization.response
 
   const canManageConfig = authorization.principal.access.permissions[PERMISSIONS.MANAGE_CONFIG]
-  const [config, domainPolicies] = await Promise.all([
+  const [config, domainPolicies, captcha] = await Promise.all([
     getConfigValues([
     CONFIG_KEYS.DEFAULT_ROLE,
     CONFIG_KEYS.ADMIN_CONTACT,
     CONFIG_KEYS.MAX_EMAILS,
-    CONFIG_KEYS.TURNSTILE_ENABLED,
-    CONFIG_KEYS.TURNSTILE_SITE_KEY,
-    CONFIG_KEYS.TURNSTILE_SECRET_KEY,
     ]),
     getDomainPolicies(),
+    canManageConfig ? getCaptchaConfig() : Promise.resolve(null),
   ])
   const availableDomainPolicies = authorization.principal.access.allowedDomains === null
     ? domainPolicies
@@ -40,11 +40,7 @@ export async function GET(request: Request) {
     domains: availableDomainPolicies.map(publicDomainPolicy),
     adminContact: config.ADMIN_CONTACT || "",
     maxEmails: config.MAX_EMAILS || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString(),
-    turnstile: canManageConfig ? {
-      enabled: config.TURNSTILE_ENABLED === "true",
-      siteKey: config.TURNSTILE_SITE_KEY || "",
-      secretKey: config.TURNSTILE_SECRET_KEY || "",
-    } : undefined
+    captcha: captcha ?? undefined,
   })
 }
 
@@ -59,17 +55,13 @@ export async function POST(request: Request) {
     emailDomains,
     adminContact,
     maxEmails,
-    turnstile
-  } = await request.json() as { 
+    captcha
+  } = await request.json() as {
     defaultRole: Exclude<Role, typeof ROLES.EMPEROR>,
     emailDomains?: string,
     adminContact: string,
     maxEmails?: string,
-    turnstile?: {
-      enabled: boolean,
-      siteKey: string,
-      secretKey: string
-    }
+    captcha?: unknown
   }
   
   if (![ROLES.DUKE, ROLES.KNIGHT, ROLES.CIVILIAN].includes(defaultRole)) {
@@ -99,24 +91,25 @@ export async function POST(request: Request) {
     }
   }
 
-  const turnstileConfig = turnstile ?? {
-    enabled: false,
-    siteKey: "",
-    secretKey: ""
-  }
+  // Absent means "leave the stored captcha alone", matching how the optional
+  // domain and quota fields behave.
+  const captchaConfig = captcha === undefined ? null : normalizeCaptchaConfig(captcha)
 
-  if (turnstileConfig.enabled && (!turnstileConfig.siteKey || !turnstileConfig.secretKey)) {
-    return apiError("TURNSTILE_KEYS_REQUIRED", 400)
+  if (captchaConfig?.enabled) {
+    if (!captchaProviderReady(captchaConfig.providers[captchaConfig.provider])) {
+      return apiError("CAPTCHA_KEYS_REQUIRED", 400)
+    }
+    if (!CAPTCHA_SCOPES.some(scope => captchaConfig.scopes[scope])) {
+      return apiError("CAPTCHA_SCOPE_REQUIRED", 400)
+    }
   }
 
   await setConfigValues({
     DEFAULT_ROLE: defaultRole,
     ADMIN_CONTACT: adminContact,
     ...(parsedMaxEmails === null ? {} : { MAX_EMAILS: parsedMaxEmails.toString() }),
-    TURNSTILE_ENABLED: turnstileConfig.enabled.toString(),
-    TURNSTILE_SITE_KEY: turnstileConfig.siteKey,
-    TURNSTILE_SECRET_KEY: turnstileConfig.secretKey,
   })
+  if (captchaConfig) await saveCaptchaConfig(captchaConfig)
 
   if (configuredDomains) {
     const currentPolicies = await getDomainPolicies()
