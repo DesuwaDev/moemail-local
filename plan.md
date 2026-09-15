@@ -178,7 +178,7 @@ Worker 路线转发原始 RFC822 邮件和 SMTP envelope：
 
 - 本地化起点 commit：`6c19aefc71ca60bc194a6003c13bae1e2960363b`。
 - 工作分支：`feat/local-deployment`。
-- `origin`：`https://github.com/XMZO/moemail-local.git`。
+- `origin`：`https://github.com/DesuwaDev/moemail-local.git`。
 - `upstream`：`https://github.com/beilunyang/moemail.git`，禁止 push。
 - 旧 Cloudflare Pages/D1 运行版本由固定基线 commit 保留，不在当前运行分支复制一套会继续漂移的 legacy Worker。
 
@@ -192,7 +192,7 @@ git worktree add ../moemail-cloudflare-baseline 6c19aefc71ca60bc194a6003c13bae1e
 
 - 为本地化工作建立独立分支。
 - 记录当前上游基线 commit。
-- 保留 `origin` 为 `XMZO/moemail-local`，保留只读 `upstream` 为官方仓库。
+- 保留 `origin` 为 `DesuwaDev/moemail-local`，保留只读 `upstream` 为官方仓库。
 - 建立最小回归清单：登录、注册、创建邮箱、收信、查看、删除、分享、角色、API Key、配置和发件。
 - 准备独立临时目录中的测试 YAML，验证 secret 不进入仓库或命令行历史。
 
@@ -531,7 +531,7 @@ git worktree add ../moemail-cloudflare-baseline 6c19aefc71ca60bc194a6003c13bae1e
 
 远程仓库约定：
 
-- `origin`: `https://github.com/XMZO/moemail-local.git`
+- `origin`: `https://github.com/DesuwaDev/moemail-local.git`
 - `upstream`: `https://github.com/beilunyang/moemail.git`
 
 建议保持以下提交边界：

@@ -138,7 +138,7 @@ assert.equal(sqliteServices["postgres-restore"], undefined)
 assert.doesNotMatch(sqlite.source, /moemail-local-postgres(?:-tools)?/)
 
 for (const name of ["storage-init", "moemail"] as const) {
-  assert.equal(sqliteServices[name]?.image, `ghcr.io/xmzo/moemail-local:${composeImageTag}`)
+  assert.equal(sqliteServices[name]?.image, `ghcr.io/desuwadev/moemail-local:${composeImageTag}`)
   assert.equal(sqliteServices[name]?.pull_policy, "always")
   assert.equal(sqliteServices[name]?.build, undefined)
 }
@@ -152,7 +152,7 @@ for (const name of [
   "monitor",
   "offsite-backup",
 ] as const) {
-  assert.equal(sqliteServices[name]?.image, `ghcr.io/xmzo/moemail-local:${composeImageTag}-tools`)
+  assert.equal(sqliteServices[name]?.image, `ghcr.io/desuwadev/moemail-local:${composeImageTag}-tools`)
   assert.equal(sqliteServices[name]?.pull_policy, "always")
   assert.equal(sqliteServices[name]?.build, undefined)
 }
@@ -218,19 +218,19 @@ for (const name of [
   "storage-init",
   "moemail",
 ]) {
-  assert.equal(postgresServices[name]?.image, `ghcr.io/xmzo/moemail-local:${composeImageTag}`)
+  assert.equal(postgresServices[name]?.image, `ghcr.io/desuwadev/moemail-local:${composeImageTag}`)
   assert.equal(postgresServices[name]?.pull_policy, "always")
   assert.equal(postgresServices[name]?.build, undefined)
 }
 for (const name of ["cleanup", "migrate", "verify", "scheduler", "monitor", "offsite-backup"]) {
-  assert.equal(postgresServices[name]?.image, `ghcr.io/xmzo/moemail-local:${composeImageTag}-tools`)
+  assert.equal(postgresServices[name]?.image, `ghcr.io/desuwadev/moemail-local:${composeImageTag}-tools`)
   assert.equal(postgresServices[name]?.pull_policy, "always")
   assert.equal(postgresServices[name]?.build, undefined)
 }
-assert.equal(postgresServices.postgres?.image, `ghcr.io/xmzo/moemail-local-postgres:${composeImageTag}`)
+assert.equal(postgresServices.postgres?.image, `ghcr.io/desuwadev/moemail-local-postgres:${composeImageTag}`)
 assert.equal(postgresServices.postgres?.pull_policy, "always")
 for (const name of ["postgres-backup", "postgres-backup-scheduler", "postgres-restore"]) {
-  assert.equal(postgresServices[name]?.image, `ghcr.io/xmzo/moemail-local-postgres-tools:${composeImageTag}`)
+  assert.equal(postgresServices[name]?.image, `ghcr.io/desuwadev/moemail-local-postgres-tools:${composeImageTag}`)
   assert.equal(postgresServices[name]?.pull_policy, "always")
   assert.equal(postgresServices[name]?.user, "10001:10001")
 }
@@ -442,9 +442,11 @@ assert.match(
 )
 assert.match(workflowSource, /linux\/amd64/)
 assert.match(workflowSource, /linux\/arm64/)
-assert.match(workflowSource, /ghcr\.io\/xmzo\/moemail-local"/)
-assert.match(workflowSource, /ghcr\.io\/xmzo\/moemail-local-postgres"/)
-assert.match(workflowSource, /ghcr\.io\/xmzo\/moemail-local-postgres-tools"/)
+assert.match(workflowSource, /REPOSITORY_OWNER: \$\{\{ github\.repository_owner \}\}/)
+assert.match(workflowSource, /registry_owner=.*REPOSITORY_OWNER.*tr '\[:upper:\]' '\[:lower:\]'/)
+assert.match(workflowSource, /ghcr\.io\/\$registry_owner\/moemail-local"/)
+assert.match(workflowSource, /ghcr\.io\/\$registry_owner\/moemail-local-postgres"/)
+assert.match(workflowSource, /ghcr\.io\/\$registry_owner\/moemail-local-postgres-tools"/)
 assert.equal((workflowSource.match(/dockerfile:/g) ?? []).length, 8)
 
 const dockerfileSource = readFileSync("Dockerfile", "utf8")

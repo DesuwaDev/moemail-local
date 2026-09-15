@@ -60,15 +60,15 @@ mv compose.yaml compose.v0.16.1.yaml
 SQLite 是最精简的部署。默认 `up -d` 只拉取 standalone Web 镜像；启用维护
 profile 时才会按需拉取同一 Package 的工具标签：
 
-- `ghcr.io/xmzo/moemail-local:latest`
-- `ghcr.io/xmzo/moemail-local:latest-tools`（仅维护 profiles 使用）
+- `ghcr.io/desuwadev/moemail-local:latest`
+- `ghcr.io/desuwadev/moemail-local:latest-tools`（仅维护 profiles 使用）
 
 ```bash
 set -euo pipefail
 mkdir -p moemail-sqlite
 cd moemail-sqlite
 curl -fsSL \
-  https://raw.githubusercontent.com/XMZO/moemail-local/master/sqlite/docker-compose.yml \
+  https://raw.githubusercontent.com/DesuwaDev/moemail-local/master/sqlite/docker-compose.yml \
   -o docker-compose.yml
 docker compose config --quiet
 docker compose up -d
@@ -82,17 +82,17 @@ docker compose ps
 PostgreSQL 默认只启动 standalone Web 与 PostgreSQL 18；维护 profile 仅在调用时
 按需拉取两种工具镜像：
 
-- `ghcr.io/xmzo/moemail-local:latest`
-- `ghcr.io/xmzo/moemail-local:latest-tools`（应用维护 profiles）
-- `ghcr.io/xmzo/moemail-local-postgres:latest`
-- `ghcr.io/xmzo/moemail-local-postgres-tools:latest`（PostgreSQL 备份/恢复 profiles）
+- `ghcr.io/desuwadev/moemail-local:latest`
+- `ghcr.io/desuwadev/moemail-local:latest-tools`（应用维护 profiles）
+- `ghcr.io/desuwadev/moemail-local-postgres:latest`
+- `ghcr.io/desuwadev/moemail-local-postgres-tools:latest`（PostgreSQL 备份/恢复 profiles）
 
 ```bash
 set -euo pipefail
 mkdir -p moemail-postgres
 cd moemail-postgres
 curl -fsSL \
-  https://raw.githubusercontent.com/XMZO/moemail-local/master/postgres/docker-compose.yml \
+  https://raw.githubusercontent.com/DesuwaDev/moemail-local/master/postgres/docker-compose.yml \
   -o docker-compose.yml
 docker compose config --quiet
 docker compose up -d
@@ -190,7 +190,7 @@ mail.example.com {
 Worker 必须使用首次向导生成的同一个 `email.ingestSecret`。建议先部署直连模式；可以在安装了 Git、Node.js 22 和 Corepack 的电脑上完成，不必在 MoeMail 服务器上执行。只下载 Compose 的部署目录不含 Worker 源码，以下命令会取得完整的对应版本源码：
 
 ```bash
-git clone --branch v0.20.7 --depth 1 https://github.com/XMZO/moemail-local.git
+git clone --branch v0.20.7 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile
@@ -357,7 +357,7 @@ docker compose --profile offsite up -d offsite-backup
 ## 开发与验证
 
 ```bash
-git clone --branch v0.20.7 --depth 1 https://github.com/XMZO/moemail-local.git
+git clone --branch v0.20.7 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile
@@ -389,6 +389,6 @@ pnpm validate:registration-login
 
 ## 上游与许可证
 
-MoeMail Local 基于 [beilunyang/moemail](https://github.com/beilunyang/moemail)，本地化改造维护于 [XMZO/moemail-local](https://github.com/XMZO/moemail-local)。由于运行时和部署模型不同，合并上游功能或安全修复时应先审查和验证。
+MoeMail Local 基于 [beilunyang/moemail](https://github.com/beilunyang/moemail)，本地化改造维护于 [DesuwaDev/moemail-local](https://github.com/DesuwaDev/moemail-local)。由于运行时和部署模型不同，合并上游功能或安全修复时应先审查和验证。
 
 本项目采用 [MIT License](LICENSE)。

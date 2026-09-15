@@ -30,7 +30,7 @@ export function FloatMenu() {
               size="icon"
               className="bg-white dark:bg-background rounded-full shadow-lg group relative border-primary/20"
               onClick={() => window.open(
-                "https://github.com/XMZO/moemail-local",
+                "https://github.com/DesuwaDev/moemail-local",
                 "_blank",
                 "noopener,noreferrer",
               )}

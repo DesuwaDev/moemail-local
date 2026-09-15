@@ -46,6 +46,7 @@ jobs:
           INPUT_PUBLISH_TAG: ${{ inputs.publish_tag }}
           INPUT_PUBLISH_LATEST: ${{ inputs.publish_latest }}
           GIT_SHA: ${{ github.sha }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
 
@@ -77,14 +78,16 @@ jobs:
             publish_latest=true
           fi
 
+          registry_owner="$(printf '%s' "$REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+
           {
             echo "publish_tag=$publish_tag"
             echo "publish_latest=$publish_latest"
             echo "semver_tag=$semver_tag"
             echo "sha_tag=sha-${GIT_SHA::12}"
-            echo "app_image=ghcr.io/xmzo/moemail-local"
-            echo "postgres_image=ghcr.io/xmzo/moemail-local-postgres"
-            echo "postgres_tools_image=ghcr.io/xmzo/moemail-local-postgres-tools"
+            echo "app_image=ghcr.io/$registry_owner/moemail-local"
+            echo "postgres_image=ghcr.io/$registry_owner/moemail-local-postgres"
+            echo "postgres_tools_image=ghcr.io/$registry_owner/moemail-local-postgres-tools"
           } >> "$GITHUB_OUTPUT"
 
   preflight:

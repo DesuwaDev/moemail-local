@@ -1,8 +1,8 @@
 name: moemail
 
 x-images:
-  app: &app-image ghcr.io/xmzo/moemail-local:latest
-  maintenance: &maintenance-image ghcr.io/xmzo/moemail-local:latest-tools
+  app: &app-image ghcr.io/desuwadev/moemail-local:latest
+  maintenance: &maintenance-image ghcr.io/desuwadev/moemail-local:latest-tools
 
 x-moemail-service: &moemail-service
   image: *app-image
