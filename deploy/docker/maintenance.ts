@@ -28,6 +28,9 @@ switch (command) {
   case "offsite-backup":
     await import("../../scripts/ops/offsite-backup")
     break
+  case "captcha-off":
+    await import("../../scripts/ops/captcha-off")
+    break
   case "self-check": {
     const [{ createDefaultConfig }, { postgresPoolConfig }, sqlite] = await Promise.all([
       import("../../app/lib/config/schema"),
@@ -73,7 +76,7 @@ switch (command) {
   }
   default:
     console.error(
-      "Usage: maintenance.mjs migrate | verify | cleanup | backup | restore | monitor | offsite-backup | self-check",
+      "Usage: maintenance.mjs migrate | verify | cleanup | backup | restore | monitor | offsite-backup | captcha-off | self-check",
     )
     process.exitCode = 64
 }

@@ -129,6 +129,7 @@ assert.deepEqual(
     "scheduler",
     "monitor",
     "offsite-backup",
+    "captcha-off",
   ]),
 )
 assert.equal(sqliteServices.postgres, undefined)
@@ -151,6 +152,7 @@ for (const name of [
   "scheduler",
   "monitor",
   "offsite-backup",
+  "captcha-off",
 ] as const) {
   assert.equal(sqliteServices[name]?.image, `ghcr.io/desuwadev/moemail-local:${composeImageTag}-tools`)
   assert.equal(sqliteServices[name]?.pull_policy, "always")
@@ -166,7 +168,7 @@ assert.match(
 assert.deepEqual(serviceVolumes(sqliteServices.moemail), ["./data:/app/data"])
 assert.deepEqual(sqliteServices.moemail?.ports, ["127.0.0.1:3000:3000"])
 assert.equal(dependencyCondition(sqliteServices.moemail, "storage-init"), "service_completed_successfully")
-for (const name of ["cleanup", "backup", "migrate", "verify"] as const) {
+for (const name of ["cleanup", "backup", "migrate", "verify", "captcha-off"] as const) {
   assert.deepEqual(sqliteServices[name]?.profiles, ["maintenance"])
   assert.equal(sqliteServices[name]?.restart, "no")
   assert.equal(sqliteServices[name]?.healthcheck?.disable, true)
@@ -209,6 +211,7 @@ assert.deepEqual(
     "monitor",
     "offsite-backup",
     "postgres-restore",
+    "captcha-off",
   ]),
 )
 assert.equal(postgresServices.caddy, undefined)
@@ -222,7 +225,7 @@ for (const name of [
   assert.equal(postgresServices[name]?.pull_policy, "always")
   assert.equal(postgresServices[name]?.build, undefined)
 }
-for (const name of ["cleanup", "migrate", "verify", "scheduler", "monitor", "offsite-backup"]) {
+for (const name of ["cleanup", "migrate", "verify", "scheduler", "monitor", "offsite-backup", "captcha-off"]) {
   assert.equal(postgresServices[name]?.image, `ghcr.io/desuwadev/moemail-local:${composeImageTag}-tools`)
   assert.equal(postgresServices[name]?.pull_policy, "always")
   assert.equal(postgresServices[name]?.build, undefined)
@@ -251,7 +254,7 @@ assert.equal(dependencyCondition(postgresServices.moemail, "postgres"), "service
 assert.deepEqual(serviceVolumes(postgresServices.moemail), ["./data:/app/data"])
 assert.deepEqual(postgresServices.cleanup?.profiles, ["maintenance"])
 assert.equal(postgresServices.cleanup?.restart, "no")
-for (const name of ["migrate", "verify"] as const) {
+for (const name of ["migrate", "verify", "captcha-off"] as const) {
   assert.deepEqual(postgresServices[name]?.profiles, ["maintenance"])
   assert.equal(postgresServices[name]?.restart, "no")
   assert.equal(dependencyCondition(postgresServices[name], "postgres"), "service_healthy")

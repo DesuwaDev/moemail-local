@@ -1,6 +1,6 @@
 {
   "name": "moemail",
-  "version": "0.20.11",
+  "version": "0.20.12",
   "private": true,
   "packageManager": "pnpm@11.21.0",
   "scripts": {
@@ -31,6 +31,7 @@
     "db:restore": "tsx scripts/database/restore.ts",
     "db:import-config": "tsx scripts/import-config.ts",
     "cleanup": "tsx scripts/cleanup.ts",
+    "captcha:off": "tsx scripts/ops/captcha-off.ts",
     "monitor": "tsx scripts/ops/monitor.ts",
     "alert": "tsx scripts/ops/alert.ts",
     "backup:offsite": "tsx scripts/ops/offsite-backup.ts",

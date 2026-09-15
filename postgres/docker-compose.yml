@@ -128,6 +128,17 @@ services:
         condition: service_healthy
     command: [verify]
 
+  captcha-off:
+    <<: *maintenance-service
+    profiles: [maintenance]
+    restart: "no"
+    depends_on:
+      storage-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    command: [captcha-off]
+
   postgres-backup:
     image: *postgres-tools-image
     pull_policy: always

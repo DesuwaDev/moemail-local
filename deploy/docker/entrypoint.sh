@@ -55,6 +55,12 @@ case "$command" in
     require_ready
     exec node "$maintenance" cleanup "$@"
     ;;
+  captcha-off)
+    # 人机验证渠道配置错误时会把运营者挡在登录页外；此命令只清 enabled 标志，
+    # 密钥保留在库中，登录回去后在面板修正即可。
+    require_ready
+    exec node "$maintenance" captcha-off "$@"
+    ;;
   backup)
     require_ready
     if [ "$(database_driver)" != "sqlite" ]; then

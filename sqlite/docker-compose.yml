@@ -82,6 +82,12 @@ services:
     restart: "no"
     command: [verify]
 
+  captcha-off:
+    <<: *maintenance-service
+    profiles: [maintenance]
+    restart: "no"
+    command: [captcha-off]
+
   restore:
     <<: *maintenance-service
     profiles: [restore]

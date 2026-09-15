@@ -41,6 +41,9 @@ try {
   assert.match(selfCheck, /"sqliteNativeBinding":true/)
   assert.match(run("migrate"), /"driver":"sqlite"/)
   assert.match(run("verify"), /"driver":"sqlite"/)
+  // The lockout hatch has to be reachable from the maintenance image, which is
+  // the only place a Compose operator can run it.
+  assert.match(run("captcha-off"), /"event":"captcha\.(already_disabled|disabled)"/)
   const backupOutput = run("backup")
   assert.match(backupOutput, /"event":"sqlite\.backup\.ok"/)
   run("cleanup")
@@ -65,6 +68,7 @@ try {
     sqliteBackupPair: true,
     sqliteRestore: true,
     sqliteCleanup: true,
+    captchaLockoutHatch: true,
   }, null, 2))
 } finally {
   rmSync(temporaryRoot, { recursive: true, force: true })
