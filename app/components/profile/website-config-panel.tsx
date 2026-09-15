@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Settings,
   ShieldCheck,
+  ShieldOff,
   type LucideIcon,
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
@@ -49,6 +50,11 @@ const PROVIDER_ICONS: Record<CaptchaProviderId, LucideIcon> = {
   hcaptcha: ShieldCheck,
 }
 
+// "Off" is an option of the channel picker rather than a separate switch, so
+// the one control always spells out what is live instead of leaving the reader
+// to combine a toggle with a dropdown that looks like a draft selection.
+const CAPTCHA_OFF = "off"
+
 const OPTION_CHOICES = {
   mode: RECAPTCHA_MODES,
   theme: CAPTCHA_THEMES,
@@ -64,6 +70,10 @@ const OPTION_CATALOGS = {
 // reCAPTCHA v3 scores range over 0..1; these are the useful stops, and any
 // hand-tuned value already in storage is folded in so it stays selectable.
 const THRESHOLD_PRESETS = [0.3, 0.5, 0.7, 0.9]
+
+// Paired option selects get narrow on a phone, so the value shrinks and clips
+// instead of pushing the chevron out of the control.
+const COMPACT_TRIGGER = "gap-2 [&>span]:min-w-0 [&>span]:truncate"
 
 export function WebsiteConfigPanel() {
   const t = useTranslations("profile.website")
@@ -136,8 +146,9 @@ export function WebsiteConfigPanel() {
 
   const provider = captcha.provider
   const settings = captcha.providers[provider]
-  const ProviderIcon = PROVIDER_ICONS[provider]
-  const providerLabel = t(`captcha.providers.${provider}.name` as never)
+  const enabled = captcha.enabled
+  const ChannelIcon = enabled ? PROVIDER_ICONS[provider] : ShieldOff
+  const channelLabel = enabled ? t(`captcha.providers.${provider}.name` as never) : t("captcha.off")
   const optionFields = captchaOptionFields(provider, settings.mode)
   const thresholdChoices = [...new Set([...THRESHOLD_PRESETS, settings.threshold])].sort((a, b) => a - b)
 
@@ -167,7 +178,7 @@ export function WebsiteConfigPanel() {
             value={settings.threshold.toFixed(2)}
             onValueChange={value => patchSettings({ threshold: Number(value) })}
           >
-            <SelectTrigger id={fieldId}>
+            <SelectTrigger id={fieldId} className={COMPACT_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
@@ -190,7 +201,7 @@ export function WebsiteConfigPanel() {
           value={settings[field]}
           onValueChange={value => patchSettings({ [field]: value } as Partial<CaptchaProviderSettings>)}
         >
-          <SelectTrigger id={fieldId}>
+          <SelectTrigger id={fieldId} className={COMPACT_TRIGGER}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
@@ -244,31 +255,15 @@ export function WebsiteConfigPanel() {
         </div>
 
         <section className="overflow-hidden rounded-lg border border-primary/25">
-          <div className="flex items-start justify-between gap-3 border-b bg-primary/[0.025] px-3 py-2.5 sm:px-4 sm:py-3">
-            <div className="flex min-w-0 items-start gap-2.5">
-              <span className="mt-0.5 shrink-0 rounded-md bg-primary/10 p-1.5 text-primary">
-                <ShieldCheck className="h-4 w-4" />
-              </span>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold">{t("captcha.title")}</h3>
-                <p className="mt-0.5 hidden text-[11px] leading-relaxed text-muted-foreground sm:block">
-                  {t("captcha.description")}
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <span className={`hidden text-[11px] font-medium sm:inline ${
-                captcha.enabled ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
-              }`}>
-                {captcha.enabled ? t("captcha.enabled") : t("captcha.disabled")}
-              </span>
-              <Switch
-                id="captcha-enabled"
-                className="shrink-0"
-                aria-label={t("captcha.enable")}
-                checked={captcha.enabled}
-                onCheckedChange={enabled => setCaptcha(current => ({ ...current, enabled }))}
-              />
+          <div className="flex items-start gap-2.5 border-b bg-primary/[0.025] px-3 py-2.5 sm:px-4 sm:py-3">
+            <span className="mt-0.5 shrink-0 rounded-md bg-primary/10 p-1.5 text-primary">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold">{t("captcha.title")}</h3>
+              <p className="mt-0.5 hidden text-[11px] leading-relaxed text-muted-foreground sm:block">
+                {t("captcha.description")}
+              </p>
             </div>
           </div>
 
@@ -279,24 +274,32 @@ export function WebsiteConfigPanel() {
               </span>
 
               <Select
-                value={provider}
-                onValueChange={value => setCaptcha(current => ({
-                  ...current,
-                  provider: value as CaptchaProviderId,
-                }))}
+                value={enabled ? provider : CAPTCHA_OFF}
+                onValueChange={value => setCaptcha(current => value === CAPTCHA_OFF
+                  ? { ...current, enabled: false }
+                  : { ...current, enabled: true, provider: value as CaptchaProviderId })}
               >
                 <SelectTrigger
                   aria-labelledby="captcha-provider-label captcha-provider-value"
                   className="w-full gap-2 sm:w-64 [&>svg]:shrink-0"
                 >
                   <span className="flex min-w-0 items-center gap-2">
-                    <ProviderIcon className="h-4 w-4 shrink-0 text-primary" />
-                    <span id="captcha-provider-value" className="truncate">
-                      {providerLabel}
+                    <ChannelIcon className={`h-4 w-4 shrink-0 ${enabled ? "text-primary" : "text-muted-foreground"}`} />
+                    <span id="captcha-provider-value" className={`truncate ${enabled ? "" : "text-muted-foreground"}`}>
+                      {channelLabel}
                     </span>
                   </span>
                 </SelectTrigger>
                 <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
+                  <SelectItem
+                    value={CAPTCHA_OFF}
+                    className="pr-2 [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
+                  >
+                    <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                      <ShieldOff className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{t("captcha.off")}</span>
+                    </span>
+                  </SelectItem>
                   {CAPTCHA_PROVIDER_IDS.map(id => {
                     const Icon = PROVIDER_ICONS[id]
                     return (
@@ -322,22 +325,29 @@ export function WebsiteConfigPanel() {
               </span>
             </div>
 
+            {!enabled && (
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {t("captcha.offHint")}
+              </p>
+            )}
+
+            {enabled && (
             <section
               key={provider}
               id="captcha-provider-panel"
               role="region"
               aria-labelledby="captcha-provider-value"
-              className="animate-in space-y-3 rounded-md border bg-card/30 p-3 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none sm:p-4"
+              className="animate-in space-y-3 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none sm:rounded-md sm:border sm:bg-card/30 sm:p-4"
             >
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b pb-3">
-                <p className="min-w-0 flex-1 basis-56 text-[11px] leading-relaxed text-muted-foreground">
+              <div className="flex items-center gap-3 border-b pb-2.5">
+                <p className="hidden min-w-0 flex-1 text-[11px] leading-relaxed text-muted-foreground sm:block">
                   {t(`captcha.providers.${provider}.description` as never)}
                 </p>
                 <a
                   href={CAPTCHA_PROVIDERS[provider].consoleUrl}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                 >
                   {t("captcha.openConsole")}
                   <ExternalLink className="h-3 w-3" />
@@ -377,8 +387,10 @@ export function WebsiteConfigPanel() {
               </div>
 
               {/* An odd number of options stretches the last cell instead of
-                  leaving a hole next to it. */}
-              <div className="grid gap-3 sm:grid-cols-2 sm:[&>*:nth-child(odd):last-child]:col-span-2">
+                  leaving a hole next to it. The compact selects pair up from
+                  380px — the common phone widths are 390-412 — so a portrait
+                  screen no longer gets one long column of boxes. */}
+              <div className="grid gap-3 min-[380px]:grid-cols-2 min-[380px]:[&>*:nth-child(odd):last-child]:col-span-2">
                 {optionFields.map(renderOptionField)}
               </div>
 
@@ -390,13 +402,13 @@ export function WebsiteConfigPanel() {
 
               <div className="space-y-1.5 border-t pt-3">
                 <span className="text-xs font-medium">{t("captcha.scopesLabel")}</span>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 min-[380px]:grid-cols-2">
                   {CAPTCHA_SCOPES.map(scope => (
                     <div
                       key={scope}
-                      className="flex min-h-10 items-center justify-between gap-3 rounded border bg-background px-3"
+                      className="flex min-h-10 items-center justify-between gap-2 rounded border bg-background px-2.5"
                     >
-                      <Label htmlFor={`captcha-scope-${scope}`} className="min-w-0 text-xs font-medium">
+                      <Label htmlFor={`captcha-scope-${scope}`} className="min-w-0 truncate text-xs font-medium">
                         {t(`captcha.scopes.${scope}` as never)}
                       </Label>
                       <Switch
@@ -416,6 +428,7 @@ export function WebsiteConfigPanel() {
                 </p>
               </div>
             </section>
+            )}
           </div>
         </section>
 

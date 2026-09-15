@@ -256,8 +256,23 @@ assert.match(websiteConfigSource, /<div className="grid gap-3 sm:grid-cols-2">/u
 assert.match(websiteConfigSource, /<Label htmlFor="website-default-role"/u)
 assert.match(websiteConfigSource, /<SelectTrigger id="website-default-role">/u)
 assert.match(websiteConfigSource, /<Label htmlFor="website-admin-contact"/u)
-// An odd option count stretches the trailing cell instead of leaving a hole.
-assert.match(websiteConfigSource, /sm:\[&>\*:nth-child\(odd\):last-child\]:col-span-2/u)
+// An odd option count stretches the trailing cell instead of leaving a hole,
+// and the compact selects pair up well before `sm` so a phone does not get one
+// long column of boxes.
+assert.match(websiteConfigSource, /min-\[380px\]:\[&>\*:nth-child\(odd\):last-child\]:col-span-2/u)
+assert.match(websiteConfigSource, /<div className="grid gap-2 min-\[380px\]:grid-cols-2">/u)
+// Paired selects get narrow, so their value clips rather than shoving the
+// chevron out of the control.
+assert.match(websiteConfigSource, /const COMPACT_TRIGGER = "gap-2 \[&>span\]:min-w-0 \[&>span\]:truncate"/u)
+// One control carries both the state and the channel: "off" is an option of the
+// picker, so the trigger always spells out what is live. A separate switch
+// would leave the dropdown looking like an unapplied draft.
+assert.match(websiteConfigSource, /value=\{enabled \? provider : CAPTCHA_OFF\}/u)
+assert.match(websiteConfigSource, /<SelectItem\s+value=\{CAPTCHA_OFF\}/u)
+assert.doesNotMatch(websiteConfigSource, /id="captcha-enabled"/u)
+// Keys, options and scopes only exist while a channel is live.
+assert.match(websiteConfigSource, /\{enabled && \(/u)
+assert.match(websiteConfigSource, /\{!enabled && \(/u)
 assert.match(websiteConfigSource, /motion-reduce:animate-none/u)
 // A failed load must not let the panel save its empty defaults over storage.
 assert.match(websiteConfigSource, /disabled=\{loading \|\| !loaded\}/u)
@@ -313,4 +328,6 @@ console.log(JSON.stringify({
   scalableCaptchaProviderPicker: true,
   captchaRuntimeWiredForEveryProvider: true,
   captchaWidgetFitsNarrowViewports: true,
+  captchaChannelStateReadableFromOneControl: true,
+  captchaPanelCompactOnPhones: true,
 }))

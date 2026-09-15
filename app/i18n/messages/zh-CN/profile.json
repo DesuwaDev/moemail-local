@@ -156,9 +156,8 @@
     "captcha": {
       "title": "人机验证",
       "description": "选择用于保护登录与注册的验证提供商，并填入其控制台签发的密钥。",
-      "enable": "启用验证",
-      "enabled": "当前已启用",
-      "disabled": "当前未启用",
+      "off": "未启用",
+      "offHint": "登录与注册当前无需通过人机验证即可提交。",
       "providerLabel": "验证码提供商",
       "providerHint": "切换提供商时会保留各自已填写的密钥。",
       "openConsole": "打开提供商控制台",

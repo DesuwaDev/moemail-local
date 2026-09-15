@@ -156,9 +156,8 @@
     "captcha": {
       "title": "Human verification",
       "description": "Choose the provider that protects sign-in and registration, then paste the keys issued by its console.",
-      "enable": "Enable verification",
-      "enabled": "Currently enabled",
-      "disabled": "Currently disabled",
+      "off": "Not enabled",
+      "offHint": "Sign-in and registration currently accept submissions without human verification.",
       "providerLabel": "Verification provider",
       "providerHint": "Switching providers keeps the keys already entered for each one.",
       "openConsole": "Open provider console",
