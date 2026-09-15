@@ -82,6 +82,10 @@ export function WebsiteConfigPanel() {
   const [defaultRole, setDefaultRole] = useState<string>("")
   const [adminContact, setAdminContact] = useState<string>("")
   const [captcha, setCaptcha] = useState<CaptchaConfig>(() => normalizeCaptchaConfig(null))
+  // What the server is actually running. The editable copy above is a draft
+  // until a save lands, so the two are compared to tell the operator whether
+  // the channel on screen is the one protecting the site right now.
+  const [liveCaptcha, setLiveCaptcha] = useState<CaptchaConfig>(() => normalizeCaptchaConfig(null))
   const [loaded, setLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
@@ -99,7 +103,9 @@ export function WebsiteConfigPanel() {
         }
         setDefaultRole(data.defaultRole)
         setAdminContact(data.adminContact)
-        setCaptcha(normalizeCaptchaConfig(data.captcha))
+        const stored = normalizeCaptchaConfig(data.captcha)
+        setCaptcha(stored)
+        setLiveCaptcha(stored)
         setLoaded(true)
       } catch (error) {
         console.error("website_config.load_failed", error)
@@ -119,15 +125,20 @@ export function WebsiteConfigPanel() {
 
   const handleSave = async () => {
     setLoading(true)
+    // Normalising up front means the stored row and the baseline below are the
+    // same document, so a trimmed key cannot leave the panel looking unsaved.
+    const submitted = normalizeCaptchaConfig(captcha)
     try {
       const res = await fetch("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ defaultRole, adminContact, captcha }),
+        body: JSON.stringify({ defaultRole, adminContact, captcha: submitted }),
       })
 
       if (!res.ok) throw new LocalizedUiError(tApi(await readApiErrorCode(res, "CONFIG_SAVE_FAILED") as never))
 
+      setCaptcha(submitted)
+      setLiveCaptcha(submitted)
       toast({
         title: t("saveSuccess"),
         description: t("saveSuccess"),
@@ -150,6 +161,12 @@ export function WebsiteConfigPanel() {
   const ChannelIcon = enabled ? PROVIDER_ICONS[provider] : ShieldOff
   const channelLabel = enabled ? t(`captcha.providers.${provider}.name` as never) : t("captcha.off")
   const optionFields = captchaOptionFields(provider, settings.mode)
+  // `normalizeCaptchaConfig` builds both documents from the same constant key
+  // order, so serialising is a sound deep comparison here.
+  const pendingChanges = JSON.stringify(captcha) !== JSON.stringify(liveCaptcha)
+  const liveChannelLabel = liveCaptcha.enabled
+    ? t(`captcha.providers.${liveCaptcha.provider}.name` as never)
+    : t("captcha.off")
   const thresholdChoices = [...new Set([...THRESHOLD_PRESETS, settings.threshold])].sort((a, b) => a - b)
 
   const patchSettings = (patch: Partial<CaptchaProviderSettings>) => {
@@ -265,6 +282,18 @@ export function WebsiteConfigPanel() {
                 {t("captcha.description")}
               </p>
             </div>
+            {/* Says whether the channel below is the one the site is running on
+                right now, which a draft form cannot express on its own. */}
+            {loaded && (
+              <span className={`ml-auto mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                pendingChanges
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              }`}>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
+                {pendingChanges ? t("captcha.status.unsaved") : t("captcha.status.live")}
+              </span>
+            )}
           </div>
 
           <div className="space-y-2.5 p-3 sm:p-4">
@@ -324,6 +353,12 @@ export function WebsiteConfigPanel() {
                 {t("captcha.providerHint")}
               </span>
             </div>
+
+            {loaded && pendingChanges && (
+              <p className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                {t("captcha.status.activeNow", { channel: liveChannelLabel })}
+              </p>
+            )}
 
             {!enabled && (
               <p className="text-[11px] leading-relaxed text-muted-foreground">

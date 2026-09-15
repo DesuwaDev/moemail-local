@@ -158,6 +158,11 @@
       "description": "Choose the provider that protects sign-in and registration, then paste the keys issued by its console.",
       "off": "Not enabled",
       "offHint": "Sign-in and registration currently accept submissions without human verification.",
+      "status": {
+        "live": "Live",
+        "unsaved": "Unsaved changes",
+        "activeNow": "Currently live: {channel}"
+      },
       "providerLabel": "Verification provider",
       "providerHint": "Switching providers keeps the keys already entered for each one.",
       "openConsole": "Open provider console",

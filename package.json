@@ -1,6 +1,6 @@
 {
   "name": "moemail",
-  "version": "0.20.9",
+  "version": "0.20.10",
   "private": true,
   "packageManager": "pnpm@11.21.0",
   "scripts": {

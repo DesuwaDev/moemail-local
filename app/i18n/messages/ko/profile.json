@@ -158,6 +158,11 @@
       "description": "로그인과 회원가입을 보호할 제공자를 선택하고 해당 콘솔에서 발급한 키를 입력하세요.",
       "off": "사용 안 함",
       "offHint": "현재 로그인과 회원가입은 사람 인증 없이 제출할 수 있습니다.",
+      "status": {
+        "live": "적용됨",
+        "unsaved": "저장하지 않은 변경 사항",
+        "activeNow": "현재 실제 적용: {channel}"
+      },
       "providerLabel": "인증 제공자",
       "providerHint": "제공자를 전환해도 각각 입력한 키는 그대로 유지됩니다.",
       "openConsole": "제공자 콘솔 열기",

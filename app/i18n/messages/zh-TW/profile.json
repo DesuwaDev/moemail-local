@@ -158,6 +158,11 @@
       "description": "選擇用於保護登入與註冊的驗證提供商，並填入其主控台核發的金鑰。",
       "off": "未啟用",
       "offHint": "登入與註冊目前無需通過人機驗證即可送出。",
+      "status": {
+        "live": "已生效",
+        "unsaved": "有未儲存的變更",
+        "activeNow": "目前實際生效：{channel}"
+      },
       "providerLabel": "驗證碼提供商",
       "providerHint": "切換提供商時會保留各自已填寫的金鑰。",
       "openConsole": "開啟提供商主控台",

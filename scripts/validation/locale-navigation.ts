@@ -273,6 +273,14 @@ assert.doesNotMatch(websiteConfigSource, /id="captcha-enabled"/u)
 // Keys, options and scopes only exist while a channel is live.
 assert.match(websiteConfigSource, /\{enabled && \(/u)
 assert.match(websiteConfigSource, /\{!enabled && \(/u)
+// The picker alone shows a draft; the panel also has to say whether that draft
+// is what the site is running on, and name the channel still in force when it
+// is not.
+assert.match(websiteConfigSource, /const \[liveCaptcha, setLiveCaptcha\] = useState/u)
+assert.match(websiteConfigSource, /JSON\.stringify\(captcha\) !== JSON\.stringify\(liveCaptcha\)/u)
+assert.match(websiteConfigSource, /setLiveCaptcha\(stored\)/u)
+assert.match(websiteConfigSource, /setLiveCaptcha\(submitted\)/u)
+assert.match(websiteConfigSource, /captcha\.status\.activeNow", \{ channel: liveChannelLabel \}/u)
 assert.match(websiteConfigSource, /motion-reduce:animate-none/u)
 // A failed load must not let the panel save its empty defaults over storage.
 assert.match(websiteConfigSource, /disabled=\{loading \|\| !loaded\}/u)
@@ -329,5 +337,6 @@ console.log(JSON.stringify({
   captchaRuntimeWiredForEveryProvider: true,
   captchaWidgetFitsNarrowViewports: true,
   captchaChannelStateReadableFromOneControl: true,
+  captchaLiveStateDistinguishedFromDraft: true,
   captchaPanelCompactOnPhones: true,
 }))
