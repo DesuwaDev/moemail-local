@@ -114,7 +114,8 @@ for (const locale of locales.filter(locale => locale !== "en")) {
 const invariantCatalogValues = new Set([
   "MoeMail",
   "Cloudflare Turnstile",
-  "Google reCAPTCHA",
+  "Google reCAPTCHA v2",
+  "Google reCAPTCHA v3",
   "hCaptcha",
   "Cloudflare Email Worker",
   "Resend",

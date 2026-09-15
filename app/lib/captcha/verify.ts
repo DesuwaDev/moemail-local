@@ -62,9 +62,9 @@ export async function verifyCaptchaToken(
       return { success: false, reason: "verification-failed" }
     }
 
-    // reCAPTCHA v3 always succeeds; the risk signal is the score, and the
-    // action pins the token to the form it was minted for.
-    if (config.provider === "recaptcha" && settings.mode === "v3") {
+    // A score-based channel always succeeds; the risk signal is the score, and
+    // the action pins the token to the form it was minted for.
+    if (descriptor.scoreBased) {
       if (data.action !== scope) {
         console.warn("captcha.action_mismatch", { expected: scope, received: data.action })
         return { success: false, reason: "verification-failed" }

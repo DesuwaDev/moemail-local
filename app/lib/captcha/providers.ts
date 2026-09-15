@@ -4,7 +4,7 @@
 // The module stays pure (no config store, no DOM) so client and server bundles
 // can share it.
 
-export const CAPTCHA_PROVIDER_IDS = ["turnstile", "recaptcha", "hcaptcha"] as const
+export const CAPTCHA_PROVIDER_IDS = ["turnstile", "recaptcha", "recaptchaV3", "hcaptcha"] as const
 export type CaptchaProviderId = (typeof CAPTCHA_PROVIDER_IDS)[number]
 
 export const CAPTCHA_THEMES = ["auto", "light", "dark"] as const
@@ -13,15 +13,10 @@ export type CaptchaTheme = (typeof CAPTCHA_THEMES)[number]
 export const CAPTCHA_SIZES = ["normal", "compact"] as const
 export type CaptchaSize = (typeof CAPTCHA_SIZES)[number]
 
-// reCAPTCHA v2 renders a checkbox widget; v3 is invisible and returns a score
-// that the server compares against `threshold`.
-export const RECAPTCHA_MODES = ["v2", "v3"] as const
-export type RecaptchaMode = (typeof RECAPTCHA_MODES)[number]
-
 export const CAPTCHA_SCOPES = ["login", "register"] as const
 export type CaptchaScope = (typeof CAPTCHA_SCOPES)[number]
 
-export const CAPTCHA_OPTION_FIELDS = ["mode", "threshold", "theme", "size"] as const
+export const CAPTCHA_OPTION_FIELDS = ["threshold", "theme", "size"] as const
 export type CaptchaOptionField = (typeof CAPTCHA_OPTION_FIELDS)[number]
 
 export const DEFAULT_SCORE_THRESHOLD = 0.5
@@ -36,6 +31,8 @@ interface CaptchaProviderDescriptor {
   // hCaptcha scopes a verification to its site key; the others infer it from
   // the secret.
   sendsSiteKeyOnVerify: boolean
+  // Runs without a widget and answers with a risk score instead of a verdict.
+  scoreBased: boolean
 }
 
 export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescriptor> = {
@@ -45,13 +42,27 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     consoleUrl: "https://dash.cloudflare.com/?to=/:account/turnstile",
     optionFields: ["theme", "size"],
     sendsSiteKeyOnVerify: false,
+    scoreBased: false,
   },
+  // The two reCAPTCHA generations are separate channels on purpose: the console
+  // mints a key as either v2 or v3, and rendering one generation with the
+  // other's key fails with "Invalid key type". Sharing a single key pair
+  // between them would guarantee that error on every switch.
   recaptcha: {
     id: "recaptcha",
     siteverifyUrl: "https://www.google.com/recaptcha/api/siteverify",
     consoleUrl: "https://www.google.com/recaptcha/admin",
-    optionFields: ["mode", "threshold", "theme", "size"],
+    optionFields: ["theme", "size"],
     sendsSiteKeyOnVerify: false,
+    scoreBased: false,
+  },
+  recaptchaV3: {
+    id: "recaptchaV3",
+    siteverifyUrl: "https://www.google.com/recaptcha/api/siteverify",
+    consoleUrl: "https://www.google.com/recaptcha/admin",
+    optionFields: ["threshold"],
+    sendsSiteKeyOnVerify: false,
+    scoreBased: true,
   },
   hcaptcha: {
     id: "hcaptcha",
@@ -59,6 +70,7 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     consoleUrl: "https://dashboard.hcaptcha.com/sites",
     optionFields: ["theme", "size"],
     sendsSiteKeyOnVerify: true,
+    scoreBased: false,
   },
 }
 
@@ -67,7 +79,6 @@ export interface CaptchaProviderSettings {
   secretKey: string
   theme: CaptchaTheme
   size: CaptchaSize
-  mode: RecaptchaMode
   threshold: number
 }
 
@@ -86,7 +97,6 @@ export interface CaptchaClientConfig {
   siteKey: string
   theme: CaptchaTheme
   size: CaptchaSize
-  mode: RecaptchaMode
   scopes: Record<CaptchaScope, boolean>
 }
 
@@ -120,9 +130,18 @@ function normalizeSettings(value: unknown): CaptchaProviderSettings {
     secretKey: normalizeKey(source.secretKey),
     theme: normalizeOption(source.theme, CAPTCHA_THEMES, "auto"),
     size: normalizeOption(source.size, CAPTCHA_SIZES, "normal"),
-    mode: normalizeOption(source.mode, RECAPTCHA_MODES, "v2"),
     threshold: normalizeThreshold(source.threshold),
   }
+}
+
+// Documents written before the split kept both reCAPTCHA generations under
+// `recaptcha` with a `mode` switch, so a stored `mode: "v3"` identifies the key
+// pair as a v3 pair. It moves to the new channel rather than being copied:
+// leaving a v3 key in the v2 slot is exactly the mismatch that makes Google
+// answer "Invalid key type".
+function migrateRecaptchaGenerations(providers: Record<string, unknown>) {
+  if (asRecord(providers.recaptcha).mode !== "v3") return providers
+  return { ...providers, recaptcha: undefined, recaptchaV3: providers.recaptcha }
 }
 
 // Every read and write funnels through here, so a hand-edited config row, an
@@ -130,11 +149,13 @@ function normalizeSettings(value: unknown): CaptchaProviderSettings {
 // fully populated config with in-range values.
 export function normalizeCaptchaConfig(value: unknown): CaptchaConfig {
   const source = asRecord(value)
-  const providers = asRecord(source.providers)
+  const stored = asRecord(source.providers)
+  const providers = migrateRecaptchaGenerations(stored)
   const scopes = asRecord(source.scopes)
+  const selected = normalizeOption(source.provider, CAPTCHA_PROVIDER_IDS, DEFAULT_PROVIDER)
   return {
     enabled: source.enabled === true,
-    provider: normalizeOption(source.provider, CAPTCHA_PROVIDER_IDS, DEFAULT_PROVIDER),
+    provider: providers !== stored && selected === "recaptcha" ? "recaptchaV3" : selected,
     scopes: Object.fromEntries(
       CAPTCHA_SCOPES.map(scope => [scope, scopes[scope] !== false]),
     ) as Record<CaptchaScope, boolean>,
@@ -148,17 +169,11 @@ export function captchaProviderReady(settings: CaptchaProviderSettings) {
   return settings.siteKey.length > 0 && settings.secretKey.length > 0
 }
 
-// Options that do not apply to the current provider stay in storage but are
-// hidden: reCAPTCHA v3 has no widget to theme, v2 has no score to threshold.
-export function captchaOptionFields(
-  provider: CaptchaProviderId,
-  mode: RecaptchaMode,
-): readonly CaptchaOptionField[] {
-  const fields = CAPTCHA_PROVIDERS[provider].optionFields
-  if (provider !== "recaptcha") return fields
-  return mode === "v3"
-    ? fields.filter(field => field !== "theme" && field !== "size")
-    : fields.filter(field => field !== "threshold")
+// Options that do not apply to the current channel stay in storage but are
+// hidden: a score-based channel has no widget to theme, a widget has no score
+// to threshold.
+export function captchaOptionFields(provider: CaptchaProviderId): readonly CaptchaOptionField[] {
+  return CAPTCHA_PROVIDERS[provider].optionFields
 }
 
 export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig {
@@ -169,7 +184,6 @@ export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig 
     siteKey: settings.siteKey,
     theme: settings.theme,
     size: settings.size,
-    mode: settings.mode,
     scopes: config.scopes,
   }
 }

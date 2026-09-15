@@ -171,13 +171,13 @@
       "scopesLabel": "保護的表單",
       "providers": {
         "turnstile": { "name": "Cloudflare Turnstile", "description": "無感驗證體驗，多數訪客不會看到任何挑戰。" },
-        "recaptcha": { "name": "Google reCAPTCHA", "description": "支援 v2 核取方塊元件與 v3 無感評分模型。" },
+        "recaptcha": { "name": "Google reCAPTCHA v2", "description": "核取方塊驗證元件，金鑰必須在主控台以 v2 類型建立。", "keyHint": "請填入以核取方塊（v2）類型建立的金鑰，評分（v3）金鑰在此無效。若金鑰建立自 Google Cloud 主控台，私密金鑰需在「金鑰詳細資料 → 整合 → 使用舊版金鑰」中取回，而不是填 Cloud API 金鑰。" },
+        "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "無感評分模型，需要獨立的 v3 金鑰，v2 金鑰無法共用。", "keyHint": "請填入以評分（v3）類型建立的金鑰，核取方塊（v2）金鑰在此無效。若金鑰建立自 Google Cloud 主控台，私密金鑰需在「金鑰詳細資料 → 整合 → 使用舊版金鑰」中取回，而不是填 Cloud API 金鑰。" },
         "hcaptcha": { "name": "hCaptcha", "description": "重視隱私的驗證挑戰，擁有獨立的站台金鑰與元件樣式。" }
       },
       "fields": {
         "siteKey": "站台金鑰",
         "secretKey": "私密金鑰",
-        "mode": "驗證模式",
         "threshold": "分數門檻",
         "theme": "主題",
         "size": "元件尺寸"
@@ -185,10 +185,6 @@
       "placeholders": {
         "siteKey": "在瀏覽器中公開呈現的金鑰",
         "secretKey": "伺服器端驗證時使用的金鑰"
-      },
-      "modes": {
-        "v2": "v2（核取方塊）",
-        "v3": "v3（評分）"
       },
       "themes": {
         "auto": "自動",
@@ -204,7 +200,7 @@
         "register": "註冊"
       },
       "hints": {
-        "threshold": "reCAPTCHA v3 全程無感執行並回傳 0 到 1 的分數，低於門檻的要求會被拒絕。",
+        "threshold": "該管道全程無感執行並回傳 0 到 1 的分數，低於門檻的要求會被拒絕。",
         "scopes": "驗證僅作用於使用者名稱與密碼表單，第三方登入不受影響。"
       }
     },

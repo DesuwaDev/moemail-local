@@ -171,13 +171,13 @@
       "scopesLabel": "보호할 양식",
       "providers": {
         "turnstile": { "name": "Cloudflare Turnstile", "description": "마찰이 적은 인증으로 대부분의 방문자는 퍼즐을 보지 않습니다." },
-        "recaptcha": { "name": "Google reCAPTCHA", "description": "v2 체크박스 위젯과 화면에 보이지 않는 v3 점수 모델을 지원합니다." },
+        "recaptcha": { "name": "Google reCAPTCHA v2", "description": "체크박스 위젯입니다. 키는 콘솔에서 v2 유형으로 발급해야 합니다.", "keyHint": "체크박스(v2) 유형으로 만든 키를 입력하세요. 점수(v3) 키는 여기에서 사용할 수 없습니다. Google Cloud 콘솔에서 만든 키라면 '키 세부정보 → 통합 → 기존 키 사용'에서 비밀 키를 가져오고, Cloud API 키는 입력하지 마세요." },
+        "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "화면에 보이지 않는 점수 모델입니다. 전용 v3 키가 필요하며 v2 키는 사용할 수 없습니다.", "keyHint": "점수(v3) 유형으로 만든 키를 입력하세요. 체크박스(v2) 키는 여기에서 사용할 수 없습니다. Google Cloud 콘솔에서 만든 키라면 '키 세부정보 → 통합 → 기존 키 사용'에서 비밀 키를 가져오고, Cloud API 키는 입력하지 마세요." },
         "hcaptcha": { "name": "hCaptcha", "description": "개인정보를 중시하는 인증으로 별도의 사이트 키와 위젯 스타일을 사용합니다." }
       },
       "fields": {
         "siteKey": "사이트 키",
         "secretKey": "비밀 키",
-        "mode": "인증 모드",
         "threshold": "점수 임계값",
         "theme": "테마",
         "size": "위젯 크기"
@@ -185,10 +185,6 @@
       "placeholders": {
         "siteKey": "브라우저에 공개되는 키",
         "secretKey": "서버에서 검증에 사용하는 키"
-      },
-      "modes": {
-        "v2": "v2(체크박스)",
-        "v3": "v3(점수)"
       },
       "themes": {
         "auto": "자동",
@@ -204,7 +200,7 @@
         "register": "회원가입"
       },
       "hints": {
-        "threshold": "reCAPTCHA v3는 화면에 표시되지 않으며 0에서 1 사이의 점수를 반환하고, 임계값보다 낮은 요청은 거부됩니다.",
+        "threshold": "이 채널은 화면에 표시되지 않으며 0에서 1 사이의 점수를 반환하고, 임계값보다 낮은 요청은 거부됩니다.",
         "scopes": "인증은 사용자 이름과 비밀번호 양식에만 적용되며 소셜 로그인에는 영향을 주지 않습니다."
       }
     },

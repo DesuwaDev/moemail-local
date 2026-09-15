@@ -243,11 +243,30 @@ assert.doesNotMatch(mailuPanelSource, /<fieldset/u)
 
 const websiteConfigSource = readFileSync(join(process.cwd(), "app/components/profile/website-config-panel.tsx"), "utf8")
 const captchaWidgetSource = readFileSync(join(process.cwd(), "app/components/auth/captcha.tsx"), "utf8")
+const captchaRegistrySource = readFileSync(join(process.cwd(), "app/lib/captcha/providers.ts"), "utf8")
+const captchaVerifySource = readFileSync(join(process.cwd(), "app/lib/captcha/verify.ts"), "utf8")
+// Google mints a site key as either v2 or v3 and refuses the other generation
+// with "Invalid key type", so the two are separate channels with their own key
+// pairs instead of one channel with a mode switch.
+assert.match(captchaRegistrySource, /"turnstile", "recaptcha", "recaptchaV3", "hcaptcha"/u)
+assert.match(captchaRegistrySource, /scoreBased: boolean/u)
+assert.doesNotMatch(captchaRegistrySource, /RECAPTCHA_MODES/u)
+assert.doesNotMatch(captchaRegistrySource, /mode: normalizeOption/u)
+// Pre-split rows carry their v3 keys over to the new channel rather than
+// leaving them in the v2 slot, where they would fail on the next render.
+assert.match(captchaRegistrySource, /function migrateRecaptchaGenerations/u)
+assert.match(captchaRegistrySource, /recaptcha: undefined, recaptchaV3: providers\.recaptcha/u)
+assert.match(captchaVerifySource, /if \(descriptor\.scoreBased\) \{/u)
+assert.match(captchaWidgetSource, /config\.provider === "recaptchaV3"/u)
+assert.match(captchaWidgetSource, /const invisible = CAPTCHA_PROVIDERS\[provider\]\.scoreBased/u)
 // The panel drives the live runtime through the shared registry, so provider,
 // option and scope lists must stay derived rather than hand-maintained here.
 assert.match(websiteConfigSource, /from "@\/lib\/captcha\/providers"/u)
 assert.match(websiteConfigSource, /CAPTCHA_PROVIDER_IDS\.map\(id => \{/u)
-assert.match(websiteConfigSource, /captchaOptionFields\(provider, settings\.mode\)/u)
+assert.match(websiteConfigSource, /captchaOptionFields\(provider\)/u)
+// The Cloud console issues an Enterprise credential by default, so the
+// reCAPTCHA channels explain which secret belongs in the field.
+assert.match(websiteConfigSource, /t\.has\(`captcha\.providers\.\$\{provider\}\.keyHint`/u)
 assert.match(websiteConfigSource, /CAPTCHA_SCOPES\.map\(scope => \(/u)
 assert.match(websiteConfigSource, /<SelectContent className="max-h-\[var\(--radix-select-content-available-height\)\]">/u)
 assert.match(websiteConfigSource, /aria-labelledby="captcha-provider-label captcha-provider-value"/u)
@@ -298,6 +317,14 @@ assert.match(captchaWidgetSource, /transform: `scale\(\$\{scale\}\)`/u)
 assert.match(captchaWidgetSource, /height: Math\.ceil\(naturalHeight \* scale\)/u)
 // Vendors refuse to re-render into a container they already used.
 assert.match(captchaWidgetSource, /frame\.replaceChildren\(host\)/u)
+// The v3 badge is hidden because it lands on top of the floating corner button,
+// so the attribution Google requires has to ship with the form instead.
+assert.match(captchaWidgetSource, /https:\/\/policies\.google\.com\/privacy/u)
+assert.match(captchaWidgetSource, /https:\/\/policies\.google\.com\/terms/u)
+assert.match(
+  readFileSync(join(process.cwd(), "app/globals.css"), "utf8"),
+  /\.grecaptcha-badge \{\s*visibility: hidden;/u,
+)
 assert.match(loginFormSource, /<Captcha\s+ref=\{captchaRef\}/u)
 assert.match(loginFormSource, /const captchaToken = await collectCaptchaToken\(\)/u)
 assert.doesNotMatch(loginFormSource, /turnstile/iu)
@@ -339,4 +366,5 @@ console.log(JSON.stringify({
   captchaChannelStateReadableFromOneControl: true,
   captchaLiveStateDistinguishedFromDraft: true,
   captchaPanelCompactOnPhones: true,
+  recaptchaGenerationsHoldSeparateKeys: true,
 }))

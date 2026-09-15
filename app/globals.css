@@ -157,4 +157,12 @@
   .dark * {
     scrollbar-color: hsl(var(--primary) / 0.3) transparent;
   }
+
+  /* reCAPTCHA v3 pins its own badge to the bottom-right corner at a z-index no
+     page style can outrank, right on top of the floating GitHub button. Google
+     allows hiding it as long as the attribution stays visible, which the login
+     form renders next to the sign-in button. */
+  .grecaptcha-badge {
+    visibility: hidden;
+  }
 }

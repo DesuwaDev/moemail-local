@@ -6,6 +6,7 @@ import {
   Bot,
   Cloud,
   ExternalLink,
+  Gauge,
   Settings,
   ShieldCheck,
   ShieldOff,
@@ -33,7 +34,6 @@ import {
   CAPTCHA_SCOPES,
   CAPTCHA_SIZES,
   CAPTCHA_THEMES,
-  RECAPTCHA_MODES,
   captchaOptionFields,
   normalizeCaptchaConfig,
   type CaptchaConfig,
@@ -47,6 +47,7 @@ import {
 const PROVIDER_ICONS: Record<CaptchaProviderId, LucideIcon> = {
   turnstile: Cloud,
   recaptcha: Bot,
+  recaptchaV3: Gauge,
   hcaptcha: ShieldCheck,
 }
 
@@ -56,19 +57,17 @@ const PROVIDER_ICONS: Record<CaptchaProviderId, LucideIcon> = {
 const CAPTCHA_OFF = "off"
 
 const OPTION_CHOICES = {
-  mode: RECAPTCHA_MODES,
   theme: CAPTCHA_THEMES,
   size: CAPTCHA_SIZES,
 } as const
 
 const OPTION_CATALOGS = {
-  mode: "modes",
   theme: "themes",
   size: "sizes",
 } as const
 
-// reCAPTCHA v3 scores range over 0..1; these are the useful stops, and any
-// hand-tuned value already in storage is folded in so it stays selectable.
+// Risk scores range over 0..1; these are the useful stops, and any hand-tuned
+// value already in storage is folded in so it stays selectable.
 const THRESHOLD_PRESETS = [0.3, 0.5, 0.7, 0.9]
 
 // Paired option selects get narrow on a phone, so the value shrinks and clips
@@ -160,7 +159,7 @@ export function WebsiteConfigPanel() {
   const enabled = captcha.enabled
   const ChannelIcon = enabled ? PROVIDER_ICONS[provider] : ShieldOff
   const channelLabel = enabled ? t(`captcha.providers.${provider}.name` as never) : t("captcha.off")
-  const optionFields = captchaOptionFields(provider, settings.mode)
+  const optionFields = captchaOptionFields(provider)
   // `normalizeCaptchaConfig` builds both documents from the same constant key
   // order, so serialising is a sound deep comparison here.
   const pendingChanges = JSON.stringify(captcha) !== JSON.stringify(liveCaptcha)
@@ -421,6 +420,15 @@ export function WebsiteConfigPanel() {
                 </div>
               </div>
 
+              {/* Only the channels whose console hands out a credential that
+                  needs explaining carry this note, so the catalog decides where
+                  it appears instead of a provider test hard-coded here. */}
+              {t.has(`captcha.providers.${provider}.keyHint` as never) && (
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  {t(`captcha.providers.${provider}.keyHint` as never)}
+                </p>
+              )}
+
               {/* An odd number of options stretches the last cell instead of
                   leaving a hole next to it. The compact selects pair up from
                   380px — the common phone widths are 390-412 — so a portrait
@@ -429,7 +437,7 @@ export function WebsiteConfigPanel() {
                 {optionFields.map(renderOptionField)}
               </div>
 
-              {provider === "recaptcha" && settings.mode === "v3" && (
+              {CAPTCHA_PROVIDERS[provider].scoreBased && (
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
                   {t("captcha.hints.threshold")}
                 </p>

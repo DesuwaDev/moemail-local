@@ -11,6 +11,7 @@ import {
 import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { CAPTCHA_PROVIDERS } from "@/lib/captcha/providers"
 import type {
   CaptchaClientConfig,
   CaptchaProviderId,
@@ -74,17 +75,20 @@ function waitFor(ready: () => boolean, timeoutMs = 10_000) {
 }
 
 function vendorApi(provider: CaptchaProviderId) {
-  if (provider === "recaptcha") return window.grecaptcha
+  if (provider === "recaptcha" || provider === "recaptchaV3") return window.grecaptcha
   if (provider === "hcaptcha") return window.hcaptcha
   return window.turnstile
 }
 
 function vendorScript(config: CaptchaClientConfig, locale: string) {
+  // reCAPTCHA takes its language from the script URL, and the score-based
+  // generation binds the site key there instead of at render time.
+  if (config.provider === "recaptchaV3") {
+    const key = encodeURIComponent(config.siteKey)
+    return `https://www.google.com/recaptcha/api.js?render=${key}&hl=${encodeURIComponent(locale)}`
+  }
   if (config.provider === "recaptcha") {
-    // reCAPTCHA takes its language from the script URL, and v3 binds the site
-    // key there instead of at render time.
-    const render = config.mode === "v3" ? encodeURIComponent(config.siteKey) : "explicit"
-    return `https://www.google.com/recaptcha/api.js?render=${render}&hl=${encodeURIComponent(locale)}`
+    return `https://www.google.com/recaptcha/api.js?render=explicit&hl=${encodeURIComponent(locale)}`
   }
   if (config.provider === "hcaptcha") return "https://js.hcaptcha.com/1/api.js?render=explicit"
   return "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
@@ -112,8 +116,8 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
   const [scale, setScale] = useState(1)
   const [naturalHeight, setNaturalHeight] = useState(0)
 
-  const { provider, siteKey, mode, theme, size } = config
-  const invisible = provider === "recaptcha" && mode === "v3"
+  const { provider, siteKey, theme, size } = config
+  const invisible = CAPTCHA_PROVIDERS[provider].scoreBased
   const active = config.enabled && config.scopes[scope]
 
   useEffect(() => {
@@ -185,7 +189,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     // `config` is consumed through the primitives below; listing the object
     // would re-render the widget on every parent render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, provider, siteKey, mode, theme, size, locale, invisible, attempt])
+  }, [active, provider, siteKey, theme, size, locale, invisible, attempt])
 
   // The widgets ship fixed pixel widths (up to ~304px) that overflow a phone
   // sized card, so the rendered box is scaled down to whatever room it has and
@@ -262,12 +266,33 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     )
   }
 
-  // reCAPTCHA v3 has no visible widget; the badge it injects is enough.
+  // reCAPTCHA v3 has no visible widget. Its floating badge is hidden in
+  // `globals.css` because it sits on top of the page's own corner button, so
+  // Google's attribution has to appear here instead.
   if (invisible) {
     return (
-      <p className={cn("text-center text-[11px] leading-relaxed text-muted-foreground", className)}>
-        {t("invisibleNotice")}
-      </p>
+      <div className={cn(
+        "flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-center text-[11px] leading-relaxed text-muted-foreground",
+        className,
+      )}>
+        <span>{t("recaptchaNotice")}</span>
+        <a
+          href="https://policies.google.com/privacy"
+          target="_blank"
+          rel="noreferrer noopener"
+          className="underline underline-offset-2 hover:text-primary"
+        >
+          {t("recaptchaPrivacy")}
+        </a>
+        <a
+          href="https://policies.google.com/terms"
+          target="_blank"
+          rel="noreferrer noopener"
+          className="underline underline-offset-2 hover:text-primary"
+        >
+          {t("recaptchaTerms")}
+        </a>
+      </div>
     )
   }
 

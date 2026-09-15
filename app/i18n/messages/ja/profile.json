@@ -171,13 +171,13 @@
       "scopesLabel": "保護するフォーム",
       "providers": {
         "turnstile": { "name": "Cloudflare Turnstile", "description": "摩擦の少ない認証で、ほとんどの訪問者はパズルを見ることがありません。" },
-        "recaptcha": { "name": "Google reCAPTCHA", "description": "v2 のチェックボックスと、画面に表示されない v3 のスコアリングに対応します。" },
+        "recaptcha": { "name": "Google reCAPTCHA v2", "description": "チェックボックス型のウィジェットです。キーはコンソールで v2 として作成する必要があります。", "keyHint": "チェックボックス（v2）として作成したキーを入力してください。スコア（v3）のキーはここでは使えません。Google Cloud コンソールで作成したキーの場合は、「キーの詳細 → 統合 → レガシーキーを使用」からシークレットを取得し、Cloud の API キーは入力しないでください。" },
+        "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "画面に表示されないスコアリングです。専用の v3 キーが必要で、v2 のキーは使えません。", "keyHint": "スコア（v3）として作成したキーを入力してください。チェックボックス（v2）のキーはここでは使えません。Google Cloud コンソールで作成したキーの場合は、「キーの詳細 → 統合 → レガシーキーを使用」からシークレットを取得し、Cloud の API キーは入力しないでください。" },
         "hcaptcha": { "name": "hCaptcha", "description": "プライバシーを重視したチャレンジで、独自のキーと表示スタイルを持ちます。" }
       },
       "fields": {
         "siteKey": "サイトキー",
         "secretKey": "シークレットキー",
-        "mode": "認証モード",
         "threshold": "スコア閾値",
         "theme": "テーマ",
         "size": "ウィジェットサイズ"
@@ -185,10 +185,6 @@
       "placeholders": {
         "siteKey": "ブラウザーに公開されるキー",
         "secretKey": "サーバー側の検証に使うキー"
-      },
-      "modes": {
-        "v2": "v2（チェックボックス）",
-        "v3": "v3（スコア）"
       },
       "themes": {
         "auto": "自動",
@@ -204,7 +200,7 @@
         "register": "新規登録"
       },
       "hints": {
-        "threshold": "reCAPTCHA v3 は画面に表示されず 0〜1 のスコアを返します。閾値を下回るリクエストは拒否されます。",
+        "threshold": "このチャネルは画面に表示されず 0〜1 のスコアを返します。閾値を下回るリクエストは拒否されます。",
         "scopes": "認証はユーザー名とパスワードのフォームにのみ適用され、ソーシャルログインには影響しません。"
       }
     },

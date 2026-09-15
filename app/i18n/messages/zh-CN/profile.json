@@ -171,13 +171,13 @@
       "scopesLabel": "保护的表单",
       "providers": {
         "turnstile": { "name": "Cloudflare Turnstile", "description": "无感验证体验，多数访客不会看到任何挑战。" },
-        "recaptcha": { "name": "Google reCAPTCHA", "description": "支持 v2 复选框组件与 v3 无感评分模型。" },
+        "recaptcha": { "name": "Google reCAPTCHA v2", "description": "复选框验证组件，密钥必须在控制台按 v2 类型创建。", "keyHint": "请填入按复选框（v2）类型创建的密钥，评分（v3）密钥在此无效。若密钥创建自 Google Cloud 控制台，私密密钥需在「密钥详情 → 集成 → 使用旧版密钥」中取回，而不是填 Cloud API 密钥。" },
+        "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "无感评分模型，需要单独的 v3 密钥，v2 密钥无法通用。", "keyHint": "请填入按评分（v3）类型创建的密钥，复选框（v2）密钥在此无效。若密钥创建自 Google Cloud 控制台，私密密钥需在「密钥详情 → 集成 → 使用旧版密钥」中取回，而不是填 Cloud API 密钥。" },
         "hcaptcha": { "name": "hCaptcha", "description": "注重隐私的验证挑战，拥有独立的站点密钥与组件样式。" }
       },
       "fields": {
         "siteKey": "站点密钥",
         "secretKey": "私密密钥",
-        "mode": "验证模式",
         "threshold": "分数阈值",
         "theme": "主题",
         "size": "组件尺寸"
@@ -185,10 +185,6 @@
       "placeholders": {
         "siteKey": "在浏览器中公开渲染的密钥",
         "secretKey": "服务端校验时使用的密钥"
-      },
-      "modes": {
-        "v2": "v2（复选框）",
-        "v3": "v3（评分）"
       },
       "themes": {
         "auto": "自动",
@@ -204,7 +200,7 @@
         "register": "注册"
       },
       "hints": {
-        "threshold": "reCAPTCHA v3 全程无感运行并返回 0 到 1 的分数，低于阈值的请求会被拒绝。",
+        "threshold": "该渠道全程无感运行并返回 0 到 1 的分数，低于阈值的请求会被拒绝。",
         "scopes": "验证仅作用于用户名与密码表单，第三方登录不受影响。"
       }
     },
