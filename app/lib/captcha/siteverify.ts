@@ -1,5 +1,5 @@
 import {
-  CAPTCHA_PROVIDERS, captchaSiteverifyUrls,
+  CAPTCHA_PROVIDERS, capTimeoutMs, captchaSiteverifyUrls,
   type CaptchaProviderId, type CaptchaProviderSettings, type CaptchaScope,
 } from "./providers"
 
@@ -9,6 +9,8 @@ interface SiteverifyResponse {
   action?: string
 }
 
+// What a hosted vendor gets. A self-hosted Cap server runs on hardware the
+// operator chose, so it brings its own budget.
 const VERIFY_TIMEOUT_MS = 8_000
 
 // Which origin last answered, per provider. Under `auto` on a network that
@@ -51,7 +53,7 @@ export async function verifyWithProvider(
         body: provider === "cap" ? JSON.stringify(Object.fromEntries(body)) : body.toString(),
         redirect: "error",
         cache: "no-store",
-        signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
+        signal: AbortSignal.timeout(provider === "cap" ? capTimeoutMs(settings) : VERIFY_TIMEOUT_MS),
       })
       if (!response.ok) continue
 

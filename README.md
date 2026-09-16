@@ -364,6 +364,13 @@ Select **Cap** under Website configuration → CAPTCHA, either as the primary pr
 - Theme, size, protected forms and fallback selection use the existing controls.
 - Allow this site's origin in Cap's CORS configuration. HTTPS pages need an HTTPS public endpoint. Custom ports and path prefixes are supported; URL credentials, query parameters and fragments are rejected.
 
+**Advanced options** (folded away in the Cap form; every one has a working default, and only Cap has them because it is the only self-hosted channel):
+
+- **Worker threads** (default `2`): how many threads solve the proof of work. `Automatic` uses every core the browser reports — fastest on a desktop, hottest on a phone.
+- **Request timeout** (default `10s`): applies to the browser fetching and redeeming a challenge *and* to the server-side siteverify call, so raise it for a slow or distant Cap server.
+- **Haptic feedback** (default off): a short vibration when a visitor taps the widget on a phone.
+- **Troubleshooting link** (default empty): the href the widget offers once a browser blocks its instrumentation. Empty points at Cap's own page, which some networks cannot reach. Only `http(s)` URLs without credentials are accepted; an invalid one is rejected on save and never disables the channel.
+
 The widget, WASM solver and decompression assets are copied from pinned dependencies during `pnpm dev` / `pnpm build` and served locally, without a jsDelivr dependency. The existing Docker build includes these files. Custom CSP rules must allow the Cap connection and its Worker/WASM resources.
 
 ## Development and validation

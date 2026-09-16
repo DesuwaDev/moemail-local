@@ -10,7 +10,10 @@ import {
 } from "@/lib/domain-policies"
 import { apiError } from "@/lib/api-response"
 import { getCaptchaConfig, saveCaptchaConfig } from "@/lib/captcha/config"
-import { CAPTCHA_SCOPES, validCapServerUrl, captchaProviderReady, normalizeCaptchaConfig } from "@/lib/captcha/providers"
+import {
+  CAPTCHA_SCOPES, validCapServerUrl, validCapLinkUrl,
+  captchaProviderReady, normalizeCaptchaConfig,
+} from "@/lib/captcha/providers"
 
 export const runtime = "nodejs"
 
@@ -101,6 +104,11 @@ export async function POST(request: Request) {
       if (!validCapServerUrl(cap.serverUrl)
         || (cap.verificationServerUrl && !validCapServerUrl(cap.verificationServerUrl))) {
         return apiError("CAPTCHA_SERVER_URL_INVALID", 400)
+      }
+      // A typo here only costs the help link, so it is refused at the point it
+      // can still be corrected rather than silently dropped at render time.
+      if (cap.troubleshootingUrl && !validCapLinkUrl(cap.troubleshootingUrl)) {
+        return apiError("CAPTCHA_LINK_URL_INVALID", 400)
       }
       if (!captchaProviderReady(cap, "cap")) return apiError("CAPTCHA_KEYS_REQUIRED", 400)
     }

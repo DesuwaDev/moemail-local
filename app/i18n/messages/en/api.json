@@ -19,6 +19,7 @@
   "CANNOT_DELETE_SELF": "You cannot delete your own account.",
   "CAPTCHA_FAILED": "Human verification failed.",
   "CAPTCHA_KEYS_REQUIRED": "Both the site key and the secret key are required.",
+  "CAPTCHA_LINK_URL_INVALID": "Enter a valid HTTP(S) troubleshooting link without credentials.",
   "CAPTCHA_REQUIRED": "Complete human verification first.",
   "CAPTCHA_SCOPE_REQUIRED": "Select at least one form to protect.",
   "CONFIG_CONFLICT": "The configuration changed elsewhere. Reload it before saving.",

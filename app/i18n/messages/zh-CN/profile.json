@@ -173,6 +173,8 @@
         "ready": "已就绪",
         "incomplete": "待完善"
       },
+      "advancedLabel": "高级参数",
+      "advancedCustomized": "已调整",
       "openConsole": "打开提供商控制台",
       "openGuide": "接入文档",
       "showSecret": "显示密钥",
@@ -193,13 +195,18 @@
         "threshold": "分数阈值",
         "theme": "主题",
         "size": "组件尺寸",
-        "endpoint": "服务域名"
+        "endpoint": "服务域名",
+        "workerCount": "计算线程",
+        "timeout": "请求超时",
+        "haptics": "触感反馈",
+        "troubleshootingUrl": "排障帮助链接"
       },
       "placeholders": {
         "serverUrl": "可公开访问的 Cap 根地址",
         "verificationServerUrl": "默认使用公开服务地址",
         "siteKey": "在浏览器中公开渲染的密钥",
-        "secretKey": "服务端校验时使用的密钥"
+        "secretKey": "服务端校验时使用的密钥",
+        "troubleshootingUrl": "默认指向 Cap 官方排障页"
       },
       "themes": {
         "auto": "自动",
@@ -215,6 +222,8 @@
         "global": "全球",
         "china": "中国大陆镜像"
       },
+      "workerCountAuto": "自动",
+      "seconds": "{value} 秒",
       "scopes": {
         "login": "登录",
         "register": "注册"
@@ -225,7 +234,8 @@
         "endpoint": "中国大陆无法访问 google.com，Google 为此提供了 recaptcha.net 镜像，两个域名共用同一套密钥。选「自动」时，每位访客会先探测全球域名、失败再走镜像，服务端也会用当时能连通的域名校验。",
         "keysMissing": "站点密钥与私密密钥都填好，这个渠道才会真正启用。",
         "fallback": "访客浏览器加载不出主渠道的脚本（域名被拦、密钥失效、插件拦截）时，登录页会自动换成备用渠道，无需刷新页面；两个渠道签发的令牌服务端都认。备用渠道需要在自己的控制台单独申请密钥，留空则视为未配置。",
-        "scopes": "验证仅作用于用户名与密码表单，第三方登录不受影响。"
+        "scopes": "验证仅作用于用户名与密码表单，第三方登录不受影响。",
+        "advanced": "线程越多解题越快，但手机会更耗电发热；选「自动」会用满浏览器报告的核心数。超时同时作用于浏览器取题、兑换和服务端校验，自建服务较慢时可以调大。触感反馈会在手机点按时轻微震动。排障链接只在浏览器拦截组件时出现，留空即指向 Cap 官方页面（中国大陆可能打不开）。"
       }
     },
     "loadFailed": "读取配置失败",

@@ -16,8 +16,23 @@ export type CaptchaSize = (typeof CAPTCHA_SIZES)[number]
 export const CAPTCHA_SCOPES = ["login", "register"] as const
 export type CaptchaScope = (typeof CAPTCHA_SCOPES)[number]
 
-export const CAPTCHA_OPTION_FIELDS = ["threshold", "theme", "size", "endpoint"] as const
+export const CAPTCHA_OPTION_FIELDS = [
+  "threshold", "theme", "size", "endpoint",
+  "workerCount", "timeout", "haptics", "troubleshootingUrl",
+] as const
 export type CaptchaOptionField = (typeof CAPTCHA_OPTION_FIELDS)[number]
+
+// Proof-of-work threads the widget runs. `auto` is the widget's own default —
+// every core the browser reports — which finishes fastest on a desktop and
+// heats a phone; a fixed count trades solve time for the visitor's battery.
+export const CAPTCHA_WORKER_COUNTS = ["auto", "1", "2", "4", "8"] as const
+export type CaptchaWorkerCount = (typeof CAPTCHA_WORKER_COUNTS)[number]
+
+// Seconds a self-hosted challenge, redeem or siteverify call may take. The
+// hosted vendors answer from their own edge and keep the fixed budget below;
+// only Cap sits on hardware the operator picked, so only Cap makes it an option.
+export const CAPTCHA_TIMEOUTS = ["5", "10", "20", "30"] as const
+export type CaptchaTimeout = (typeof CAPTCHA_TIMEOUTS)[number]
 
 // Some providers publish the same service on a second origin for networks that
 // cannot reach the first. Both fronts share one backend, so a token minted
@@ -66,6 +81,10 @@ interface CaptchaProviderDescriptor {
   consoleUrl: string
   // Options the provider actually honours, in display order.
   optionFields: readonly CaptchaOptionField[]
+  // Options that change how the channel runs rather than how it looks. They
+  // have working defaults, so they fold away instead of lengthening the form
+  // every operator scrolls past.
+  advancedFields: readonly CaptchaOptionField[]
   // hCaptcha scopes a verification to its site key; the others infer it from
   // the secret.
   sendsSiteKeyOnVerify: boolean
@@ -81,6 +100,7 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     scriptOrigins: everywhere("https://challenges.cloudflare.com"),
     consoleUrl: "https://dash.cloudflare.com/?to=/:account/turnstile",
     optionFields: ["theme", "size"],
+    advancedFields: [],
     sendsSiteKeyOnVerify: false,
     scoreBased: false,
   },
@@ -95,6 +115,7 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     scriptOrigins: RECAPTCHA_ORIGINS,
     consoleUrl: "https://www.google.com/recaptcha/admin",
     optionFields: ["theme", "size", "endpoint"],
+    advancedFields: [],
     sendsSiteKeyOnVerify: false,
     scoreBased: false,
   },
@@ -105,6 +126,7 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     scriptOrigins: RECAPTCHA_ORIGINS,
     consoleUrl: "https://www.google.com/recaptcha/admin",
     optionFields: ["threshold", "endpoint"],
+    advancedFields: [],
     sendsSiteKeyOnVerify: false,
     scoreBased: true,
   },
@@ -115,6 +137,7 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     scriptOrigins: everywhere("https://js.hcaptcha.com"),
     consoleUrl: "https://dashboard.hcaptcha.com/sites",
     optionFields: ["theme", "size"],
+    advancedFields: [],
     sendsSiteKeyOnVerify: true,
     scoreBased: false,
   },
@@ -123,6 +146,9 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     siteverifyPath: "/siteverify",
     consoleUrl: "https://capjs.js.org/guide/",
     optionFields: ["theme", "size"],
+    // The only channel this site hosts itself, so it is the only one whose
+    // pace, patience and help link are the operator's to set.
+    advancedFields: ["workerCount", "timeout", "haptics", "troubleshootingUrl"],
     sendsSiteKeyOnVerify: false,
     scoreBased: false,
   },
@@ -137,6 +163,10 @@ export interface CaptchaProviderSettings {
   endpoint: CaptchaEndpoint
   serverUrl: string
   verificationServerUrl: string
+  workerCount: CaptchaWorkerCount
+  timeout: CaptchaTimeout
+  haptics: boolean
+  troubleshootingUrl: string
 }
 
 export interface CaptchaConfig {
@@ -156,6 +186,10 @@ export interface CaptchaChannelConfig {
   theme: CaptchaTheme
   size: CaptchaSize
   endpoint: CaptchaEndpoint
+  workerCount: CaptchaWorkerCount
+  timeout: CaptchaTimeout
+  haptics: boolean
+  troubleshootingUrl: string
 }
 
 // Everything the browser needs to render a challenge, and nothing else: the
@@ -202,6 +236,12 @@ function normalizeSettings(value: unknown): CaptchaProviderSettings {
     endpoint: normalizeOption(source.endpoint, CAPTCHA_ENDPOINTS, "auto"),
     serverUrl: normalizeServerUrl(source.serverUrl),
     verificationServerUrl: normalizeServerUrl(source.verificationServerUrl),
+    // Two threads keep a phone responsive while still solving quickly, which is
+    // why it is the default rather than the widget's "every core".
+    workerCount: normalizeOption(source.workerCount, CAPTCHA_WORKER_COUNTS, "2"),
+    timeout: normalizeOption(source.timeout, CAPTCHA_TIMEOUTS, "10"),
+    haptics: source.haptics === true,
+    troubleshootingUrl: normalizeLinkUrl(source.troubleshootingUrl),
   }
 }
 
@@ -250,6 +290,25 @@ function normalizeServerUrl(value: unknown): string {
   return validCapServerUrl(input) ? new URL(input).href.replace(/\/+$/, "") : input
 }
 
+function normalizeLinkUrl(value: unknown): string {
+  const input = typeof value === "string" ? value.trim().slice(0, 2048) : ""
+  return validCapLinkUrl(input) ? new URL(input).href : input
+}
+
+// The widget renders this one as the href of its troubleshooting link, so the
+// scheme is all that has to be pinned down: a help page reached through a query
+// string or an anchor is ordinary, unlike an API root, and credentials in a
+// link the visitor clicks never are.
+export function validCapLinkUrl(value: string): boolean {
+  if (!value || value.length > 2048) return false
+  try {
+    const url = new URL(value)
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password
+  } catch {
+    return false
+  }
+}
+
 export function validCapServerUrl(value: string): boolean {
   if (!value || value.length > 2048) return false
   try {
@@ -283,6 +342,16 @@ export function captchaProviderReady(settings: CaptchaProviderSettings, provider
 // to threshold.
 export function captchaOptionFields(provider: CaptchaProviderId): readonly CaptchaOptionField[] {
   return CAPTCHA_PROVIDERS[provider].optionFields
+}
+
+export function captchaAdvancedFields(provider: CaptchaProviderId): readonly CaptchaOptionField[] {
+  return CAPTCHA_PROVIDERS[provider].advancedFields
+}
+
+// The browser and the server wait the same number of seconds on the operator's
+// own Cap server, so the budget is read from one place.
+export function capTimeoutMs(settings: CaptchaProviderSettings): number {
+  return Number(settings.timeout) * 1000
 }
 
 // Candidate origins in the order they should be tried. A pinned region yields
@@ -342,6 +411,12 @@ function channelConfig(
     theme: settings.theme,
     size: settings.size,
     endpoint: settings.endpoint,
+    workerCount: settings.workerCount,
+    timeout: settings.timeout,
+    haptics: settings.haptics,
+    // A link the widget only shows when it is already in trouble is worth
+    // dropping rather than rendering as a dead or hostile href.
+    troubleshootingUrl: validCapLinkUrl(settings.troubleshootingUrl) ? settings.troubleshootingUrl : "",
   }
 }
 

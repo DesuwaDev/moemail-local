@@ -19,6 +19,7 @@
   "CANNOT_DELETE_SELF": "不能删除自己的账户。",
   "CAPTCHA_FAILED": "人机验证失败。",
   "CAPTCHA_KEYS_REQUIRED": "必须同时填写站点密钥和服务端密钥。",
+  "CAPTCHA_LINK_URL_INVALID": "请填写有效的 HTTP(S) 排障链接，且不可包含账号密码。",
   "CAPTCHA_REQUIRED": "请先完成人机验证。",
   "CAPTCHA_SCOPE_REQUIRED": "请至少选择一个需要保护的表单。",
   "CONFIG_CONFLICT": "配置已在其他位置更改，请重新加载后再保存。",

@@ -19,6 +19,7 @@
   "CANNOT_DELETE_SELF": "自分のアカウントは削除できません。",
   "CAPTCHA_FAILED": "人間確認に失敗しました。",
   "CAPTCHA_KEYS_REQUIRED": "サイトキーとシークレットキーの両方が必要です。",
+  "CAPTCHA_LINK_URL_INVALID": "認証情報を含まない有効な HTTP(S) のトラブルシューティングリンクを入力してください。",
   "CAPTCHA_REQUIRED": "先に人間確認を完了してください。",
   "CAPTCHA_SCOPE_REQUIRED": "保護するフォームを 1 つ以上選択してください。",
   "CONFIG_CONFLICT": "設定が別の場所で変更されました。再読み込みしてから保存してください。",

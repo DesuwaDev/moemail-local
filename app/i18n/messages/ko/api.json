@@ -19,6 +19,7 @@
   "CANNOT_DELETE_SELF": "자신의 계정은 삭제할 수 없습니다.",
   "CAPTCHA_FAILED": "사람 확인에 실패했습니다.",
   "CAPTCHA_KEYS_REQUIRED": "사이트 키와 비밀 키가 모두 필요합니다.",
+  "CAPTCHA_LINK_URL_INVALID": "자격 증명이 없는 유효한 HTTP(S) 문제 해결 링크를 입력하세요.",
   "CAPTCHA_REQUIRED": "먼저 사람 확인을 완료하세요.",
   "CAPTCHA_SCOPE_REQUIRED": "보호할 양식을 하나 이상 선택하세요.",
   "CONFIG_CONFLICT": "다른 곳에서 구성이 변경되었습니다. 다시 불러온 뒤 저장하세요.",

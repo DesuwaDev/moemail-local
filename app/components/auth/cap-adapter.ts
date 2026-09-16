@@ -1,7 +1,7 @@
 import type { CapWidget, CapSolveEvent, CapErrorEvent } from "cap-widget"
-import { capEndpoint, type CaptchaChannelConfig } from "@/lib/captcha/providers"
+import { capEndpoint, validCapLinkUrl, type CaptchaChannelConfig } from "@/lib/captcha/providers"
 
-export function prepareCapAssets() {
+export function prepareCapAssets(timeoutMs: number) {
   window.CAP_CUSTOM_WASM_URL = "/vendor/cap/cap-0.0.7.wasm"
   window.CAP_PAKO_URL = "/vendor/cap/pako-inflate-2.1.0.min.js"
   // An unreachable challenge/redeem endpoint must reach the fallback UI.
@@ -11,7 +11,7 @@ export function prepareCapAssets() {
     const signal = init?.signal
     if (signal?.aborted) abort()
     else signal?.addEventListener("abort", abort, { once: true })
-    const timer = window.setTimeout(abort, 10_000)
+    const timer = window.setTimeout(abort, timeoutMs)
     try {
       return await fetch(input, { ...init, signal: controller.signal })
     } finally {
@@ -38,9 +38,15 @@ export function mountCap(
   widget.setAttribute("data-cap-api-endpoint", endpoint)
   widget.setAttribute("data-cap-lang", locale.toLowerCase())
   widget.setAttribute("data-cap-hidden-field-name", "captchaToken")
-  // Avoid using every CPU core on phones; server settings control PoW difficulty.
-  widget.setAttribute("data-cap-worker-count", "2")
-  widget.setAttribute("data-cap-disable-haptics", "")
+  // Left unset, the widget claims every core the browser reports; a number caps
+  // it. Difficulty stays a Cap server setting either way.
+  if (channel.workerCount !== "auto") widget.setAttribute("data-cap-worker-count", channel.workerCount)
+  if (!channel.haptics) widget.setAttribute("data-cap-disable-haptics", "")
+  // Only shown once instrumentation is already blocked, and only worth pointing
+  // somewhere else when the vendor's own page is unreachable from here.
+  if (validCapLinkUrl(channel.troubleshootingUrl)) {
+    widget.setAttribute("data-cap-troubleshooting-url", channel.troubleshootingUrl)
+  }
   for (const [key, label] of Object.entries(labels)) widget.setAttribute(`data-cap-i18n-${key}`, label)
   const solved = (event: CapSolveEvent) => onToken(event.detail.token)
   const cleared = () => onToken("")

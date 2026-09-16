@@ -246,6 +246,8 @@ const captchaWidgetSource = readFileSync(join(process.cwd(), "app/components/aut
 const captchaRegistrySource = readFileSync(join(process.cwd(), "app/lib/captcha/providers.ts"), "utf8")
 const captchaVerifySource = readFileSync(join(process.cwd(), "app/lib/captcha/verify.ts"), "utf8")
 const captchaSiteverifySource = readFileSync(join(process.cwd(), "app/lib/captcha/siteverify.ts"), "utf8")
+const capAdapterSource = readFileSync(join(process.cwd(), "app/components/auth/cap-adapter.ts"), "utf8")
+const configRouteSource = readFileSync(join(process.cwd(), "app/api/config/route.ts"), "utf8")
 const globalsCssSource = readFileSync(join(process.cwd(), "app/globals.css"), "utf8")
 const homeContentSource = readFileSync(join(process.cwd(), "app/components/home/home-content.tsx"), "utf8")
 // Google mints a site key as either v2 or v3 and refuses the other generation
@@ -393,6 +395,45 @@ assert.match(websiteConfigSource, /captcha\.channelStatus\.ready" : "captcha\.ch
 assert.match(websiteConfigSource, /setOpenChannel\(open \? null : role\)/u)
 assert.match(websiteConfigSource, /setOpenChannel\(value === CAPTCHA_OFF \? null : "primary"\)/u)
 
+// Cap runs on the operator's own hardware, so its pace, patience and help link
+// are theirs to set — but every one of them has a working default, so they hide
+// behind a single row instead of adding four controls to the longest form on
+// the page. The hosted vendors declare no advanced options, so the row itself
+// never renders for them.
+assert.match(captchaRegistrySource, /advancedFields: \["workerCount", "timeout", "haptics", "troubleshootingUrl"\]/u)
+assert.match(captchaRegistrySource, /export function captchaAdvancedFields/u)
+assert.match(websiteConfigSource, /const advancedFields = captchaAdvancedFields\(id\)/u)
+assert.match(websiteConfigSource, /advancedFields\.length > 0 && \(/u)
+assert.match(websiteConfigSource, /setAdvancedChannel\(advancedOpen \? null : id\)/u)
+assert.match(websiteConfigSource, /useState<CaptchaProviderId \| null>\(null\)/u)
+// Folded away, it still has to admit when it is no longer showing the defaults.
+assert.match(websiteConfigSource, /settings\[field\] !== DEFAULT_SETTINGS\[id\]\[field\]/u)
+assert.match(websiteConfigSource, /captcha\.advancedCustomized/u)
+// Absent, the widget claims every core the browser reports, which finishes
+// fastest on a desktop and heats a phone.
+assert.match(capAdapterSource, /channel\.workerCount !== "auto"/u)
+assert.match(capAdapterSource, /data-cap-worker-count/u)
+assert.match(capAdapterSource, /!channel\.haptics.+data-cap-disable-haptics/u)
+// Both ends wait on the same self-hosted server, so they read one budget.
+assert.match(captchaRegistrySource, /export function capTimeoutMs/u)
+assert.match(capAdapterSource, /export function prepareCapAssets\(timeoutMs: number\)/u)
+assert.match(captchaWidgetSource, /prepareCapAssets\(Number\(timeout\) \* 1000\)/u)
+assert.match(captchaSiteverifySource, /provider === "cap" \? capTimeoutMs\(settings\) : VERIFY_TIMEOUT_MS/u)
+// A mistyped help link is refused where it can still be corrected, and dropped
+// rather than rendered if it ever reaches the widget — but it never decides
+// whether the channel itself is usable, because a dead link must not lock a
+// login form.
+assert.match(configRouteSource, /apiError\("CAPTCHA_LINK_URL_INVALID", 400\)/u)
+assert.match(captchaRegistrySource, /validCapLinkUrl\(settings\.troubleshootingUrl\) \? settings\.troubleshootingUrl : ""/u)
+assert.match(capAdapterSource, /if \(validCapLinkUrl\(channel\.troubleshootingUrl\)\)/u)
+assert.doesNotMatch(
+  captchaRegistrySource.slice(
+    captchaRegistrySource.indexOf("export function captchaProviderReady"),
+    captchaRegistrySource.indexOf("export function captchaOptionFields"),
+  ),
+  /troubleshootingUrl/u,
+)
+
 console.log(JSON.stringify({
   localePrefixHidden: true,
   legacyLocaleLinksCanonicalized: true,
@@ -437,4 +478,5 @@ console.log(JSON.stringify({
   captchaFallsBackToASecondChannel: true,
   captchaChannelsFoldIntoSummaryRows: true,
   unusableSelfHostedPrimaryKeepsItsBackup: true,
+  capAdvancedOptionsFoldAway: true,
 }))

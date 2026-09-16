@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Server,
   ShieldOff,
+  SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
@@ -38,8 +39,12 @@ import {
   CAPTCHA_SCOPES,
   CAPTCHA_SIZES,
   CAPTCHA_THEMES,
+  CAPTCHA_TIMEOUTS,
+  CAPTCHA_WORKER_COUNTS,
+  captchaAdvancedFields,
   captchaOptionFields,
   captchaProviderReady,
+  validCapLinkUrl,
   validCapServerUrl,
   normalizeCaptchaConfig,
   type CaptchaConfig,
@@ -79,6 +84,10 @@ const OPTION_CATALOGS = {
 // Risk scores range over 0..1; these are the useful stops.
 const THRESHOLD_PRESETS = [0.3, 0.5, 0.7, 0.9]
 
+// What a channel looks like before anyone touches it, so a folded advanced
+// section can say whether anything inside it was moved.
+const DEFAULT_SETTINGS = normalizeCaptchaConfig(null).providers
+
 // Paired option selects get narrow on a phone, so the value shrinks and clips
 // instead of pushing the chevron out of the control.
 const COMPACT_TRIGGER = "gap-2 [&>span]:min-w-0 [&>span]:truncate"
@@ -115,6 +124,10 @@ export function WebsiteConfigPanel() {
   // action — a click, or picking a channel — so a form cannot fold itself away
   // under the operator's hands the moment the last key makes it valid.
   const [openChannel, setOpenChannel] = useState<ChannelRole | null>(null)
+  // Whose advanced options are unfolded. Keyed by channel rather than by row so
+  // opening it on one channel does not open it on the other, and it starts shut
+  // every time: the defaults are the right answer until someone says otherwise.
+  const [advancedChannel, setAdvancedChannel] = useState<CaptchaProviderId | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
@@ -246,6 +259,83 @@ export function WebsiteConfigPanel() {
       )
     }
 
+    // A vibration on tap is the visitor's preference to feel, not a setting
+    // with a value to read, so it is a switch rather than a two-item list.
+    if (field === "haptics") {
+      return (
+        <div
+          key={field}
+          className="flex min-w-0 items-center justify-between gap-3 rounded-md border bg-background/60 px-2.5 py-1.5 min-[380px]:col-span-2"
+        >
+          <Label htmlFor={fieldId} className="min-w-0 text-xs font-medium">
+            {t("captcha.fields.haptics")}
+          </Label>
+          <Switch
+            id={fieldId}
+            className="shrink-0"
+            checked={settings.haptics}
+            onCheckedChange={checked => patchSettings(id, { haptics: checked })}
+          />
+        </div>
+      )
+    }
+
+    if (field === "troubleshootingUrl") {
+      const link = settings.troubleshootingUrl
+      const linkValid = !link || validCapLinkUrl(link)
+      return (
+        <div key={field} className="min-w-0 space-y-1.5 min-[380px]:col-span-2">
+          {label}
+          <Input
+            id={fieldId}
+            type="url"
+            className="font-mono"
+            autoComplete="off"
+            spellCheck={false}
+            value={link}
+            onChange={e => patchSettings(id, { troubleshootingUrl: e.target.value })}
+            placeholder={t("captcha.placeholders.troubleshootingUrl")}
+            aria-invalid={!linkValid}
+          />
+          {!linkValid && (
+            <p className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+              {tApi("CAPTCHA_LINK_URL_INVALID")}
+            </p>
+          )}
+        </div>
+      )
+    }
+
+    // Both read as plain numbers, so only the unit and the "let the browser
+    // decide" entry are worth a catalog of their own.
+    if (field === "workerCount" || field === "timeout") {
+      const choices = field === "timeout" ? CAPTCHA_TIMEOUTS : CAPTCHA_WORKER_COUNTS
+      const choiceLabel = (choice: string) => {
+        if (field === "timeout") return t("captcha.seconds", { value: choice })
+        return choice === "auto" ? t("captcha.workerCountAuto") : choice
+      }
+      return (
+        <div key={field} className="min-w-0 space-y-1.5">
+          {label}
+          <Select
+            value={settings[field]}
+            onValueChange={value => patchSettings(id, { [field]: value } as Partial<CaptchaProviderSettings>)}
+          >
+            <SelectTrigger id={fieldId} className={COMPACT_TRIGGER}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
+              {choices.map(choice => (
+                <SelectItem key={choice} value={choice}>
+                  {choiceLabel(choice)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )
+    }
+
     const catalog = OPTION_CATALOGS[field]
     return (
       <div key={field} className="min-w-0 space-y-1.5">
@@ -275,6 +365,10 @@ export function WebsiteConfigPanel() {
   const renderChannelForm = (id: CaptchaProviderId) => {
     const settings = captcha.providers[id]
     const optionFields = captchaOptionFields(id)
+    const advancedFields = captchaAdvancedFields(id)
+    const advancedOpen = advancedChannel === id
+    // Folded, it has to admit when it is no longer showing the defaults.
+    const advancedChanged = advancedFields.some(field => settings[field] !== DEFAULT_SETTINGS[id][field])
     const capUrlValid = validCapServerUrl(settings.serverUrl)
       && (!settings.verificationServerUrl || validCapServerUrl(settings.verificationServerUrl))
     return (
@@ -413,6 +507,56 @@ export function WebsiteConfigPanel() {
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             {t("captcha.hints.endpoint")}
           </p>
+        )}
+
+        {/* Knobs with working defaults sit behind one line instead of adding
+            four controls to a form that is already the longest on the page.
+            Only a self-hosted channel has any, so the line itself disappears
+            for the vendors that run their own service. */}
+        {advancedFields.length > 0 && (
+          <section className="overflow-hidden rounded-md border bg-background/40">
+            <h5>
+              <button
+                type="button"
+                id={`captcha-${id}-advanced-heading`}
+                aria-expanded={advancedOpen}
+                aria-controls={`captcha-${id}-advanced`}
+                onClick={() => setAdvancedChannel(advancedOpen ? null : id)}
+                className="flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors hover:bg-primary/[0.04]"
+              >
+                <ChevronRight
+                  className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none ${
+                    advancedOpen ? "rotate-90" : ""
+                  }`}
+                />
+                <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate text-xs font-medium">
+                  {t("captcha.advancedLabel")}
+                </span>
+                {advancedChanged && (
+                  <span className="shrink-0 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {t("captcha.advancedCustomized")}
+                  </span>
+                )}
+              </button>
+            </h5>
+
+            {advancedOpen && (
+              <div
+                id={`captcha-${id}-advanced`}
+                role="region"
+                aria-labelledby={`captcha-${id}-advanced-heading`}
+                className="animate-in space-y-3 border-t p-2.5 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none"
+              >
+                <div className="grid gap-3 min-[380px]:grid-cols-2">
+                  {advancedFields.map(field => renderOptionField(id, field))}
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  {t("captcha.hints.advanced")}
+                </p>
+              </div>
+            )}
+          </section>
         )}
       </>
     )

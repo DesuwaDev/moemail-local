@@ -167,6 +167,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
   // switch to the backup is a change of inputs and not a second code path.
   const channel: CaptchaChannelConfig = usingFallback && config.fallback ? config.fallback : config
   const { provider, siteKey, theme, size, endpoint, serverUrl } = channel
+  const { workerCount, timeout, haptics, troubleshootingUrl } = channel
   const invisible = CAPTCHA_PROVIDERS[provider].scoreBased
   const active = config.enabled && config.scopes[scope]
   const canFallBack = !usingFallback && config.fallback !== null
@@ -197,7 +198,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     }
 
     const start = async () => {
-      if (provider === "cap") prepareCapAssets()
+      if (provider === "cap") prepareCapAssets(Number(timeout) * 1000)
       const script = await resolveScript(channel, locale)
       if (cancelled) return
 
@@ -288,7 +289,8 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     // `config` is consumed through the primitives below; listing the object
     // would re-render the widget on every parent render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, provider, siteKey, theme, size, endpoint, serverUrl, scope, locale, invisible, usingFallback, attempt])
+  }, [active, provider, siteKey, theme, size, endpoint, serverUrl, scope, locale, invisible,
+    usingFallback, attempt, workerCount, timeout, haptics, troubleshootingUrl])
 
   // The widgets ship fixed pixel widths (up to ~304px) that overflow a phone
   // sized card, so the rendered box is scaled down to whatever room it has and

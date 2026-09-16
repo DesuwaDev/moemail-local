@@ -173,6 +173,8 @@
         "ready": "Ready",
         "incomplete": "Needs setup"
       },
+      "advancedLabel": "Advanced options",
+      "advancedCustomized": "Changed",
       "openConsole": "Open provider console",
       "openGuide": "Integration guide",
       "showSecret": "Show secret",
@@ -193,13 +195,18 @@
         "threshold": "Score threshold",
         "theme": "Theme",
         "size": "Widget size",
-        "endpoint": "Service domain"
+        "endpoint": "Service domain",
+        "workerCount": "Worker threads",
+        "timeout": "Request timeout",
+        "haptics": "Haptic feedback",
+        "troubleshootingUrl": "Troubleshooting link"
       },
       "placeholders": {
         "serverUrl": "Public Cap base URL",
         "verificationServerUrl": "Use the public server URL",
         "siteKey": "Public key rendered in the browser",
-        "secretKey": "Server-side key used for verification"
+        "secretKey": "Server-side key used for verification",
+        "troubleshootingUrl": "Cap's own troubleshooting page"
       },
       "themes": {
         "auto": "Auto",
@@ -215,6 +222,8 @@
         "global": "Global",
         "china": "Mainland China mirror"
       },
+      "workerCountAuto": "Automatic",
+      "seconds": "{value}s",
       "scopes": {
         "login": "Sign-in",
         "register": "Registration"
@@ -225,7 +234,8 @@
         "endpoint": "google.com is unreachable from mainland China, so Google mirrors reCAPTCHA on recaptcha.net; both accept the same key pair. Automatic probes the global domain per visitor and falls back to the mirror, and the server verifies against whichever domain answers.",
         "keysMissing": "A channel only goes live once both the site key and the secret are filled in.",
         "fallback": "When a visitor's browser cannot load the main channel's script — a blocked domain, a dead key, a blocking extension — the sign-in page switches to the backup channel without a reload, and the server accepts tokens from either one. The backup needs its own key pair from its own console; leaving it empty counts as unconfigured.",
-        "scopes": "Verification only applies to username and password forms. Social sign-in is unaffected."
+        "scopes": "Verification only applies to username and password forms. Social sign-in is unaffected.",
+        "advanced": "More threads solve the challenge faster but drain and heat a phone; Automatic uses every core the browser reports. The timeout covers fetching a challenge, redeeming it and the server-side check, so raise it for a slow self-hosted server. Haptic feedback vibrates briefly on tap. The troubleshooting link only appears once a browser blocks the widget; left empty it points at Cap's own page, which some networks cannot reach."
       }
     },
     "loadFailed": "Failed to load configuration",

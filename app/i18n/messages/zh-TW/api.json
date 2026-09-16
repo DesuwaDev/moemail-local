@@ -19,6 +19,7 @@
   "CANNOT_DELETE_SELF": "無法刪除自己的帳戶。",
   "CAPTCHA_FAILED": "人機驗證失敗。",
   "CAPTCHA_KEYS_REQUIRED": "必須同時填寫網站金鑰與伺服器金鑰。",
+  "CAPTCHA_LINK_URL_INVALID": "請填寫有效的 HTTP(S) 排障連結，且不可包含帳號密碼。",
   "CAPTCHA_REQUIRED": "請先完成人機驗證。",
   "CAPTCHA_SCOPE_REQUIRED": "請至少選擇一個要保護的表單。",
   "CONFIG_CONFLICT": "設定已在其他位置變更，請重新載入後再儲存。",
