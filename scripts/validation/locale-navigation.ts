@@ -245,6 +245,7 @@ const websiteConfigSource = readFileSync(join(process.cwd(), "app/components/pro
 const captchaWidgetSource = readFileSync(join(process.cwd(), "app/components/auth/captcha.tsx"), "utf8")
 const captchaRegistrySource = readFileSync(join(process.cwd(), "app/lib/captcha/providers.ts"), "utf8")
 const captchaVerifySource = readFileSync(join(process.cwd(), "app/lib/captcha/verify.ts"), "utf8")
+const captchaSiteverifySource = readFileSync(join(process.cwd(), "app/lib/captcha/siteverify.ts"), "utf8")
 const globalsCssSource = readFileSync(join(process.cwd(), "app/globals.css"), "utf8")
 const homeContentSource = readFileSync(join(process.cwd(), "app/components/home/home-content.tsx"), "utf8")
 // Google mints a site key as either v2 or v3 and refuses the other generation
@@ -258,7 +259,7 @@ assert.doesNotMatch(captchaRegistrySource, /mode: normalizeOption/u)
 // leaving them in the v2 slot, where they would fail on the next render.
 assert.match(captchaRegistrySource, /function migrateRecaptchaGenerations/u)
 assert.match(captchaRegistrySource, /recaptcha: undefined, recaptchaV3: providers\.recaptcha/u)
-assert.match(captchaVerifySource, /if \(descriptor\.scoreBased\) \{/u)
+assert.match(captchaSiteverifySource, /if \(descriptor\.scoreBased\) \{/u)
 assert.match(captchaRegistrySource, /channel\.provider === "recaptchaV3"/u)
 assert.match(captchaWidgetSource, /const invisible = CAPTCHA_PROVIDERS\[provider\]\.scoreBased/u)
 // google.com is unreachable from mainland China, so both the browser and the
@@ -267,7 +268,7 @@ assert.match(captchaWidgetSource, /const invisible = CAPTCHA_PROVIDERS\[provider
 assert.match(captchaRegistrySource, /"auto", \.\.\.CAPTCHA_REGIONS/u)
 assert.match(captchaRegistrySource, /china: "https:\/\/www\.recaptcha\.net"/u)
 assert.match(captchaRegistrySource, /function candidateOrigins/u)
-assert.match(captchaVerifySource, /lastAnsweringUrl\.set\(provider, url\)/u)
+assert.match(captchaSiteverifySource, /lastAnsweringUrl\.set\(provider, url\)/u)
 assert.match(captchaWidgetSource, /mode: "no-cors"/u)
 assert.match(captchaWidgetSource, /originProbes\.clear\(\)/u)
 assert.match(websiteConfigSource, /optionFields\.includes\("endpoint"\)/u)
@@ -358,7 +359,7 @@ assert.match(captchaRegistrySource, /const CAPTCHA_FALLBACK_OFF = "none"/u)
 // an unusable backup would turn a load failure into a rejection.
 assert.match(captchaRegistrySource, /fallback === provider \? CAPTCHA_FALLBACK_OFF : fallback/u)
 assert.match(captchaRegistrySource, /export function captchaFallbackProvider/u)
-assert.match(captchaRegistrySource, /captchaProviderReady\(config\.providers\[config\.fallback\]\)/u)
+assert.match(captchaRegistrySource, /captchaProviderReady\(config\.providers\[config\.fallback\], config\.fallback\)/u)
 assert.match(captchaWidgetSource, /const canFallBack = !usingFallback && config\.fallback !== null/u)
 assert.match(captchaWidgetSource, /const giveUp = \(\) => \{/u)
 assert.match(captchaWidgetSource, /setUsingFallback\(false\)/u)
@@ -367,7 +368,7 @@ assert.match(captchaWidgetSource, /t\("fallbackNotice"\)/u)
 // minted the token only orders the attempts; it can never widen what is
 // accepted.
 assert.match(captchaWidgetSource, /token: tokenRef\.current, provider/u)
-assert.match(captchaVerifySource, /channels\.filter\(id => id !== mintedBy\)/u)
+assert.match(captchaVerifySource, /const ordered = mintedBy \? \[mintedBy as CaptchaProviderId\] : \[config\.provider\]/u)
 assert.match(captchaVerifySource, /for \(const provider of ordered\)/u)
 assert.match(websiteConfigSource, /renderChannelPanel\(fallback, "fallback"\)/u)
 assert.match(websiteConfigSource, /CAPTCHA_PROVIDER_IDS\.filter\(id => id !== provider\)/u)

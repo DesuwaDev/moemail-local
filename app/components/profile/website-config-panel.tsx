@@ -9,6 +9,7 @@ import {
   Gauge,
   Settings,
   ShieldCheck,
+  Server,
   ShieldOff,
   type LucideIcon,
 } from "lucide-react"
@@ -38,6 +39,7 @@ import {
   CAPTCHA_THEMES,
   captchaOptionFields,
   captchaProviderReady,
+  validCapServerUrl,
   normalizeCaptchaConfig,
   type CaptchaConfig,
   type CaptchaFallback,
@@ -53,6 +55,7 @@ const PROVIDER_ICONS: Record<CaptchaProviderId, LucideIcon> = {
   recaptcha: Bot,
   recaptchaV3: Gauge,
   hcaptcha: ShieldCheck,
+  cap: Server,
 }
 
 // "Off" is an option of the channel picker rather than a separate switch, so
@@ -249,6 +252,8 @@ export function WebsiteConfigPanel() {
     const settings = captcha.providers[id]
     const optionFields = captchaOptionFields(id)
     const Icon = PROVIDER_ICONS[id]
+    const capUrlValid = validCapServerUrl(settings.serverUrl)
+      && (!settings.verificationServerUrl || validCapServerUrl(settings.verificationServerUrl))
     return (
       <section
         key={`${role}-${id}`}
@@ -266,15 +271,64 @@ export function WebsiteConfigPanel() {
             {t(`captcha.providers.${id}.description` as never)}
           </p>
           <a
-            href={CAPTCHA_PROVIDERS[id].consoleUrl}
+            href={id === "cap" && validCapServerUrl(settings.serverUrl) ? settings.serverUrl : CAPTCHA_PROVIDERS[id].consoleUrl}
             target="_blank"
             rel="noreferrer noopener"
             className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
           >
-            {t("captcha.openConsole")}
+            {id === "cap" && !validCapServerUrl(settings.serverUrl) ? t("captcha.openGuide") : t("captcha.openConsole")}
             <ExternalLink className="h-3 w-3" />
           </a>
         </div>
+
+        {id === "cap" && (
+          <div className="space-y-1.5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="captcha-cap-server-url" className="text-xs font-medium">
+                  {t("captcha.fields.serverUrl")}
+                </Label>
+                <Input
+                  id="captcha-cap-server-url"
+                  type="url"
+                  className="font-mono"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={settings.serverUrl}
+                  onChange={e => patchSettings(id, { serverUrl: e.target.value })}
+                  placeholder={t("captcha.placeholders.serverUrl")}
+                  aria-invalid={Boolean(settings.serverUrl) && !validCapServerUrl(settings.serverUrl)}
+                  aria-describedby="captcha-cap-server-hint"
+                />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="captcha-cap-verification-url" className="text-xs font-medium">
+                  {t("captcha.fields.verificationServerUrl")}
+                </Label>
+                <Input
+                  id="captcha-cap-verification-url"
+                  type="url"
+                  className="font-mono"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={settings.verificationServerUrl}
+                  onChange={e => patchSettings(id, { verificationServerUrl: e.target.value })}
+                  placeholder={t("captcha.placeholders.verificationServerUrl")}
+                  aria-invalid={Boolean(settings.verificationServerUrl) && !validCapServerUrl(settings.verificationServerUrl)}
+                  aria-describedby="captcha-cap-server-hint"
+                />
+              </div>
+            </div>
+            <p id="captcha-cap-server-hint" className="text-[11px] leading-relaxed text-muted-foreground">
+              {t("captcha.hints.capServer")}
+            </p>
+            {!capUrlValid && (
+              <p className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                {tApi("CAPTCHA_SERVER_URL_INVALID")}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="min-w-0 space-y-1.5">

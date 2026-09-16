@@ -169,6 +169,7 @@
       "fallbackOff": "使用しない",
       "fallbackHint": "メインが読み込めないときに引き継ぎます。専用のキーが必要です。",
       "openConsole": "プロバイダーのコンソールを開く",
+      "openGuide": "導入ガイド",
       "showSecret": "シークレットを表示",
       "hideSecret": "シークレットを隠す",
       "scopesLabel": "保護するフォーム",
@@ -176,9 +177,12 @@
         "turnstile": { "name": "Cloudflare Turnstile", "description": "摩擦の少ない認証で、ほとんどの訪問者はパズルを見ることがありません。" },
         "recaptcha": { "name": "Google reCAPTCHA v2", "description": "チェックボックス型のウィジェットです。キーはコンソールで v2 として作成する必要があります。", "keyHint": "チェックボックス（v2）として作成したキーを入力してください。スコア（v3）のキーはここでは使えません。Google Cloud コンソールで作成したキーの場合は、「キーの詳細 → 統合 → レガシーキーを使用」からシークレットを取得し、Cloud の API キーは入力しないでください。" },
         "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "画面に表示されないスコアリングです。専用の v3 キーが必要で、v2 のキーは使えません。", "keyHint": "スコア（v3）として作成したキーを入力してください。チェックボックス（v2）のキーはここでは使えません。Google Cloud コンソールで作成したキーの場合は、「キーの詳細 → 統合 → レガシーキーを使用」からシークレットを取得し、Cloud の API キーは入力しないでください。" },
-        "hcaptcha": { "name": "hCaptcha", "description": "プライバシーを重視したチャレンジで、独自のキーと表示スタイルを持ちます。" }
+        "hcaptcha": { "name": "hCaptcha", "description": "プライバシーを重視したチャレンジで、独自のキーと表示スタイルを持ちます。" },
+        "cap": {"name":"Cap","description":"独自の Cap サーバーによるプルーフ・オブ・ワーク認証。","keyHint":"Cap 管理画面で作成したサイトキーとシークレットキーを入力してください。管理画面の ADMIN_KEY は使用しません。計算の難易度は Cap サーバー側で設定します。"}
       },
       "fields": {
+        "serverUrl": "公開サーバー URL",
+        "verificationServerUrl": "サーバー検証 URL（任意）",
         "siteKey": "サイトキー",
         "secretKey": "シークレットキー",
         "threshold": "スコア閾値",
@@ -187,6 +191,8 @@
         "endpoint": "サービスドメイン"
       },
       "placeholders": {
+        "serverUrl": "公開 Cap ベース URL",
+        "verificationServerUrl": "公開サーバー URL を使用",
         "siteKey": "ブラウザーに公開されるキー",
         "secretKey": "サーバー側の検証に使うキー"
       },
@@ -209,6 +215,7 @@
         "register": "新規登録"
       },
       "hints": {
+        "capServer": "サイトキーや /siteverify を含めず、パスの接頭辞を含むベース URL を入力します。訪問者からアクセス可能で、HTTPS ページには HTTPS が必要です。任意の検証 URL はサーバー間通信専用です（Docker 内のホスト名など）。ウィジェットはこのサイトから配信します。Cap の CORS 設定でこのサイトを許可してください。",
         "threshold": "このチャネルは画面に表示されず 0〜1 のスコアを返します。閾値を下回るリクエストは拒否されます。",
         "endpoint": "中国本土からは google.com に接続できないため、Google は recaptcha.net をミラーとして提供しています。両方のドメインで同じキーペアが使えます。「自動」では訪問者ごとにグローバルドメインを試し、失敗するとミラーに切り替え、サーバー側も応答したドメインで検証します。",
         "keysMissing": "サイトキーとシークレットの両方を入力すると、このチャネルが有効になります。",

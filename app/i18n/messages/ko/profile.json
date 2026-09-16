@@ -169,6 +169,7 @@
       "fallbackOff": "사용 안 함",
       "fallbackHint": "기본 채널을 불러오지 못할 때 대신 사용되며, 전용 키가 필요합니다.",
       "openConsole": "제공자 콘솔 열기",
+      "openGuide": "연동 안내",
       "showSecret": "비밀 값 표시",
       "hideSecret": "비밀 값 숨기기",
       "scopesLabel": "보호할 양식",
@@ -176,9 +177,12 @@
         "turnstile": { "name": "Cloudflare Turnstile", "description": "마찰이 적은 인증으로 대부분의 방문자는 퍼즐을 보지 않습니다." },
         "recaptcha": { "name": "Google reCAPTCHA v2", "description": "체크박스 위젯입니다. 키는 콘솔에서 v2 유형으로 발급해야 합니다.", "keyHint": "체크박스(v2) 유형으로 만든 키를 입력하세요. 점수(v3) 키는 여기에서 사용할 수 없습니다. Google Cloud 콘솔에서 만든 키라면 '키 세부정보 → 통합 → 기존 키 사용'에서 비밀 키를 가져오고, Cloud API 키는 입력하지 마세요." },
         "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "화면에 보이지 않는 점수 모델입니다. 전용 v3 키가 필요하며 v2 키는 사용할 수 없습니다.", "keyHint": "점수(v3) 유형으로 만든 키를 입력하세요. 체크박스(v2) 키는 여기에서 사용할 수 없습니다. Google Cloud 콘솔에서 만든 키라면 '키 세부정보 → 통합 → 기존 키 사용'에서 비밀 키를 가져오고, Cloud API 키는 입력하지 마세요." },
-        "hcaptcha": { "name": "hCaptcha", "description": "개인정보를 중시하는 인증으로 별도의 사이트 키와 위젯 스타일을 사용합니다." }
+        "hcaptcha": { "name": "hCaptcha", "description": "개인정보를 중시하는 인증으로 별도의 사이트 키와 위젯 스타일을 사용합니다." },
+        "cap": {"name":"Cap","description":"자체 Cap 서버의 작업 증명으로 인증합니다.","keyHint":"Cap 관리 화면에서 만든 사이트 키와 비밀 키를 입력하세요. 관리 화면의 ADMIN_KEY를 사용하지 마세요. 계산 난이도는 Cap 서버에서 설정합니다."}
       },
       "fields": {
+        "serverUrl": "공개 서버 주소",
+        "verificationServerUrl": "서버 검증 주소 (선택)",
         "siteKey": "사이트 키",
         "secretKey": "비밀 키",
         "threshold": "점수 임계값",
@@ -187,6 +191,8 @@
         "endpoint": "서비스 도메인"
       },
       "placeholders": {
+        "serverUrl": "공개 Cap 기본 주소",
+        "verificationServerUrl": "공개 서버 주소 사용",
         "siteKey": "브라우저에 공개되는 키",
         "secretKey": "서버에서 검증에 사용하는 키"
       },
@@ -209,6 +215,7 @@
         "register": "회원가입"
       },
       "hints": {
+        "capServer": "사이트 키나 /siteverify 없이 경로 접두사를 포함한 기본 주소를 입력하세요. 방문자가 접속할 수 있어야 하며 HTTPS 페이지에는 HTTPS 주소가 필요합니다. 선택적인 검증 주소는 서버 통신에만 사용됩니다 (예: Docker 내부 주소). 위젯 리소스는 이 사이트에서 제공됩니다. Cap CORS 설정에서 이 사이트를 허용하세요.",
         "threshold": "이 채널은 화면에 표시되지 않으며 0에서 1 사이의 점수를 반환하고, 임계값보다 낮은 요청은 거부됩니다.",
         "endpoint": "중국 본토에서는 google.com에 접속할 수 없어 Google이 recaptcha.net 미러를 제공하며, 두 도메인은 같은 키 쌍을 사용합니다. 「자동」을 선택하면 방문자마다 글로벌 도메인을 먼저 확인하고 실패하면 미러로 전환하며, 서버도 응답한 도메인으로 검증합니다.",
         "keysMissing": "사이트 키와 비밀 키를 모두 입력해야 이 채널이 실제로 활성화됩니다.",

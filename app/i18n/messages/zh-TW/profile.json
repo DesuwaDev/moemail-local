@@ -169,6 +169,7 @@
       "fallbackOff": "不啟用",
       "fallbackHint": "主管道載入不出來時自動頂上，需另外填金鑰。",
       "openConsole": "開啟提供商主控台",
+      "openGuide": "整合文件",
       "showSecret": "顯示密鑰",
       "hideSecret": "隱藏密鑰",
       "scopesLabel": "保護的表單",
@@ -176,9 +177,12 @@
         "turnstile": { "name": "Cloudflare Turnstile", "description": "無感驗證體驗，多數訪客不會看到任何挑戰。" },
         "recaptcha": { "name": "Google reCAPTCHA v2", "description": "核取方塊驗證元件，金鑰必須在主控台以 v2 類型建立。", "keyHint": "請填入以核取方塊（v2）類型建立的金鑰，評分（v3）金鑰在此無效。若金鑰建立自 Google Cloud 主控台，私密金鑰需在「金鑰詳細資料 → 整合 → 使用舊版金鑰」中取回，而不是填 Cloud API 金鑰。" },
         "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "無感評分模型，需要獨立的 v3 金鑰，v2 金鑰無法共用。", "keyHint": "請填入以評分（v3）類型建立的金鑰，核取方塊（v2）金鑰在此無效。若金鑰建立自 Google Cloud 主控台，私密金鑰需在「金鑰詳細資料 → 整合 → 使用舊版金鑰」中取回，而不是填 Cloud API 金鑰。" },
-        "hcaptcha": { "name": "hCaptcha", "description": "重視隱私的驗證挑戰，擁有獨立的站台金鑰與元件樣式。" }
+        "hcaptcha": { "name": "hCaptcha", "description": "重視隱私的驗證挑戰，擁有獨立的站台金鑰與元件樣式。" },
+        "cap": {"name":"Cap","description":"連接自己的 Cap 服務，透過工作量證明完成驗證。","keyHint":"填入 Cap 控制台建立的網站金鑰與私密金鑰，請勿填入控制台 ADMIN_KEY。驗證難度在 Cap 伺服器設定。"}
       },
       "fields": {
+        "serverUrl": "公開服務位址",
+        "verificationServerUrl": "伺服器驗證位址（選填）",
         "siteKey": "站台金鑰",
         "secretKey": "私密金鑰",
         "threshold": "分數門檻",
@@ -187,6 +191,8 @@
         "endpoint": "服務網域"
       },
       "placeholders": {
+        "serverUrl": "可公開存取的 Cap 根位址",
+        "verificationServerUrl": "預設使用公開服務位址",
         "siteKey": "在瀏覽器中公開呈現的金鑰",
         "secretKey": "伺服器端驗證時使用的金鑰"
       },
@@ -209,6 +215,7 @@
         "register": "註冊"
       },
       "hints": {
+        "capServer": "填入服務根位址，可包含路徑前綴，請勿包含網站金鑰或 /siteverify。訪客瀏覽器必須能連線，HTTPS 網頁須使用 HTTPS 位址。選填驗證位址僅供伺服器存取（如 Docker 內網位址）。元件資源由本站提供；請在 Cap 的 CORS 設定允許本站來源。",
         "threshold": "該管道全程無感執行並回傳 0 到 1 的分數，低於門檻的要求會被拒絕。",
         "endpoint": "中國大陸無法連線 google.com，Google 為此提供 recaptcha.net 鏡像，兩個網域共用同一組金鑰。選「自動」時，每位訪客會先偵測全球網域、失敗再改走鏡像，伺服器端也會用當時連得上的網域驗證。",
         "keysMissing": "站台金鑰與私密金鑰都填好，這個管道才會真正啟用。",

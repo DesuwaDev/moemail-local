@@ -1,4 +1,5 @@
 {
+  "CAPTCHA_SERVER_URL_INVALID": "Enter a valid Cap HTTP(S) server URL without credentials, query parameters or fragments.",
   "ACCESS_POLICIES_READ_FAILED": "Failed to load access policies.",
   "ACCESS_POLICIES_SAVE_FAILED": "Failed to save access policies.",
   "ADVANCED_YAML_INVALID": "The advanced YAML configuration is invalid.",

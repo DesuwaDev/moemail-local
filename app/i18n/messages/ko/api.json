@@ -1,4 +1,5 @@
 {
+  "CAPTCHA_SERVER_URL_INVALID": "계정 정보, 쿼리 매개변수 또는 프래그먼트가 없는 유효한 Cap HTTP(S) 서버 주소를 입력하세요.",
   "ACCESS_POLICIES_READ_FAILED": "접근 정책을 불러오지 못했습니다.",
   "ACCESS_POLICIES_SAVE_FAILED": "접근 정책을 저장하지 못했습니다.",
   "ADVANCED_YAML_INVALID": "고급 YAML 구성이 올바르지 않습니다.",

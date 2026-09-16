@@ -1,10 +1,10 @@
 // Single source of truth for every verification channel. Both the browser
-// widget and the server-side siteverify call read this registry, so adding a
-// provider is one entry here plus its `captcha.providers.*` catalog strings.
+// widget and the server-side siteverify call read this registry. Providers with
+// different widget protocols also have an adapter in the client component.
 // The module stays pure (no config store, no DOM) so client and server bundles
 // can share it.
 
-export const CAPTCHA_PROVIDER_IDS = ["turnstile", "recaptcha", "recaptchaV3", "hcaptcha"] as const
+export const CAPTCHA_PROVIDER_IDS = ["turnstile", "recaptcha", "recaptchaV3", "hcaptcha", "cap"] as const
 export type CaptchaProviderId = (typeof CAPTCHA_PROVIDER_IDS)[number]
 
 export const CAPTCHA_THEMES = ["auto", "light", "dark"] as const
@@ -57,11 +57,11 @@ function everywhere(origin: string): Record<CaptchaRegion, string> {
 interface CaptchaProviderDescriptor {
   id: CaptchaProviderId
   // Origin fronting the verification backend, per region.
-  apiOrigins: Record<CaptchaRegion, string>
+  apiOrigins?: Record<CaptchaRegion, string>
   siteverifyPath: string
   // Origin serving the browser bundle, per region. hCaptcha splits the two;
   // the rest reuse one host.
-  scriptOrigins: Record<CaptchaRegion, string>
+  scriptOrigins?: Record<CaptchaRegion, string>
   // Where the operator creates a site key pair.
   consoleUrl: string
   // Options the provider actually honours, in display order.
@@ -118,6 +118,14 @@ export const CAPTCHA_PROVIDERS: Record<CaptchaProviderId, CaptchaProviderDescrip
     sendsSiteKeyOnVerify: true,
     scoreBased: false,
   },
+  cap: {
+    id: "cap",
+    siteverifyPath: "/siteverify",
+    consoleUrl: "https://capjs.js.org/guide/",
+    optionFields: ["theme", "size"],
+    sendsSiteKeyOnVerify: false,
+    scoreBased: false,
+  },
 }
 
 export interface CaptchaProviderSettings {
@@ -127,6 +135,8 @@ export interface CaptchaProviderSettings {
   size: CaptchaSize
   threshold: number
   endpoint: CaptchaEndpoint
+  serverUrl: string
+  verificationServerUrl: string
 }
 
 export interface CaptchaConfig {
@@ -140,6 +150,7 @@ export interface CaptchaConfig {
 // What the browser needs to mint a token with one channel. The login page holds
 // two of these at once, so it is named apart from the document below.
 export interface CaptchaChannelConfig {
+  serverUrl: string
   provider: CaptchaProviderId
   siteKey: string
   theme: CaptchaTheme
@@ -189,6 +200,8 @@ function normalizeSettings(value: unknown): CaptchaProviderSettings {
     size: normalizeOption(source.size, CAPTCHA_SIZES, "normal"),
     threshold: normalizeThreshold(source.threshold),
     endpoint: normalizeOption(source.endpoint, CAPTCHA_ENDPOINTS, "auto"),
+    serverUrl: normalizeServerUrl(source.serverUrl),
+    verificationServerUrl: normalizeServerUrl(source.verificationServerUrl),
   }
 }
 
@@ -230,8 +243,39 @@ export function normalizeCaptchaConfig(value: unknown): CaptchaConfig {
   }
 }
 
-export function captchaProviderReady(settings: CaptchaProviderSettings) {
-  return settings.siteKey.length > 0 && settings.secretKey.length > 0
+// Keep invalid input visible so save validation can explain it instead of
+// silently turning a configured captcha off.
+function normalizeServerUrl(value: unknown): string {
+  const input = typeof value === "string" ? value.trim() : ""
+  return validCapServerUrl(input) ? new URL(input).href.replace(/\/+$/, "") : input
+}
+
+export function validCapServerUrl(value: string): boolean {
+  if (!value || value.length > 2048) return false
+  try {
+    const url = new URL(value)
+    return ["http:", "https:"].includes(url.protocol)
+      && !url.username && !url.password && !url.href.includes("?") && !url.href.includes("#")
+  } catch {
+    return false
+  }
+}
+
+export function capEndpoint(serverUrl: string, siteKey: string): string {
+  if (!validCapServerUrl(serverUrl) || !siteKey || siteKey === "." || siteKey === "..") return ""
+  try {
+    return `${new URL(serverUrl).href.replace(/\/+$/, "")}/${encodeURIComponent(siteKey)}/`
+  } catch {
+    return ""
+  }
+}
+
+export function captchaProviderReady(settings: CaptchaProviderSettings, provider?: CaptchaProviderId) {
+  if (!settings.siteKey || !settings.secretKey) return false
+  return provider !== "cap" || (
+    Boolean(capEndpoint(settings.serverUrl, settings.siteKey))
+    && (!settings.verificationServerUrl || validCapServerUrl(settings.verificationServerUrl))
+  )
 }
 
 // Options that do not apply to the current channel stay in storage but are
@@ -250,7 +294,9 @@ function candidateOrigins(origins: Record<CaptchaRegion, string>, endpoint: Capt
 }
 
 export function captchaScriptUrls(channel: CaptchaChannelConfig, locale: string): string[] {
+  if (channel.provider === "cap") return ["/vendor/cap/cap-0.1.57.min.js"]
   const descriptor = CAPTCHA_PROVIDERS[channel.provider]
+  if (!descriptor.scriptOrigins) return []
   return candidateOrigins(descriptor.scriptOrigins, channel.endpoint)
     .map(origin => vendorScriptUrl(channel, locale, origin))
 }
@@ -258,8 +304,15 @@ export function captchaScriptUrls(channel: CaptchaChannelConfig, locale: string)
 export function captchaSiteverifyUrls(
   provider: CaptchaProviderId,
   endpoint: CaptchaEndpoint,
+  settings?: CaptchaProviderSettings,
 ): string[] {
+  if (provider === "cap") {
+    if (!settings) return []
+    const base = capEndpoint(settings.verificationServerUrl || settings.serverUrl, settings.siteKey)
+    return base ? [`${base}siteverify`] : []
+  }
   const descriptor = CAPTCHA_PROVIDERS[provider]
+  if (!descriptor.apiOrigins) return []
   return candidateOrigins(descriptor.apiOrigins, endpoint)
     .map(origin => `${origin}${descriptor.siteverifyPath}`)
 }
@@ -284,6 +337,7 @@ function channelConfig(
 ): CaptchaChannelConfig {
   return {
     provider,
+    serverUrl: settings.serverUrl,
     siteKey: settings.siteKey,
     theme: settings.theme,
     size: settings.size,
@@ -296,7 +350,7 @@ function channelConfig(
 // load failure into a rejection.
 export function captchaFallbackProvider(config: CaptchaConfig): CaptchaProviderId | null {
   if (config.fallback === CAPTCHA_FALLBACK_OFF) return null
-  return captchaProviderReady(config.providers[config.fallback]) ? config.fallback : null
+  return captchaProviderReady(config.providers[config.fallback], config.fallback) ? config.fallback : null
 }
 
 export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig {
@@ -304,7 +358,7 @@ export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig 
   const fallback = captchaFallbackProvider(config)
   return {
     ...channelConfig(config.provider, settings),
-    enabled: config.enabled && captchaProviderReady(settings),
+    enabled: config.enabled && (config.provider === "cap" || captchaProviderReady(settings, config.provider)),
     scopes: config.scopes,
     fallback: fallback ? channelConfig(fallback, config.providers[fallback]) : null,
   }

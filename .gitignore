@@ -49,3 +49,6 @@ public/sw.js
 
 wrangler.email.json
 wrangler.email.durable.json
+
+# Generated from pinned captcha dependencies before dev/build
+/public/vendor/cap/

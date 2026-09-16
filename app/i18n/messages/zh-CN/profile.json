@@ -169,6 +169,7 @@
       "fallbackOff": "不启用",
       "fallbackHint": "主渠道加载不出来时自动顶上，需单独填密钥。",
       "openConsole": "打开提供商控制台",
+      "openGuide": "接入文档",
       "showSecret": "显示密钥",
       "hideSecret": "隐藏密钥",
       "scopesLabel": "保护的表单",
@@ -176,9 +177,12 @@
         "turnstile": { "name": "Cloudflare Turnstile", "description": "无感验证体验，多数访客不会看到任何挑战。" },
         "recaptcha": { "name": "Google reCAPTCHA v2", "description": "复选框验证组件，密钥必须在控制台按 v2 类型创建。", "keyHint": "请填入按复选框（v2）类型创建的密钥，评分（v3）密钥在此无效。若密钥创建自 Google Cloud 控制台，私密密钥需在「密钥详情 → 集成 → 使用旧版密钥」中取回，而不是填 Cloud API 密钥。" },
         "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "无感评分模型，需要单独的 v3 密钥，v2 密钥无法通用。", "keyHint": "请填入按评分（v3）类型创建的密钥，复选框（v2）密钥在此无效。若密钥创建自 Google Cloud 控制台，私密密钥需在「密钥详情 → 集成 → 使用旧版密钥」中取回，而不是填 Cloud API 密钥。" },
-        "hcaptcha": { "name": "hCaptcha", "description": "注重隐私的验证挑战，拥有独立的站点密钥与组件样式。" }
+        "hcaptcha": { "name": "hCaptcha", "description": "注重隐私的验证挑战，拥有独立的站点密钥与组件样式。" },
+        "cap": {"name":"Cap","description":"连接自己的 Cap 服务，通过工作量证明完成验证。","keyHint":"填写 Cap 控制台创建的站点密钥及私密密钥，不要填写控制台 ADMIN_KEY。验证难度在 Cap 服务端设置。"}
       },
       "fields": {
+        "serverUrl": "公开服务地址",
+        "verificationServerUrl": "服务端验证地址（可选）",
         "siteKey": "站点密钥",
         "secretKey": "私密密钥",
         "threshold": "分数阈值",
@@ -187,6 +191,8 @@
         "endpoint": "服务域名"
       },
       "placeholders": {
+        "serverUrl": "可公开访问的 Cap 根地址",
+        "verificationServerUrl": "默认使用公开服务地址",
         "siteKey": "在浏览器中公开渲染的密钥",
         "secretKey": "服务端校验时使用的密钥"
       },
@@ -209,6 +215,7 @@
         "register": "注册"
       },
       "hints": {
+        "capServer": "填写服务根地址，可包含路径前缀，不要包含站点密钥或 /siteverify。访客浏览器必须能访问，HTTPS 网页需使用 HTTPS 地址。可选验证地址仅供服务端访问（如 Docker 内网地址）。组件资源由本站提供；请在 Cap 的 CORS 设置中允许本站来源。",
         "threshold": "该渠道全程无感运行并返回 0 到 1 的分数，低于阈值的请求会被拒绝。",
         "endpoint": "中国大陆无法访问 google.com，Google 为此提供了 recaptcha.net 镜像，两个域名共用同一套密钥。选「自动」时，每位访客会先探测全球域名、失败再走镜像，服务端也会用当时能连通的域名校验。",
         "keysMissing": "站点密钥与私密密钥都填好，这个渠道才会真正启用。",

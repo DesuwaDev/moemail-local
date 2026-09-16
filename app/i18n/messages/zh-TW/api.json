@@ -1,4 +1,5 @@
 {
+  "CAPTCHA_SERVER_URL_INVALID": "請填入有效的 Cap HTTP(S) 服務位址，不可包含帳號密碼、查詢參數或片段。",
   "ACCESS_POLICIES_READ_FAILED": "讀取存取原則失敗。",
   "ACCESS_POLICIES_SAVE_FAILED": "儲存存取原則失敗。",
   "ADVANCED_YAML_INVALID": "進階 YAML 設定無效。",

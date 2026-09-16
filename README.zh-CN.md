@@ -354,6 +354,18 @@ docker compose --profile offsite up -d offsite-backup
 - Compose 有意跟踪 `latest`；只在整个镜像发布 Action 成功后执行 `pull`，每次更新前先制作可恢复备份。需要回滚时，将同一方案的全部镜像一起固定到同一个旧 tag 或 digest。
 - 对公网提供服务前，完整阅读[部署与运维指南](docs/local-deployment.zh-CN.md)。
 
+## Cap 验证码
+
+在「网站配置 → 人机验证」中选择 **Cap**，也可将它作为备用渠道。需要先部署自己的 [Cap Standalone](https://capjs.js.org/guide/) 服务，并在其控制台创建站点密钥和私密密钥。
+
+- **公开服务地址**：填写浏览器可访问的服务根地址，如 `https://captcha.example.com` 或 `https://example.com/cap`，不要附加站点密钥或 `/siteverify`。
+- **服务端验证地址（可选）**：默认使用公开地址；应用与 Cap 在同一个 Docker 网络时可改为内网根地址，如 `http://cap:3000`。这个地址和私密密钥不会下发给访客。
+- **站点密钥 / 私密密钥**：使用 Cap 控制台为该站点签发的密钥，不要使用控制台 `ADMIN_KEY`。
+- 主题、组件尺寸、登录/注册保护范围及备用渠道沿用现有设置。挑战难度在 Cap 服务端设置。
+- 在 Cap 的 CORS 设置中允许本站来源。HTTPS 页面应使用 HTTPS 公开地址；服务地址支持自定义端口和路径前缀，不接受 URL 中的账号密码、查询参数或片段。
+
+验证码脚本、WASM 和解压资源在 `pnpm dev` / `pnpm build` 时从锁定版本的依赖复制到本站，不依赖 jsDelivr。已有 Docker 构建流程会将这些资源带入镜像，无需额外的应用环境变量。若自定义 CSP，需要允许 Cap 服务的连接以及组件使用的 Worker/WASM。
+
 ## 开发与验证
 
 ```bash

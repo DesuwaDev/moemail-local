@@ -40,6 +40,9 @@ importers:
       '@auth/drizzle-adapter':
         specifier: ^1.11.3
         version: 1.11.3(nodemailer@9.0.5)
+      '@cap.js/wasm':
+        specifier: 0.0.7
+        version: 0.0.7
       '@radix-ui/react-alert-dialog':
         specifier: ^1.1.23
         version: 1.1.23(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -76,6 +79,9 @@ importers:
       better-sqlite3:
         specifier: 12.4.1
         version: 12.4.1
+      cap-widget:
+        specifier: 0.1.57
+        version: 0.1.57
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
@@ -112,6 +118,9 @@ importers:
       nodemailer:
         specifier: 9.0.5
         version: 9.0.5
+      pako:
+        specifier: 2.1.0
+        version: 2.1.0
       pg:
         specifier: 8.16.3
         version: 8.16.3
@@ -774,6 +783,9 @@ packages:
   '@babel/types@7.29.8':
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
+
+  '@cap.js/wasm@0.0.7':
+    resolution: {integrity: sha512-IgUjrPOUBaOjTp+BkrhfEBBeQ4An7fQiSWWezDy9Uvd+OdTYm4+h3AJU0j/CpHYayp7FltZU+UePC6p28oGQaw==}
 
   '@cloudflare/kv-asset-handler@0.3.4':
     resolution: {integrity: sha512-YLPHc8yASwjNkmcDMQMY35yiWjoKAKnhUbPRszBRS0YgH+IXtsMp61j+yTcnCE3oO2DgP0U3iejLC8FTtKDC8Q==}
@@ -3064,6 +3076,9 @@ packages:
   caniuse-lite@1.0.30001809:
     resolution: {integrity: sha512-xxWVywk6a6Arlk+hymeycyn/VgqEfLDxupvhH/xiY5SJ/18kmi9o6MiO320DCUzypORHLtvh0I4i04tUhCNHNQ==}
 
+  cap-widget@0.1.57:
+    resolution: {integrity: sha512-SyIK5XgYIFSDgH683M9KpfBmDSDB0ZfPZQBxL6MggNrjjnbIQYpbsNpj0S7PC/wXp7oJgAuBD2vtJnN9jJghBg==}
+
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
@@ -4602,6 +4617,9 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  pako@2.1.0:
+    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -6482,6 +6500,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@cap.js/wasm@0.0.7': {}
 
   '@cloudflare/kv-asset-handler@0.3.4':
     dependencies:
@@ -8423,6 +8443,8 @@ snapshots:
 
   caniuse-lite@1.0.30001809: {}
 
+  cap-widget@0.1.57: {}
+
   chalk@4.1.2:
     dependencies:
       ansi-styles: 4.3.0
@@ -10136,6 +10158,8 @@ snapshots:
   p-try@2.2.0: {}
 
   package-json-from-dist@1.0.1: {}
+
+  pako@2.1.0: {}
 
   parent-module@1.0.1:
     dependencies:

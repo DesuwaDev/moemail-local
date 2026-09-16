@@ -117,6 +117,7 @@ const invariantCatalogValues = new Set([
   "Google reCAPTCHA v2",
   "Google reCAPTCHA v3",
   "hCaptcha",
+  "Cap",
   "Cloudflare Email Worker",
   "Resend",
   "TLS",

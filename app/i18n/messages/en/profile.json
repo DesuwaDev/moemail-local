@@ -169,6 +169,7 @@
       "fallbackOff": "Not used",
       "fallbackHint": "Takes over when the main channel fails to load; needs its own keys.",
       "openConsole": "Open provider console",
+      "openGuide": "Integration guide",
       "showSecret": "Show secret",
       "hideSecret": "Hide secret",
       "scopesLabel": "Protected forms",
@@ -176,9 +177,12 @@
         "turnstile": { "name": "Cloudflare Turnstile", "description": "Low-friction verification; most visitors never see a puzzle." },
         "recaptcha": { "name": "Google reCAPTCHA v2", "description": "Checkbox widget. Its key pair must be created as v2 in the console.", "keyHint": "Use a key created as a checkbox (v2) key; a score (v3) key is rejected here. For keys made in the Google Cloud console, take the secret from Key details → Integration → Use Legacy Key, not a Cloud API key." },
         "recaptchaV3": { "name": "Google reCAPTCHA v3", "description": "Invisible scoring. It needs its own v3 key pair; v2 keys are rejected.", "keyHint": "Use a key created as a score (v3) key; a checkbox (v2) key is rejected here. For keys made in the Google Cloud console, take the secret from Key details → Integration → Use Legacy Key, not a Cloud API key." },
-        "hcaptcha": { "name": "hCaptcha", "description": "Privacy-focused challenges with independent site keys and widget styling." }
+        "hcaptcha": { "name": "hCaptcha", "description": "Privacy-focused challenges with independent site keys and widget styling." },
+        "cap": {"name":"Cap","description":"Self-hosted proof-of-work verification using your own Cap server.","keyHint":"Use the site key and secret from your Cap dashboard, not the dashboard ADMIN_KEY. Challenge difficulty is configured on your Cap server."}
       },
       "fields": {
+        "serverUrl": "Public server URL",
+        "verificationServerUrl": "Verification server URL (optional)",
         "siteKey": "Site Key",
         "secretKey": "Secret Key",
         "threshold": "Score threshold",
@@ -187,6 +191,8 @@
         "endpoint": "Service domain"
       },
       "placeholders": {
+        "serverUrl": "Public Cap base URL",
+        "verificationServerUrl": "Use the public server URL",
         "siteKey": "Public key rendered in the browser",
         "secretKey": "Server-side key used for verification"
       },
@@ -209,6 +215,7 @@
         "register": "Registration"
       },
       "hints": {
+        "capServer": "Enter the server base URL, including any path prefix, without the site key or /siteverify. Visitors must be able to reach it; HTTPS pages need an HTTPS endpoint. The optional verification URL is for server-side access only (for example, a Docker hostname). Widget assets are served by this site. Allow this site’s origin in Cap CORS settings.",
         "threshold": "This channel runs invisibly and returns a score between 0 and 1; requests below the threshold are rejected.",
         "endpoint": "google.com is unreachable from mainland China, so Google mirrors reCAPTCHA on recaptcha.net; both accept the same key pair. Automatic probes the global domain per visitor and falls back to the mirror, and the server verifies against whichever domain answers.",
         "keysMissing": "A channel only goes live once both the site key and the secret are filled in.",

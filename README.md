@@ -354,6 +354,18 @@ Keep these production boundaries in place:
 - Compose intentionally tracks `latest`. Pull only after the complete image publishing workflow succeeds, and take a recoverable backup first. For rollback, pin every image in the selected variant to the same previous tag or digest.
 - Review the full [deployment and operations guide](docs/local-deployment.zh-CN.md) before serving production traffic.
 
+## Cap CAPTCHA
+
+Select **Cap** under Website configuration → CAPTCHA, either as the primary provider or as the fallback. Deploy your own [Cap Standalone](https://capjs.js.org/guide/) server first and create a site key and secret in its dashboard.
+
+- **Public server URL**: a browser-reachable base URL, such as `https://captcha.example.com` or `https://example.com/cap`. Do not append the site key or `/siteverify`.
+- **Verification server URL (optional)**: defaults to the public URL. A deployment on the same Docker network can use an internal base URL such as `http://cap:3000`. This value and the secret key stay server-side.
+- Use the site's key pair from Cap, not its dashboard `ADMIN_KEY`. Configure challenge difficulty on the Cap server.
+- Theme, size, protected forms and fallback selection use the existing controls.
+- Allow this site's origin in Cap's CORS configuration. HTTPS pages need an HTTPS public endpoint. Custom ports and path prefixes are supported; URL credentials, query parameters and fragments are rejected.
+
+The widget, WASM solver and decompression assets are copied from pinned dependencies during `pnpm dev` / `pnpm build` and served locally, without a jsDelivr dependency. The existing Docker build includes these files. Custom CSP rules must allow the Cap connection and its Worker/WASM resources.
+
 ## Development and validation
 
 ```bash

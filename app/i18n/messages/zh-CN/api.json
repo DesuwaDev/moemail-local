@@ -1,4 +1,5 @@
 {
+  "CAPTCHA_SERVER_URL_INVALID": "请填写有效的 Cap HTTP(S) 服务地址，不可包含账号密码、查询参数或片段。",
   "ACCESS_POLICIES_READ_FAILED": "读取访问策略失败。",
   "ACCESS_POLICIES_SAVE_FAILED": "保存访问策略失败。",
   "ADVANCED_YAML_INVALID": "高级 YAML 配置无效。",

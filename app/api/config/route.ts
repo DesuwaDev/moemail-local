@@ -10,7 +10,7 @@ import {
 } from "@/lib/domain-policies"
 import { apiError } from "@/lib/api-response"
 import { getCaptchaConfig, saveCaptchaConfig } from "@/lib/captcha/config"
-import { CAPTCHA_SCOPES, captchaProviderReady, normalizeCaptchaConfig } from "@/lib/captcha/providers"
+import { CAPTCHA_SCOPES, validCapServerUrl, captchaProviderReady, normalizeCaptchaConfig } from "@/lib/captcha/providers"
 
 export const runtime = "nodejs"
 
@@ -96,7 +96,15 @@ export async function POST(request: Request) {
   const captchaConfig = captcha === undefined ? null : normalizeCaptchaConfig(captcha)
 
   if (captchaConfig?.enabled) {
-    if (!captchaProviderReady(captchaConfig.providers[captchaConfig.provider])) {
+    if (captchaConfig.provider === "cap" || captchaConfig.fallback === "cap") {
+      const cap = captchaConfig.providers.cap
+      if (!validCapServerUrl(cap.serverUrl)
+        || (cap.verificationServerUrl && !validCapServerUrl(cap.verificationServerUrl))) {
+        return apiError("CAPTCHA_SERVER_URL_INVALID", 400)
+      }
+      if (!captchaProviderReady(cap, "cap")) return apiError("CAPTCHA_KEYS_REQUIRED", 400)
+    }
+    if (!captchaProviderReady(captchaConfig.providers[captchaConfig.provider], captchaConfig.provider)) {
       return apiError("CAPTCHA_KEYS_REQUIRED", 400)
     }
     if (!CAPTCHA_SCOPES.some(scope => captchaConfig.scopes[scope])) {

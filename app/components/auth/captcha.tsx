@@ -10,6 +10,7 @@ import {
 } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { mountCap, prepareCapAssets } from "./cap-adapter"
 import { cn } from "@/lib/utils"
 import { CAPTCHA_PROVIDERS, captchaScriptUrls } from "@/lib/captcha/providers"
 import type {
@@ -53,12 +54,17 @@ function loadScript(src: string) {
     script.src = src
     script.async = true
     script.defer = true
-    script.addEventListener("load", () => resolve(true))
-    script.addEventListener("error", () => {
-      // Drop the cache entry so the retry button can append a fresh tag.
-      scriptLoads.delete(src)
-      resolve(false)
-    })
+    const finish = (ok: boolean) => {
+      window.clearTimeout(timer)
+      if (!ok) {
+        scriptLoads.delete(src)
+        script.remove()
+      }
+      resolve(ok)
+    }
+    const timer = window.setTimeout(() => finish(false), 10_000)
+    script.addEventListener("load", () => finish(true), { once: true })
+    script.addEventListener("error", () => finish(false), { once: true })
     document.head.appendChild(script)
   })
 
@@ -83,6 +89,7 @@ function waitFor(ready: () => boolean, timeoutMs = 10_000) {
 }
 
 function vendorApi(provider: CaptchaProviderId) {
+  if (provider === "cap") return undefined
   if (provider === "recaptcha" || provider === "recaptchaV3") return window.grecaptcha
   if (provider === "hcaptcha") return window.hcaptcha
   return window.turnstile
@@ -149,6 +156,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
   const boxRef = useRef<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<string | number | null>(null)
   const tokenRef = useRef("")
+  const capRef = useRef<ReturnType<typeof mountCap> | null>(null)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [usingFallback, setUsingFallback] = useState(false)
@@ -158,7 +166,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
   // Everything below reads the channel in play rather than the document, so the
   // switch to the backup is a change of inputs and not a second code path.
   const channel: CaptchaChannelConfig = usingFallback && config.fallback ? config.fallback : config
-  const { provider, siteKey, theme, size, endpoint } = channel
+  const { provider, siteKey, theme, size, endpoint, serverUrl } = channel
   const invisible = CAPTCHA_PROVIDERS[provider].scoreBased
   const active = config.enabled && config.scopes[scope]
   const canFallBack = !usingFallback && config.fallback !== null
@@ -167,10 +175,12 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     if (!active) return
 
     let cancelled = false
+    tokenRef.current = ""
     // Remembering the exact node that was rendered into keeps teardown honest:
     // the ref may already point elsewhere (or nowhere) by cleanup time.
     let mounted: HTMLDivElement | null = null
     const hasApi = () => {
+      if (provider === "cap") return Boolean(customElements.get("cap-widget"))
       const api = vendorApi(provider)
       return Boolean(invisible ? api?.execute : api?.render)
     }
@@ -180,11 +190,14 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     // asked to retry, because retrying the same channel repeats the same
     // request to the same origin with the same key.
     const giveUp = () => {
+      if (cancelled) return
+      tokenRef.current = ""
       if (canFallBack) setUsingFallback(true)
       else setFailed(true)
     }
 
     const start = async () => {
+      if (provider === "cap") prepareCapAssets()
       const script = await resolveScript(channel, locale)
       if (cancelled) return
 
@@ -197,6 +210,29 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
       setFailed(false)
       if (invisible) return
 
+      if (provider === "cap") {
+        if (!boxRef.current) return
+        try {
+          capRef.current = mountCap(boxRef.current, channel, locale, {
+            "initial-state": t("cap.initial"),
+            "verifying-label": t("cap.verifying"),
+            "solved-label": t("cap.solved"),
+            "error-label": t("cap.error"),
+            "verify-aria-label": t("cap.initial"),
+            "verifying-aria-label": t("cap.verifying"),
+            "verified-aria-label": t("cap.solved"),
+            "error-aria-label": t("cap.error"),
+            "required-label": t("cap.required"),
+            "group-aria-label": t("cap.initial"),
+            "troubleshooting-label": t("cap.troubleshoot"),
+            "wasm-disabled": t("cap.wasmDisabled"),
+          }, token => { if (!cancelled) tokenRef.current = token }, giveUp)
+        } catch (error) {
+          console.error("captcha.cap_mount_failed", error)
+          giveUp()
+        }
+        return
+      }
       const api = vendorApi(provider)
       const frame = boxRef.current
       if (!api || !frame) return
@@ -226,10 +262,15 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
       }
     }
 
-    void start()
+    void start().catch(error => {
+      console.error("captcha.load_failed", error)
+      giveUp()
+    })
 
     return () => {
       cancelled = true
+      capRef.current?.dispose()
+      capRef.current = null
       tokenRef.current = ""
       const api = vendorApi(provider)
       const widgetId = widgetIdRef.current
@@ -247,7 +288,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     // `config` is consumed through the primitives below; listing the object
     // would re-render the widget on every parent render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, provider, siteKey, theme, size, endpoint, locale, invisible, usingFallback, attempt])
+  }, [active, provider, siteKey, theme, size, endpoint, serverUrl, scope, locale, invisible, usingFallback, attempt])
 
   // The widgets ship fixed pixel widths (up to ~304px) that overflow a phone
   // sized card, so the rendered box is scaled down to whatever room it has and
@@ -270,7 +311,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     observer.observe(box)
     measure()
     return () => observer.disconnect()
-  }, [active, invisible])
+  }, [active, invisible, failed])
 
   const runInvisibleChallenge = useCallback(async (tokenScope: CaptchaScope) => {
     const api = window.grecaptcha
@@ -293,6 +334,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     reset: () => {
       tokenRef.current = ""
       if (invisible) return
+      if (provider === "cap") { capRef.current?.reset(); return }
       try {
         const api = vendorApi(provider)
         if (widgetIdRef.current !== null && api) api.reset(widgetIdRef.current)

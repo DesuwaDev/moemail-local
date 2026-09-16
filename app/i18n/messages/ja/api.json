@@ -1,4 +1,5 @@
 {
+  "CAPTCHA_SERVER_URL_INVALID": "認証情報、クエリ、フラグメントを含まない有効な Cap HTTP(S) サーバー URL を入力してください。",
   "ACCESS_POLICIES_READ_FAILED": "アクセス規則を読み込めませんでした。",
   "ACCESS_POLICIES_SAVE_FAILED": "アクセス規則を保存できませんでした。",
   "ADVANCED_YAML_INVALID": "高度な YAML 設定が無効です。",
