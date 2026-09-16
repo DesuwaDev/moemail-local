@@ -165,9 +165,14 @@
       },
       "providerLabel": "인증 제공자",
       "providerHint": "제공자를 전환해도 각각 입력한 키는 그대로 유지됩니다.",
+      "primaryLabel": "기본 채널",
       "fallbackLabel": "예비 채널",
       "fallbackOff": "사용 안 함",
       "fallbackHint": "기본 채널을 불러오지 못할 때 대신 사용되며, 전용 키가 필요합니다.",
+      "channelStatus": {
+        "ready": "준비됨",
+        "incomplete": "설정 필요"
+      },
       "openConsole": "제공자 콘솔 열기",
       "openGuide": "연동 안내",
       "showSecret": "비밀 값 표시",

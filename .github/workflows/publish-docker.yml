@@ -138,6 +138,7 @@ jobs:
           pnpm validate:mailu
           pnpm validate:runtime-fields
           pnpm validate:i18n
+          pnpm validate:captcha
           pnpm validate:no-local-env
           pnpm validate:deployment
           pnpm validate:maintenance-bundle

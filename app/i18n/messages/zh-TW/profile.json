@@ -165,9 +165,14 @@
       },
       "providerLabel": "驗證碼提供商",
       "providerHint": "切換提供商時會保留各自已填寫的金鑰。",
+      "primaryLabel": "主管道",
       "fallbackLabel": "備用管道",
       "fallbackOff": "不啟用",
       "fallbackHint": "主管道載入不出來時自動頂上，需另外填金鑰。",
+      "channelStatus": {
+        "ready": "已就緒",
+        "incomplete": "待完善"
+      },
       "openConsole": "開啟提供商主控台",
       "openGuide": "整合文件",
       "showSecret": "顯示密鑰",

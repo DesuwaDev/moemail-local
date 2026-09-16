@@ -165,9 +165,14 @@
       },
       "providerLabel": "Verification provider",
       "providerHint": "Switching providers keeps the keys already entered for each one.",
+      "primaryLabel": "Main channel",
       "fallbackLabel": "Backup channel",
       "fallbackOff": "Not used",
       "fallbackHint": "Takes over when the main channel fails to load; needs its own keys.",
+      "channelStatus": {
+        "ready": "Ready",
+        "incomplete": "Needs setup"
+      },
       "openConsole": "Open provider console",
       "openGuide": "Integration guide",
       "showSecret": "Show secret",

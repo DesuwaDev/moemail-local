@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Bot,
+  ChevronRight,
   Cloud,
   ExternalLink,
   Gauge,
@@ -82,6 +83,23 @@ const THRESHOLD_PRESETS = [0.3, 0.5, 0.7, 0.9]
 // instead of pushing the chevron out of the control.
 const COMPACT_TRIGGER = "gap-2 [&>span]:min-w-0 [&>span]:truncate"
 
+// The two channels are the same kind of thing, so they are the same kind of row.
+type ChannelRole = "primary" | "fallback"
+
+// Which row a freshly loaded panel opens. Two channel forms stacked open run for
+// a screenful on a phone — Cap alone adds two URL fields — and a channel that
+// already verifies has nothing its summary row does not say, so only one that
+// cannot verify yet asks for the space.
+function incompleteChannel(config: CaptchaConfig): ChannelRole | null {
+  if (!config.enabled) return null
+  if (!captchaProviderReady(config.providers[config.provider], config.provider)) return "primary"
+  const backup = config.fallback
+  if (backup !== CAPTCHA_FALLBACK_OFF && !captchaProviderReady(config.providers[backup], backup)) {
+    return "fallback"
+  }
+  return null
+}
+
 export function WebsiteConfigPanel() {
   const t = useTranslations("profile.website")
   const tCard = useTranslations("profile.card")
@@ -93,6 +111,10 @@ export function WebsiteConfigPanel() {
   // until a save lands, so the two are compared to tell the operator whether
   // the channel on screen is the one protecting the site right now.
   const [liveCaptcha, setLiveCaptcha] = useState<CaptchaConfig>(() => normalizeCaptchaConfig(null))
+  // Which channel row is unfolded, or none. It only ever moves on an explicit
+  // action — a click, or picking a channel — so a form cannot fold itself away
+  // under the operator's hands the moment the last key makes it valid.
+  const [openChannel, setOpenChannel] = useState<ChannelRole | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
@@ -113,6 +135,7 @@ export function WebsiteConfigPanel() {
         const stored = normalizeCaptchaConfig(data.captcha)
         setCaptcha(stored)
         setLiveCaptcha(stored)
+        setOpenChannel(incompleteChannel(stored))
         setLoaded(true)
       } catch (error) {
         console.error("website_config.load_failed", error)
@@ -246,27 +269,17 @@ export function WebsiteConfigPanel() {
     )
   }
 
-  // One panel shape for both roles: the backup is a full channel with its own
-  // key pair and its own options, not a switch on the primary one.
-  const renderChannelPanel = (id: CaptchaProviderId, role: "primary" | "fallback") => {
+  // One form shape for both roles: the backup is a full channel with its own key
+  // pair and its own options, not a switch on the primary one. The row around it
+  // carries the name and the state, so this starts at the description.
+  const renderChannelForm = (id: CaptchaProviderId) => {
     const settings = captcha.providers[id]
     const optionFields = captchaOptionFields(id)
-    const Icon = PROVIDER_ICONS[id]
     const capUrlValid = validCapServerUrl(settings.serverUrl)
       && (!settings.verificationServerUrl || validCapServerUrl(settings.verificationServerUrl))
     return (
-      <section
-        key={`${role}-${id}`}
-        id={`captcha-${role}-panel`}
-        role="region"
-        aria-labelledby={`captcha-${role}-heading`}
-        className="animate-in space-y-3 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none sm:rounded-md sm:border sm:bg-card/30 sm:p-4"
-      >
-        <div className="flex items-center gap-3 border-b pb-2.5">
-          <span id={`captcha-${role}-heading`} className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium">
-            <Icon className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate">{t(`captcha.providers.${id}.name` as never)}</span>
-          </span>
+      <>
+        <div className="flex items-start gap-3 border-b pb-2.5">
           <p className="hidden min-w-0 flex-1 text-[11px] leading-relaxed text-muted-foreground sm:block">
             {t(`captcha.providers.${id}.description` as never)}
           </p>
@@ -401,6 +414,145 @@ export function WebsiteConfigPanel() {
             {t("captcha.hints.endpoint")}
           </p>
         )}
+      </>
+    )
+  }
+
+  // Which provider stands in for the live one. It lives inside the backup row
+  // because it is that channel's own setting, and the row header already says
+  // which one is on duty when the row is folded away.
+  const renderFallbackPicker = () => (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      <span id="captcha-fallback-label" className="shrink-0 text-xs font-medium">
+        {t("captcha.providerLabel")}
+      </span>
+
+      <Select
+        value={fallback}
+        onValueChange={value => setCaptcha(current => ({
+          ...current,
+          fallback: value as CaptchaFallback,
+        }))}
+      >
+        <SelectTrigger
+          aria-labelledby="captcha-fallback-label captcha-fallback-value"
+          className="w-full gap-2 sm:w-64 [&>svg]:shrink-0"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <FallbackIcon className={`h-4 w-4 shrink-0 ${
+              fallback === CAPTCHA_FALLBACK_OFF ? "text-muted-foreground" : "text-primary"
+            }`} />
+            <span
+              id="captcha-fallback-value"
+              className={`truncate ${fallback === CAPTCHA_FALLBACK_OFF ? "text-muted-foreground" : ""}`}
+            >
+              {fallbackLabel}
+            </span>
+          </span>
+        </SelectTrigger>
+        <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
+          <SelectItem
+            value={CAPTCHA_FALLBACK_OFF}
+            className="pr-2 [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
+          >
+            <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
+              <ShieldOff className="h-4 w-4 shrink-0" />
+              <span className="truncate">{t("captcha.fallbackOff")}</span>
+            </span>
+          </SelectItem>
+          {/* The live channel is not offered as its own understudy. */}
+          {CAPTCHA_PROVIDER_IDS.filter(id => id !== provider).map(id => {
+            const Icon = PROVIDER_ICONS[id]
+            return (
+              <SelectItem
+                key={id}
+                value={id}
+                className="pr-2 [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <Icon className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="truncate">
+                    {t(`captcha.providers.${id}.name` as never)}
+                  </span>
+                </span>
+              </SelectItem>
+            )
+          })}
+        </SelectContent>
+      </Select>
+
+      <span className="hidden min-w-0 flex-1 truncate text-[11px] text-muted-foreground md:block">
+        {t("captcha.fallbackHint")}
+      </span>
+    </div>
+  )
+
+  // A channel is a summary line plus a form that only exists while it is open.
+  // Collapsed, the pair states which providers are on duty and whether either
+  // still needs keys — the two questions worth answering without scrolling.
+  const renderChannelRow = (role: ChannelRole) => {
+    const id = role === "primary" ? provider : fallback === CAPTCHA_FALLBACK_OFF ? null : fallback
+    const open = openChannel === role
+    const Icon = id ? PROVIDER_ICONS[id] : ShieldOff
+    // A channel nobody asked for reports nothing; the line above already reads
+    // "not used".
+    const ready = id === null ? null : captchaProviderReady(captcha.providers[id], id)
+    return (
+      <section className="overflow-hidden rounded-md border bg-card/30">
+        <h4>
+          <button
+            type="button"
+            id={`captcha-${role}-heading`}
+            aria-expanded={open}
+            aria-controls={`captcha-${role}-panel`}
+            onClick={() => setOpenChannel(open ? null : role)}
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-primary/[0.04]"
+          >
+            <ChevronRight
+              className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none ${
+                open ? "rotate-90" : ""
+              }`}
+            />
+            <Icon className={`h-4 w-4 shrink-0 ${id ? "text-primary" : "text-muted-foreground"}`} />
+            {/* Role and provider sit side by side once there is room for both.
+                On the narrowest phones the provider drops to its own line rather
+                than being truncated down to two letters beside a status pill. */}
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-2">
+              <span className="truncate text-xs font-medium">
+                {t(role === "primary" ? "captcha.primaryLabel" : "captcha.fallbackLabel")}
+              </span>
+              <span className="truncate text-[11px] text-muted-foreground">
+                {id ? t(`captcha.providers.${id}.name` as never) : t("captcha.fallbackOff")}
+              </span>
+            </span>
+            {ready !== null && (
+              <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${
+                ready
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              }`}>
+                {t(ready ? "captcha.channelStatus.ready" : "captcha.channelStatus.incomplete")}
+              </span>
+            )}
+          </button>
+        </h4>
+
+        {open && (
+          <div
+            id={`captcha-${role}-panel`}
+            role="region"
+            aria-labelledby={`captcha-${role}-heading`}
+            className="animate-in space-y-3 border-t p-3 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none"
+          >
+            {role === "fallback" && renderFallbackPicker()}
+            {id && renderChannelForm(id)}
+            {role === "fallback" && (
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {t("captcha.hints.fallback")}
+              </p>
+            )}
+          </div>
+        )}
       </section>
     )
   }
@@ -476,16 +628,20 @@ export function WebsiteConfigPanel() {
 
               <Select
                 value={enabled ? provider : CAPTCHA_OFF}
-                onValueChange={value => setCaptcha(current => value === CAPTCHA_OFF
-                  ? { ...current, enabled: false }
-                  : {
-                      ...current,
-                      enabled: true,
-                      provider: value as CaptchaProviderId,
-                      // Promoting the backup leaves the site without one rather
-                      // than with a channel standing in for itself.
-                      fallback: current.fallback === value ? CAPTCHA_FALLBACK_OFF : current.fallback,
-                    })}
+                onValueChange={value => {
+                  setCaptcha(current => value === CAPTCHA_OFF
+                    ? { ...current, enabled: false }
+                    : {
+                        ...current,
+                        enabled: true,
+                        provider: value as CaptchaProviderId,
+                        // Promoting the backup leaves the site without one rather
+                        // than with a channel standing in for itself.
+                        fallback: current.fallback === value ? CAPTCHA_FALLBACK_OFF : current.fallback,
+                      })
+                  // A channel that was just chosen is the one about to be filled in.
+                  setOpenChannel(value === CAPTCHA_OFF ? null : "primary")
+                }}
               >
                 <SelectTrigger
                   aria-labelledby="captcha-provider-label captcha-provider-value"
@@ -545,81 +701,12 @@ export function WebsiteConfigPanel() {
               </p>
             )}
 
-            {enabled && renderChannelPanel(provider, "primary")}
-
             {enabled && (
-              <>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <span id="captcha-fallback-label" className="shrink-0 text-xs font-medium">
-                    {t("captcha.fallbackLabel")}
-                  </span>
-
-                  <Select
-                    value={fallback}
-                    onValueChange={value => setCaptcha(current => ({
-                      ...current,
-                      fallback: value as CaptchaFallback,
-                    }))}
-                  >
-                    <SelectTrigger
-                      aria-labelledby="captcha-fallback-label captcha-fallback-value"
-                      className="w-full gap-2 sm:w-64 [&>svg]:shrink-0"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <FallbackIcon className={`h-4 w-4 shrink-0 ${
-                          fallback === CAPTCHA_FALLBACK_OFF ? "text-muted-foreground" : "text-primary"
-                        }`} />
-                        <span
-                          id="captcha-fallback-value"
-                          className={`truncate ${fallback === CAPTCHA_FALLBACK_OFF ? "text-muted-foreground" : ""}`}
-                        >
-                          {fallbackLabel}
-                        </span>
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[var(--radix-select-content-available-height)]">
-                      <SelectItem
-                        value={CAPTCHA_FALLBACK_OFF}
-                        className="pr-2 [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
-                      >
-                        <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
-                          <ShieldOff className="h-4 w-4 shrink-0" />
-                          <span className="truncate">{t("captcha.fallbackOff")}</span>
-                        </span>
-                      </SelectItem>
-                      {/* The live channel is not offered as its own understudy. */}
-                      {CAPTCHA_PROVIDER_IDS.filter(id => id !== provider).map(id => {
-                        const Icon = PROVIDER_ICONS[id]
-                        return (
-                          <SelectItem
-                            key={id}
-                            value={id}
-                            className="pr-2 [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
-                          >
-                            <span className="flex min-w-0 items-center gap-2">
-                              <Icon className="h-4 w-4 shrink-0 text-primary" />
-                              <span className="truncate">
-                                {t(`captcha.providers.${id}.name` as never)}
-                              </span>
-                            </span>
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-
-                  <span className="hidden min-w-0 flex-1 truncate text-[11px] text-muted-foreground md:block">
-                    {t("captcha.fallbackHint")}
-                  </span>
-                </div>
-
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  {t("captcha.hints.fallback")}
-                </p>
-              </>
+              <div className="space-y-2">
+                {renderChannelRow("primary")}
+                {renderChannelRow("fallback")}
+              </div>
             )}
-
-            {enabled && fallback !== CAPTCHA_FALLBACK_OFF && renderChannelPanel(fallback, "fallback")}
 
             {/* Which forms are protected is a property of the gate, not of a
                 channel, so it stays outside both panels. */}

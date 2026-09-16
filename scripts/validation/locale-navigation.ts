@@ -368,11 +368,30 @@ assert.match(captchaWidgetSource, /t\("fallbackNotice"\)/u)
 // minted the token only orders the attempts; it can never widen what is
 // accepted.
 assert.match(captchaWidgetSource, /token: tokenRef\.current, provider/u)
-assert.match(captchaVerifySource, /const ordered = mintedBy \? \[mintedBy as CaptchaProviderId\] : \[config\.provider\]/u)
-assert.match(captchaVerifySource, /for \(const provider of ordered\)/u)
-assert.match(websiteConfigSource, /renderChannelPanel\(fallback, "fallback"\)/u)
+assert.match(captchaVerifySource, /const minted = mintedBy \?\? channels\[0\]/u)
+assert.match(captchaVerifySource, /const channel = channels\.find\(id => id === minted\)/u)
+// An unusable primary must not take its backup down with it: the login page is
+// handed both and switches on its own, so with a self-hosted primary that fails
+// closed the backup's token is the only one that can arrive.
+assert.match(captchaVerifySource, /\.\.\.\(primaryReady \? \[config\.provider\] : \[\]\)/u)
+assert.match(captchaVerifySource, /if \(!primaryReady && config\.provider !== "cap"\)/u)
 assert.match(websiteConfigSource, /CAPTCHA_PROVIDER_IDS\.filter\(id => id !== provider\)/u)
 assert.match(websiteConfigSource, /captchaProviderReady\(settings\)/u)
+
+// Two channel forms stacked open run for a screenful on a phone — Cap alone adds
+// two URL fields — so each channel folds into a summary row that still answers
+// which provider is on duty and whether it can verify anything yet.
+assert.match(websiteConfigSource, /function incompleteChannel\(config: CaptchaConfig\)/u)
+assert.match(websiteConfigSource, /setOpenChannel\(incompleteChannel\(stored\)\)/u)
+assert.match(websiteConfigSource, /renderChannelRow\("primary"\)/u)
+assert.match(websiteConfigSource, /renderChannelRow\("fallback"\)/u)
+assert.match(websiteConfigSource, /aria-expanded=\{open\}/u)
+assert.match(websiteConfigSource, /aria-controls=\{`captcha-\$\{role\}-panel`\}/u)
+assert.match(websiteConfigSource, /captcha\.channelStatus\.ready" : "captcha\.channelStatus\.incomplete"/u)
+// Folding is driven by explicit actions only, so a form cannot collapse under
+// the operator's hands the moment the last key makes it valid.
+assert.match(websiteConfigSource, /setOpenChannel\(open \? null : role\)/u)
+assert.match(websiteConfigSource, /setOpenChannel\(value === CAPTCHA_OFF \? null : "primary"\)/u)
 
 console.log(JSON.stringify({
   localePrefixHidden: true,
@@ -416,4 +435,6 @@ console.log(JSON.stringify({
   vendorBadgeHiddenWithAttributionShipped: true,
   customUtilitiesSurviveThePurge: true,
   captchaFallsBackToASecondChannel: true,
+  captchaChannelsFoldIntoSummaryRows: true,
+  unusableSelfHostedPrimaryKeepsItsBackup: true,
 }))

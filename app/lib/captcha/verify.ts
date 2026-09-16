@@ -20,16 +20,32 @@ export async function verifyCaptchaToken(
   const config = await getCaptchaConfig()
   const settings = config.providers[config.provider]
 
-  // Disabled scopes do not require a token; an invalid enabled Cap configuration
-  // fails closed instead of silently removing protection.
+  // Disabled scopes do not require a token.
   if (!config.enabled || !config.scopes[scope]) {
     return { success: true }
   }
 
-  if (!captchaProviderReady(settings, config.provider)) {
-    return config.provider === "cap"
-      ? { success: false, reason: "verification-failed" }
-      : { success: true }
+  // A hosted channel missing half a key pair verifies nothing, and the browser
+  // is told the gate is off, so demanding a token would lock the site out of its
+  // own login. A self-hosted Cap keeps the gate shut instead: the login page
+  // still shows it, and a Cap server that cannot be reached is exactly what a
+  // bypass would look like.
+  const primaryReady = captchaProviderReady(settings, config.provider)
+  if (!primaryReady && config.provider !== "cap") {
+    return { success: true }
+  }
+
+  // Channels the browser could have minted this token with, in the order the
+  // login page offers them. An unusable primary drops out of the list instead of
+  // taking the backup down with it: the page is handed both and switches on its
+  // own, so the backup's token is the only one that can arrive.
+  const fallback = captchaFallbackProvider(config)
+  const channels: CaptchaProviderId[] = [
+    ...(primaryReady ? [config.provider] : []),
+    ...(fallback ? [fallback] : []),
+  ]
+  if (!channels.length) {
+    return { success: false, reason: "verification-failed" }
   }
 
   const trimmedToken = token?.trim()
@@ -37,23 +53,16 @@ export async function verifyCaptchaToken(
     return { success: false, reason: "missing-token" }
   }
 
-  // A visitor whose browser could not load the first channel submits a token
-  // from the backup. Its provider hint selects one operator-configured
-  // channel; an unknown channel is rejected.
-  const fallback = captchaFallbackProvider(config)
-  const channels = fallback ? [config.provider, fallback] : [config.provider]
-  // With self-hosted backends a token must never leak to another provider.
-  // The browser hint can select only a channel the administrator enabled.
-  if (mintedBy && !(channels as string[]).includes(mintedBy)) {
+  // With self-hosted backends a token must never leak to another provider, so
+  // the browser's claim about which channel minted it selects exactly one the
+  // administrator enabled; anything else is rejected rather than tried around.
+  const minted = mintedBy ?? channels[0]
+  const channel = channels.find(id => id === minted)
+  if (!channel) {
     return { success: false, reason: "verification-failed" }
   }
-  const ordered = mintedBy ? [mintedBy as CaptchaProviderId] : [config.provider]
 
-  for (const provider of ordered) {
-    if (await verifyWithProvider(provider, config.providers[provider], scope, trimmedToken)) {
-      return { success: true }
-    }
-  }
-
-  return { success: false, reason: "verification-failed" }
+  return await verifyWithProvider(channel, config.providers[channel], scope, trimmedToken)
+    ? { success: true }
+    : { success: false, reason: "verification-failed" }
 }

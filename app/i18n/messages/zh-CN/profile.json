@@ -165,9 +165,14 @@
       },
       "providerLabel": "验证码提供商",
       "providerHint": "切换提供商时会保留各自已填写的密钥。",
+      "primaryLabel": "主渠道",
       "fallbackLabel": "备用渠道",
       "fallbackOff": "不启用",
       "fallbackHint": "主渠道加载不出来时自动顶上，需单独填密钥。",
+      "channelStatus": {
+        "ready": "已就绪",
+        "incomplete": "待完善"
+      },
       "openConsole": "打开提供商控制台",
       "openGuide": "接入文档",
       "showSecret": "显示密钥",

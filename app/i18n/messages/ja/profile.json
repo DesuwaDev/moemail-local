@@ -165,9 +165,14 @@
       },
       "providerLabel": "認証プロバイダー",
       "providerHint": "プロバイダーを切り替えても、それぞれに入力したキーは保持されます。",
+      "primaryLabel": "メインチャネル",
       "fallbackLabel": "予備チャネル",
       "fallbackOff": "使用しない",
       "fallbackHint": "メインが読み込めないときに引き継ぎます。専用のキーが必要です。",
+      "channelStatus": {
+        "ready": "設定済み",
+        "incomplete": "要設定"
+      },
       "openConsole": "プロバイダーのコンソールを開く",
       "openGuide": "導入ガイド",
       "showSecret": "シークレットを表示",
