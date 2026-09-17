@@ -32,6 +32,8 @@ import {
 import { readApiErrorCode } from "@/lib/api-error-client"
 import { LocalizedUiError, localizedUiErrorMessage } from "@/lib/localized-ui-error"
 import {
+  CAP_FAILURE_POLICIES,
+  type CapFailurePolicy,
   CAPTCHA_ENDPOINTS,
   CAPTCHA_FALLBACK_OFF,
   CAPTCHA_PROVIDERS,
@@ -362,7 +364,7 @@ export function WebsiteConfigPanel() {
   // One form shape for both roles: the backup is a full channel with its own key
   // pair and its own options, not a switch on the primary one. The row around it
   // carries the name and the state, so this starts at the description.
-  const renderChannelForm = (id: CaptchaProviderId) => {
+  const renderChannelForm = (id: CaptchaProviderId): React.ReactNode => {
     const settings = captcha.providers[id]
     const optionFields = captchaOptionFields(id)
     const advancedFields = captchaAdvancedFields(id)
@@ -561,6 +563,62 @@ export function WebsiteConfigPanel() {
       </>
     )
   }
+
+  // Failure routing is independent of credentials, so it can be edited without
+  // opening the long Cap connection form.
+  const renderCapFailures = () => (
+    <details className="group rounded-md border bg-background/40">
+      <summary className="cursor-pointer px-2.5 py-2 text-xs font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
+        {t("captcha.capFailure.title")}
+        <span className="ml-2 text-[11px] font-normal text-muted-foreground">
+          {captcha.capBlockedFallback === "none" ? t("captcha.capFailure.none")
+            : captcha.capBlockedFallback === "default" ? t("captcha.capFailure.default")
+              : t(`captcha.providers.${captcha.capBlockedFallback}.name` as never)}
+        </span>
+      </summary>
+      <div className="space-y-3 border-t p-2.5">
+        <div className="grid gap-3 min-[480px]:grid-cols-2">
+          {(["capBlockedFallback", "capNetworkFallback"] as const).map(field => (
+            <div key={field} className="min-w-0 space-y-1.5">
+              <Label htmlFor={`captcha-${field}`} className="text-xs">
+                {t(field === "capBlockedFallback" ? "captcha.capFailure.blocked" : "captcha.capFailure.network")}
+              </Label>
+              <Select value={captcha[field]} disabled={loading}
+                onValueChange={value => setCaptcha(current => ({ ...current, [field]: value as CapFailurePolicy }))}>
+                <SelectTrigger id={`captcha-${field}`} className={`h-8 text-xs ${COMPACT_TRIGGER}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAP_FAILURE_POLICIES.map(policy => (
+                    <SelectItem key={policy} value={policy} className="text-xs">
+                      {policy === "none" ? t("captcha.capFailure.none") : policy === "default"
+                        ? t("captcha.capFailure.default") : t(`captcha.providers.${policy}.name` as never)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{t("captcha.capFailure.hint")}</p>
+        {[...new Set([captcha.capBlockedFallback, captcha.capNetworkFallback])]
+          .filter((target): target is Exclude<CaptchaProviderId, "cap"> => target !== "none" && target !== "default")
+          .filter(target => target !== provider && target !== fallback)
+          .map(target => (
+            <details key={target} className="rounded-md border">
+              <summary className="cursor-pointer px-2.5 py-2 text-xs">
+                {t(`captcha.providers.${target}.name` as never)}
+                <span className="ml-2 text-muted-foreground">
+                  {t(captchaProviderReady(captcha.providers[target], target)
+                    ? "captcha.channelStatus.ready" : "captcha.channelStatus.incomplete")}
+                </span>
+              </summary>
+              <div className="space-y-3 border-t p-2.5">{renderChannelForm(target)}</div>
+            </details>
+          ))}
+      </div>
+    </details>
+  )
 
   // Which provider stands in for the live one. It lives inside the backup row
   // because it is that channel's own setting, and the row header already says
@@ -849,6 +907,7 @@ export function WebsiteConfigPanel() {
               <div className="space-y-2">
                 {renderChannelRow("primary")}
                 {renderChannelRow("fallback")}
+                {(provider === "cap" || fallback === "cap") && renderCapFailures()}
               </div>
             )}
 

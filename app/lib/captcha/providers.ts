@@ -53,6 +53,9 @@ export type CaptchaEndpoint = (typeof CAPTCHA_ENDPOINTS)[number]
 export const CAPTCHA_FALLBACK_OFF = "none"
 export type CaptchaFallback = CaptchaProviderId | typeof CAPTCHA_FALLBACK_OFF
 export const CAPTCHA_FALLBACK_CHOICES = [CAPTCHA_FALLBACK_OFF, ...CAPTCHA_PROVIDER_IDS] as const
+export const CAP_FAILURE_POLICIES = ["none", "default", "turnstile", "recaptcha", "recaptchaV3", "hcaptcha"] as const
+export type CapFailurePolicy = (typeof CAP_FAILURE_POLICIES)[number]
+export type CapFailureKind = "blocked" | "network" | "unavailable"
 
 export const DEFAULT_SCORE_THRESHOLD = 0.5
 
@@ -173,6 +176,8 @@ export interface CaptchaConfig {
   enabled: boolean
   provider: CaptchaProviderId
   fallback: CaptchaFallback
+  capBlockedFallback: CapFailurePolicy
+  capNetworkFallback: CapFailurePolicy
   scopes: Record<CaptchaScope, boolean>
   providers: Record<CaptchaProviderId, CaptchaProviderSettings>
 }
@@ -200,6 +205,7 @@ export interface CaptchaClientConfig extends CaptchaChannelConfig {
   // The channel to switch to when the first one never loads, or null when the
   // operator configured none — an unusable one is never advertised.
   fallback: CaptchaChannelConfig | null
+  capFallbacks: Record<"blocked" | "network", CaptchaChannelConfig | null>
 }
 
 const DEFAULT_PROVIDER: CaptchaProviderId = "turnstile"
@@ -274,6 +280,8 @@ export function normalizeCaptchaConfig(value: unknown): CaptchaConfig {
     // A channel cannot stand in for itself: the second attempt would repeat the
     // load that just failed, with the same key, against the same origin.
     fallback: fallback === provider ? CAPTCHA_FALLBACK_OFF : fallback,
+    capBlockedFallback: normalizeOption(source.capBlockedFallback, CAP_FAILURE_POLICIES, "none"),
+    capNetworkFallback: normalizeOption(source.capNetworkFallback, CAP_FAILURE_POLICIES, "none"),
     scopes: Object.fromEntries(
       CAPTCHA_SCOPES.map(scope => [scope, scopes[scope] !== false]),
     ) as Record<CaptchaScope, boolean>,
@@ -428,6 +436,29 @@ export function captchaFallbackProvider(config: CaptchaConfig): CaptchaProviderI
   return captchaProviderReady(config.providers[config.fallback], config.fallback) ? config.fallback : null
 }
 
+export function capFailureProvider(config: CaptchaConfig, kind: "blocked" | "network"): CaptchaProviderId | null {
+  if (config.provider !== "cap" && config.fallback !== "cap") return null
+  const policy = kind === "blocked" ? config.capBlockedFallback : config.capNetworkFallback
+  const id = policy === "default" ? captchaFallbackProvider(config) : policy === "none" ? null : policy
+  return id && id !== "cap" && captchaProviderReady(config.providers[id], id) ? id : null
+}
+
+export function captchaVerificationProviders(config: CaptchaConfig): CaptchaProviderId[] {
+  return [...new Set([
+    captchaProviderReady(config.providers[config.provider], config.provider) ? config.provider : null,
+    captchaFallbackProvider(config), capFailureProvider(config, "blocked"), capFailureProvider(config, "network"),
+  ].filter((id): id is CaptchaProviderId => id !== null))]
+}
+
+// Ordinary backup failures are terminal; Cap may have its own explicit policy.
+// Never loop back through an already tried channel.
+export function captchaFailureChannel(config: CaptchaClientConfig, current: CaptchaProviderId,
+  kind: CapFailureKind, tried: readonly CaptchaProviderId[]): CaptchaChannelConfig | null {
+  const target = current === "cap" && kind !== "unavailable" ? config.capFallbacks[kind]
+    : tried.length === 1 ? config.fallback : null
+  return target && !tried.includes(target.provider) ? target : null
+}
+
 export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig {
   const settings = config.providers[config.provider]
   const fallback = captchaFallbackProvider(config)
@@ -436,5 +467,9 @@ export function publicCaptchaConfig(config: CaptchaConfig): CaptchaClientConfig 
     enabled: config.enabled && (config.provider === "cap" || captchaProviderReady(settings, config.provider)),
     scopes: config.scopes,
     fallback: fallback ? channelConfig(fallback, config.providers[fallback]) : null,
+    capFallbacks: Object.fromEntries((["blocked", "network"] as const).map(kind => {
+      const id = capFailureProvider(config, kind)
+      return [kind, id ? channelConfig(id, config.providers[id]) : null]
+    })) as CaptchaClientConfig["capFallbacks"],
   }
 }

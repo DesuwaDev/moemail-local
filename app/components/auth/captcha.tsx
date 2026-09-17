@@ -12,8 +12,9 @@ import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { mountCap, prepareCapAssets } from "./cap-adapter"
 import { cn } from "@/lib/utils"
-import { CAPTCHA_PROVIDERS, captchaScriptUrls } from "@/lib/captcha/providers"
+import { CAPTCHA_PROVIDERS, captchaFailureChannel, captchaScriptUrls } from "@/lib/captcha/providers"
 import type {
+  CapFailureKind,
   CaptchaChannelConfig,
   CaptchaClientConfig,
   CaptchaProviderId,
@@ -157,20 +158,22 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
   const widgetIdRef = useRef<string | number | null>(null)
   const tokenRef = useRef("")
   const capRef = useRef<ReturnType<typeof mountCap> | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [failed, setFailed] = useState<CapFailureKind | null>(null)
   const [attempt, setAttempt] = useState(0)
-  const [usingFallback, setUsingFallback] = useState(false)
+  const [backup, setBackup] = useState<CaptchaChannelConfig | null>(null)
+  const triedRef = useRef<CaptchaProviderId[]>([config.provider])
+  const usingFallback = backup !== null
   const [scale, setScale] = useState(1)
   const [naturalHeight, setNaturalHeight] = useState(0)
 
   // Everything below reads the channel in play rather than the document, so the
   // switch to the backup is a change of inputs and not a second code path.
-  const channel: CaptchaChannelConfig = usingFallback && config.fallback ? config.fallback : config
+  const channel: CaptchaChannelConfig = backup ?? config
   const { provider, siteKey, theme, size, endpoint, serverUrl } = channel
   const { workerCount, timeout, haptics, troubleshootingUrl } = channel
   const invisible = CAPTCHA_PROVIDERS[provider].scoreBased
   const active = config.enabled && config.scopes[scope]
-  const canFallBack = !usingFallback && config.fallback !== null
+  const routingKey = JSON.stringify([config.fallback, config.capFallbacks])
 
   useEffect(() => {
     if (!active) return
@@ -190,15 +193,20 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     // visitor with nothing to solve. The backup gets its turn before they are
     // asked to retry, because retrying the same channel repeats the same
     // request to the same origin with the same key.
-    const giveUp = () => {
-      if (cancelled) return
+    let settled = false
+    const giveUp = (kind: CapFailureKind = "unavailable") => {
+      if (cancelled || settled) return
+      settled = true
       tokenRef.current = ""
-      if (canFallBack) setUsingFallback(true)
-      else setFailed(true)
+      const next = captchaFailureChannel(config, provider, kind, triedRef.current)
+      if (next) {
+        triedRef.current = [...triedRef.current, next.provider]
+        setBackup(next)
+      } else setFailed(kind)
     }
 
     const start = async () => {
-      if (provider === "cap") prepareCapAssets(Number(timeout) * 1000)
+      if (provider === "cap") prepareCapAssets()
       const script = await resolveScript(channel, locale)
       if (cancelled) return
 
@@ -208,7 +216,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
         giveUp()
         return
       }
-      setFailed(false)
+      setFailed(null)
       if (invisible) return
 
       if (provider === "cap") {
@@ -227,7 +235,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
             "group-aria-label": t("cap.initial"),
             "troubleshooting-label": t("cap.troubleshoot"),
             "wasm-disabled": t("cap.wasmDisabled"),
-          }, token => { if (!cancelled) tokenRef.current = token }, giveUp)
+          }, token => { if (!cancelled && !settled) tokenRef.current = token }, giveUp)
         } catch (error) {
           console.error("captcha.cap_mount_failed", error)
           giveUp()
@@ -290,7 +298,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
     // would re-render the widget on every parent render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, provider, siteKey, theme, size, endpoint, serverUrl, scope, locale, invisible,
-    usingFallback, attempt, workerCount, timeout, haptics, troubleshootingUrl])
+    usingFallback, attempt, workerCount, timeout, haptics, troubleshootingUrl, routingKey])
 
   // The widgets ship fixed pixel widths (up to ~304px) that overflow a phone
   // sized card, so the rendered box is scaled down to whatever room it has and
@@ -329,7 +337,7 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
 
   useImperativeHandle(ref, () => ({
     ensureToken: async (tokenScope: CaptchaScope) => {
-      if (!active) return { token: "", provider }
+      if (!active || failed) return { token: "", provider }
       if (invisible) return { token: await runInvisibleChallenge(tokenScope), provider }
       return { token: tokenRef.current, provider }
     },
@@ -344,27 +352,28 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(function Captcha(
         console.error("captcha.reset_failed", error)
       }
     },
-  }), [active, invisible, provider, runInvisibleChallenge])
+  }), [active, failed, invisible, provider, runInvisibleChallenge])
 
   if (!active) return null
 
   if (failed) {
     return (
       <div className={cn("flex flex-wrap items-center justify-center gap-2 text-center", className)}>
-        <p className="text-xs text-destructive">{t("loadFailed")}</p>
+        <p className="text-xs text-destructive">{t(failed === "blocked" ? "capBlocked" : failed === "network" ? "capNetworkFailed" : "loadFailed")}</p>
         <Button
           type="button"
           size="sm"
           variant="outline"
           className="h-7 px-2 text-xs"
           onClick={() => {
-            setFailed(false)
+            setFailed(null)
             // Conditions may have changed since the origins were probed, so the
             // retry gets to pick a different mirror instead of repeating the
             // choice that just failed, and starts from the primary channel
             // again rather than settling for the backup.
             originProbes.clear()
-            setUsingFallback(false)
+            setBackup(null)
+            triedRef.current = [config.provider]
             setAttempt(value => value + 1)
           }}
         >

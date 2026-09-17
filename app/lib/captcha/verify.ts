@@ -3,7 +3,7 @@ import { verifyWithProvider } from "./siteverify"
 import {
   type CaptchaProviderId,
   type CaptchaScope,
-  captchaFallbackProvider,
+  captchaVerificationProviders,
   captchaProviderReady,
 } from "./providers"
 
@@ -39,11 +39,7 @@ export async function verifyCaptchaToken(
   // login page offers them. An unusable primary drops out of the list instead of
   // taking the backup down with it: the page is handed both and switches on its
   // own, so the backup's token is the only one that can arrive.
-  const fallback = captchaFallbackProvider(config)
-  const channels: CaptchaProviderId[] = [
-    ...(primaryReady ? [config.provider] : []),
-    ...(fallback ? [fallback] : []),
-  ]
+  const channels: CaptchaProviderId[] = captchaVerificationProviders(config)
   if (!channels.length) {
     return { success: false, reason: "verification-failed" }
   }

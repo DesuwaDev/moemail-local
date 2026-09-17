@@ -190,7 +190,7 @@ mail.example.com {
 Worker 必须使用首次向导生成的同一个 `email.ingestSecret`。建议先部署直连模式；可以在安装了 Git、Node.js 24 和 Corepack 的电脑上完成，不必在 MoeMail 服务器上执行。只下载 Compose 的部署目录不含 Worker 源码，以下命令会取得完整的对应版本源码：
 
 ```bash
-git clone --branch v0.21.3 --depth 1 https://github.com/DesuwaDev/moemail-local.git
+git clone --branch v0.21.4 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile
@@ -364,6 +364,10 @@ docker compose --profile offsite up -d offsite-backup
 - 主题、组件尺寸、登录/注册保护范围及备用渠道沿用现有设置。挑战难度在 Cap 服务端设置。
 - 在 Cap 的 CORS 设置中允许本站来源。HTTPS 页面应使用 HTTPS 公开地址；服务地址支持自定义端口和路径前缀，不接受 URL 中的账号密码、查询参数或片段。
 
+**Cap 失败处理**（默认折叠）：访问被拒绝和原因不明的网络错误可分别选择「直接失败，不回退」「沿用通用备用」或指定验证码，并在下方配置所选渠道的密钥。两项默认直接失败，已有配置未设置这两项时也采用此默认值。HTTP 401/403/429/451 或明确的屏蔽响应使用拒绝策略；CORS、断连、超时使用原因不明策略，因为浏览器可能看不到地区屏蔽的状态码。脚本加载失败、5xx 等明确故障仍使用通用备用。不会再次尝试已经失败的渠道，指定渠道不可用时直接失败。
+
+这控制的是浏览器验证码切换，不是网站级地区访问控制。只要配置了备用渠道，后端就允许校验该渠道的有效令牌；严格的地区封禁应同时在应用或入口网关执行，并让 Cap 的拒绝响应带上允许本站读取的 CORS 响应头。
+
 **高级参数**（在 Cap 表单中默认折叠，每一项都有可用默认值；只有 Cap 这一自建渠道提供）：
 
 - **计算线程**（默认 `2`）：解题使用的线程数。选「自动」会用满浏览器报告的核心数，桌面端最快，手机最烫。
@@ -376,7 +380,7 @@ docker compose --profile offsite up -d offsite-backup
 ## 开发与验证
 
 ```bash
-git clone --branch v0.21.3 --depth 1 https://github.com/DesuwaDev/moemail-local.git
+git clone --branch v0.21.4 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile

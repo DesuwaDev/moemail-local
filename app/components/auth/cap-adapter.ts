@@ -1,23 +1,19 @@
 import type { CapWidget, CapSolveEvent, CapErrorEvent } from "cap-widget"
-import { capEndpoint, validCapLinkUrl, type CaptchaChannelConfig } from "@/lib/captcha/providers"
+import { capEndpoint, validCapLinkUrl, type CaptchaChannelConfig, type CapFailureKind } from "@/lib/captcha/providers"
+import { fetchCap } from "@/lib/captcha/cap-transport"
 
-export function prepareCapAssets(timeoutMs: number) {
+const transports = new Map<string, Set<{ timeout: number; failed: (kind: CapFailureKind) => void }>>()
+
+export function prepareCapAssets() {
   window.CAP_CUSTOM_WASM_URL = "/vendor/cap/cap-0.0.7.wasm"
   window.CAP_PAKO_URL = "/vendor/cap/pako-inflate-2.2.0.min.js"
-  // An unreachable challenge/redeem endpoint must reach the fallback UI.
   window.CAP_CUSTOM_FETCH = async (input, init) => {
-    const controller = new AbortController()
-    const abort = () => controller.abort()
-    const signal = init?.signal
-    if (signal?.aborted) abort()
-    else signal?.addEventListener("abort", abort, { once: true })
-    const timer = window.setTimeout(abort, timeoutMs)
-    try {
-      return await fetch(input, { ...init, signal: controller.signal })
-    } finally {
-      window.clearTimeout(timer)
-      signal?.removeEventListener("abort", abort)
-    }
+    const url = input instanceof Request ? input.url : String(input)
+    const listeners = [...(transports.get(url) ?? [])]
+    if (!listeners.length) return fetch(input, init)
+    return fetchCap(input, init, Math.min(...listeners.map(item => item.timeout)), kind => {
+      for (const item of listeners) if (transports.get(url)?.has(item)) item.failed(kind)
+    })
   }
 }
 
@@ -27,10 +23,10 @@ export function mountCap(
   locale: string,
   labels: Record<string, string>,
   onToken: (token: string) => void,
-  onUnavailable: () => void,
+  onUnavailable: (kind: CapFailureKind) => void,
 ) {
   const endpoint = capEndpoint(channel.serverUrl, channel.siteKey)
-  if (!endpoint) { onUnavailable(); return null }
+  if (!endpoint) { onUnavailable("unavailable"); return null }
   const widget = document.createElement("cap-widget") as CapWidget
   widget.className = "moemail-cap"
   widget.dataset.theme = channel.theme
@@ -50,11 +46,28 @@ export function mountCap(
   for (const [key, label] of Object.entries(labels)) widget.setAttribute(`data-cap-i18n-${key}`, label)
   const solved = (event: CapSolveEvent) => onToken(event.detail.token)
   const cleared = () => onToken("")
+  // 0.1.57's click/keyboard handlers discard solve()'s promise. The error event
+  // already handles failure; consume this instance's rejection as well so a
+  // refused request does not become an unhandled page error.
+  const solve = widget.solve.bind(widget)
+  widget.solve = () => solve().catch(() => {
+    cleared()
+    return { success: false, token: "" }
+  })
   const failed = (event: CapErrorEvent) => {
     cleared()
     // A rejected solution or blocked instrumentation is not an outage.
-    if (["network_error", "missing_endpoint", "challenge_parse_error", "challenge_unsupported",
-      "wasm_load_failed", "worker_spawn_failed"].includes(event.detail.code)) onUnavailable()
+    // A 200 HTML block page is indistinguishable from a broken JSON response.
+    if (["network_error", "challenge_parse_error"].includes(event.detail.code)) onUnavailable("network")
+    else if (["missing_endpoint", "challenge_unsupported",
+      "wasm_load_failed", "worker_spawn_failed"].includes(event.detail.code)) onUnavailable("unavailable")
+  }
+  const transport = { timeout: Number(channel.timeout) * 1000, failed: onUnavailable }
+  const urls = ["challenge", "redeem"].map(path => `${endpoint}${path}`)
+  for (const url of urls) {
+    const listeners = transports.get(url) ?? new Set()
+    listeners.add(transport)
+    transports.set(url, listeners)
   }
   widget.addEventListener("solve", solved)
   widget.addEventListener("reset", cleared)
@@ -63,6 +76,11 @@ export function mountCap(
   return {
     reset: () => widget.reset(),
     dispose: () => {
+      for (const url of urls) {
+        const listeners = transports.get(url)
+        listeners?.delete(transport)
+        if (!listeners?.size) transports.delete(url)
+      }
       widget.removeEventListener("solve", solved)
       widget.removeEventListener("reset", cleared)
       widget.removeEventListener("error", failed)

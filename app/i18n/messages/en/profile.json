@@ -177,6 +177,14 @@
     "captcha": {
       "title": "Human verification",
       "description": "Choose the provider that protects sign-in and registration, then paste the keys issued by its console.",
+      "capFailure": {
+        "title": "Cap failure handling",
+        "blocked": "Access denied",
+        "network": "Network error / cause unknown",
+        "none": "Stop verification",
+        "default": "Use general fallback",
+        "hint": "403/451, rate limits and explicit refusals use the access-denied policy. CORS, timeouts and connection failures use the unknown-cause policy; choose Stop if blocked responses hide their status. Scripts and server outages use the general fallback. These control browser switching; enforce country restrictions on the application or gateway as well."
+      },
       "off": "Not enabled",
       "offHint": "Sign-in and registration currently accept submissions without human verification.",
       "status": {

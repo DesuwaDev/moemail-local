@@ -111,6 +111,12 @@ export async function POST(request: Request) {
         return apiError("CAPTCHA_LINK_URL_INVALID", 400)
       }
       if (!captchaProviderReady(cap, "cap")) return apiError("CAPTCHA_KEYS_REQUIRED", 400)
+      for (const policy of [captchaConfig.capBlockedFallback, captchaConfig.capNetworkFallback]) {
+        if (policy !== "none" && policy !== "default"
+          && !captchaProviderReady(captchaConfig.providers[policy], policy)) {
+          return apiError("CAPTCHA_KEYS_REQUIRED", 400)
+        }
+      }
     }
     if (!captchaProviderReady(captchaConfig.providers[captchaConfig.provider], captchaConfig.provider)) {
       return apiError("CAPTCHA_KEYS_REQUIRED", 400)

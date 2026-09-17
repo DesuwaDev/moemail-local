@@ -365,9 +365,8 @@ assert.match(captchaRegistrySource, /const CAPTCHA_FALLBACK_OFF = "none"/u)
 assert.match(captchaRegistrySource, /fallback === provider \? CAPTCHA_FALLBACK_OFF : fallback/u)
 assert.match(captchaRegistrySource, /export function captchaFallbackProvider/u)
 assert.match(captchaRegistrySource, /captchaProviderReady\(config\.providers\[config\.fallback\], config\.fallback\)/u)
-assert.match(captchaWidgetSource, /const canFallBack = !usingFallback && config\.fallback !== null/u)
-assert.match(captchaWidgetSource, /const giveUp = \(\) => \{/u)
-assert.match(captchaWidgetSource, /setUsingFallback\(false\)/u)
+// Failure routing and cycle prevention are exercised in captcha-cap.ts.
+assert.match(captchaWidgetSource, /setBackup\(null\)/u)
 assert.match(captchaWidgetSource, /t\("fallbackNotice"\)/u)
 // Both channels are operator-configured, so the browser's claim about which one
 // minted the token only orders the attempts; it can never widen what is
@@ -378,7 +377,7 @@ assert.match(captchaVerifySource, /const channel = channels\.find\(id => id === 
 // An unusable primary must not take its backup down with it: the login page is
 // handed both and switches on its own, so with a self-hosted primary that fails
 // closed the backup's token is the only one that can arrive.
-assert.match(captchaVerifySource, /\.\.\.\(primaryReady \? \[config\.provider\] : \[\]\)/u)
+assert.match(captchaVerifySource, /captchaVerificationProviders\(config\)/u)
 assert.match(captchaVerifySource, /if \(!primaryReady && config\.provider !== "cap"\)/u)
 assert.match(websiteConfigSource, /CAPTCHA_PROVIDER_IDS\.filter\(id => id !== provider\)/u)
 assert.match(websiteConfigSource, /captchaProviderReady\(settings\)/u)
@@ -419,8 +418,7 @@ assert.match(capAdapterSource, /data-cap-worker-count/u)
 assert.match(capAdapterSource, /!channel\.haptics.+data-cap-disable-haptics/u)
 // Both ends wait on the same self-hosted server, so they read one budget.
 assert.match(captchaRegistrySource, /export function capTimeoutMs/u)
-assert.match(capAdapterSource, /export function prepareCapAssets\(timeoutMs: number\)/u)
-assert.match(captchaWidgetSource, /prepareCapAssets\(Number\(timeout\) \* 1000\)/u)
+assert.match(capAdapterSource, /timeout: Number\(channel\.timeout\) \* 1000/u)
 assert.match(captchaSiteverifySource, /provider === "cap" \? capTimeoutMs\(settings\) : VERIFY_TIMEOUT_MS/u)
 // A mistyped help link is refused where it can still be corrected, and dropped
 // rather than rendered if it ever reaches the widget — but it never decides
