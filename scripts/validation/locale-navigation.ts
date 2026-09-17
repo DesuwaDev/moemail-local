@@ -207,7 +207,7 @@ assert.match(emailListSource, /if \(!response\.ok\)[\s\S]*MAILBOXES_READ_FAILED[
 assert.match(messageListSource, /if \(!response\.ok\)[\s\S]*MESSAGES_READ_FAILED[\s\S]*Array\.isArray\(data\.messages\)/u)
 assert.match(messageListSource, /max-w-48 shrink-0 truncate rounded-full/u)
 assert.doesNotMatch(messageListSource, /basis-full flex flex-wrap gap-x-3/u)
-assert.match(htmlFrameSource, /if \(!frame \|\| frame\.html !== html \|\| frame\.dark !== dark\)/u)
+assert.match(htmlFrameSource, /if \(!frame \|\| frame\.html !== html \|\| frame\.dark !== dark \|\| frame\.images !== inlineImages\)/u)
 assert.match(htmlFrameSource, /srcDoc=\{frame\.source\}/u)
 assert.doesNotMatch(htmlFrameSource, /srcDoc=\{source\}/u)
 assert.match(messageViewSource, /relative min-h-0 flex-1 overflow-auto/u)
