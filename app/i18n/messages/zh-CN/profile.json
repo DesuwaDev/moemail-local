@@ -1,4 +1,5 @@
 {
+  "security": {"title":"登录安全","description":"怀疑账号在其他设备登录时，可以让所有设备重新登录。API Key 不受影响，可在密钥管理中单独停用。","revoke":"退出所有设备","confirm":"包含当前设备在内的所有登录会话都会失效。继续使用需要重新登录，邮箱和邮件不会被删除。","failed":"退出所有设备失败，请重试。"},
   "title": "个人中心",
   "card": {
     "title": "用户信息",
@@ -55,6 +56,20 @@
     "units": { "second": "秒", "minute": "分钟", "hour": "小时", "day": "天", "week": "周", "month": "30 天" }
   },
   "apiKey": {
+    "saveKey": "请立即复制并妥善保存，此密钥只显示一次。",
+    "policyHelp": "按用途选择权限和有效期，密钥权限不会超过账号本身。",
+    "accessLevel": "权限范围",
+    "levels": {"read":"只读邮件","mail":"邮件管理","full":"完整权限"},
+    "levelHelp": {"read":"查看邮箱、邮件和附件，不允许发送、删除或访问分享链接。","mail":"管理邮箱、收发邮件及分享链接，不允许管理系统配置。","full":"继承账号在 OpenAPI 中的全部权限，管理员密钥可能修改系统配置。"},
+    "validFor": "有效期",
+    "days": "{days} 天",
+    "mailbox": "限定邮箱（可选）",
+    "mailboxPlaceholder": "留空表示所有自己的邮箱",
+    "mailboxHelp": "填写自己已有邮箱的完整地址。限定后不能创建新邮箱或管理系统配置，邮箱删除后不会扩大权限。",
+    "mailboxRemoved": "原邮箱已删除",
+    "allMailboxes": "所有自己的邮箱",
+    "expiresAt": "到期时间：{date}",
+    "toggleKey": "启用或停用 {name}",
     "title": "API Key 管理",
     "description": "创建和管理用于访问 OpenAPI 的 API 密钥",
     "create": "创建 API Key",

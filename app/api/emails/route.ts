@@ -27,6 +27,7 @@ export async function GET(request: Request) {
   try {
     const baseConditions = and(
       eq(emails.userId, userId),
+      authorization.principal.mailboxId ? eq(emails.id, authorization.principal.mailboxId) : undefined,
       gt(emails.expiresAt, new Date())
     )
 

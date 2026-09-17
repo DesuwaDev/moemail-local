@@ -3,8 +3,9 @@ import { createDb } from "./db"
 import { apiKeys, roles, userRoles, users } from "./schema"
 import { ROLES, type Role } from "./permissions"
 import { digestApiKey } from "./api-key-digest"
+import type { ApiKeyPolicy } from "./api-key-policy"
 
-export interface ApiKeyPrincipal {
+export interface ApiKeyPrincipal extends ApiKeyPolicy {
   userId: string
   roles: Role[]
 }
@@ -15,6 +16,8 @@ export async function getApiKeyPrincipal(key: string): Promise<ApiKeyPrincipal |
   const rows = await createDb()
     .select({
       userId: apiKeys.userId,
+      accessLevel: apiKeys.accessLevel,
+      mailboxId: apiKeys.mailboxId,
       roleName: roles.name,
     })
     .from(apiKeys)
@@ -31,6 +34,8 @@ export async function getApiKeyPrincipal(key: string): Promise<ApiKeyPrincipal |
 
   return {
     userId: rows[0].userId,
+    accessLevel: rows[0].accessLevel,
+    mailboxId: rows[0].mailboxId,
     roles: rows.flatMap(({ roleName }) => (
       roleName && validRoles.has(roleName as Role) ? [roleName as Role] : []
     )),

@@ -51,6 +51,7 @@ const TABLES: readonly TableSpec[] = [
     columns: [
       column("id"), column("name"), column("email"), column("emailVerified", "date"),
       column("image"), column("username"), column("password"),
+      column("session_version"),
     ],
     primaryKey: ["id"],
   },
@@ -78,6 +79,7 @@ const TABLES: readonly TableSpec[] = [
       column("id"), column("user_id"), column("name"), column("key"),
       column("created_at", "date"), column("expires_at", "date"),
       column("enabled", "boolean"),
+      column("access_level"), column("mailbox_id"),
     ],
     primaryKey: ["id"],
   },
@@ -184,6 +186,9 @@ function listSourceColumns(sqlite: Database.Database, table: string) {
 
 function sourceExpression(table: string, columnName: string, sourceColumns: Set<string>) {
   if (sourceColumns.has(columnName)) return quoteIdentifier(columnName)
+  if (table === "user" && columnName === "session_version") return "0"
+  if (table === "api_keys" && columnName === "access_level") return "'full'"
+  if (table === "api_keys" && columnName === "mailbox_id") return "NULL"
   if (table === "message" && columnName === "to_address") return "NULL"
   if (table === "message" && columnName === "type") return "'received'"
   if (table === "message" && columnName === "sent_at") return quoteIdentifier("received_at")
@@ -212,7 +217,7 @@ function inspectSource(sqlite: Database.Database) {
     const sourceColumns = listSourceColumns(sqlite, table.name)
     const compatibleMissing = table.name === "message"
       ? new Set(["to_address", "type", "sent_at"])
-      : new Set<string>()
+      : new Set(table.name === "user" ? ["session_version"] : table.name === "api_keys" ? ["access_level", "mailbox_id"] : [])
     const missingColumns = table.columns
       .map(item => item.name)
       .filter(name => !sourceColumns.has(name) && !compatibleMissing.has(name))

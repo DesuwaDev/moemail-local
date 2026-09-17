@@ -26,6 +26,7 @@ export const users = pgTable("user", {
   image: text("image"),
   username: text("username").unique(),
   password: text("password"),
+  sessionVersion: integer("session_version").notNull().default(0),
   bannedAt: dateColumn("banned_at"),
 }, (table) => [
   index("user_banned_at_idx").on(table.bannedAt),
@@ -175,6 +176,9 @@ export const apiKeys = pgTable("api_keys", {
   name: text("name").notNull(),
   // Versioned SHA-256 lookup digest; never the issued bearer credential.
   key: text("key").notNull().unique(),
+  accessLevel: text("access_level").notNull().default("full"),
+  // No SET NULL foreign key: deleting a mailbox must never broaden this key.
+  mailboxId: text("mailbox_id"),
   createdAt: dateColumn("created_at").$defaultFn(() => new Date()),
   expiresAt: dateColumn("expires_at"),
   enabled: boolean("enabled").notNull().default(true),

@@ -55,6 +55,8 @@ source.prepare("INSERT INTO api_keys (id, user_id, name, key, expires_at) VALUES
   .run("raw", "raw", "mk_import-legacy", Math.floor(Date.now() / 1000) + 3600)
 source.prepare("INSERT INTO api_keys (id, user_id, name, key, expires_at) VALUES (?, 'import-user', ?, ?, ?)")
   .run("digest", "digest", hashed, Math.floor(Date.now() / 1000) + 3600)
+source.prepare("UPDATE user SET session_version = 4 WHERE id = 'import-user'").run()
+source.prepare("UPDATE api_keys SET access_level = 'read', mailbox_id = 'deleted-mailbox' WHERE id = 'digest'").run()
 source.close()
 // Runtime migration folders are resolved from the disposable command cwd.
 for (const folder of ["drizzle-local", "drizzle-postgres"]) cpSync(resolve(folder), join(importWorkspace, folder), { recursive: true })
@@ -72,10 +74,24 @@ const importedSqlite = new Database(join(importWorkspace, "data/import.db"), { r
 try {
   assert.equal((importedSqlite.prepare("SELECT key FROM api_keys WHERE id = 'raw'").get() as { key: string }).key, digestApiKey("mk_import-legacy"))
   assert.equal((importedSqlite.prepare("SELECT key FROM api_keys WHERE id = 'digest'").get() as { key: string }).key, hashed)
+  assert.deepEqual(importedSqlite.prepare("SELECT access_level, mailbox_id FROM api_keys WHERE id = 'digest'").get(), { access_level: "read", mailbox_id: "deleted-mailbox" })
+  assert.equal((importedSqlite.prepare("SELECT session_version FROM user WHERE id = 'import-user'").get() as { session_version: number }).session_version, 4)
 } finally {
   importedSqlite.close()
 }
 console.log("api-key.sqlite: D1 import stores digests and preserves existing digests")
+
+const legacySourcePath = join(importWorkspace, "legacy-source.db")
+cpSync(sourcePath, legacySourcePath)
+const legacySource = new Database(legacySourcePath)
+legacySource.exec("ALTER TABLE user DROP COLUMN session_version; ALTER TABLE api_keys DROP COLUMN access_level; ALTER TABLE api_keys DROP COLUMN mailbox_id;")
+legacySource.close()
+execFileSync(process.execPath, [tsxCli, resolve("scripts/sqlite/import-d1.ts"), legacySourcePath, "--force"], { cwd: importWorkspace, stdio: "pipe", windowsHide: true })
+const legacyImported = new Database(join(importWorkspace, "data/import.db"), { readonly: true })
+try {
+  assert.deepEqual(legacyImported.prepare("SELECT access_level, mailbox_id FROM api_keys WHERE id = 'digest'").get(), { access_level: "full", mailbox_id: null })
+  assert.equal((legacyImported.prepare("SELECT session_version FROM user WHERE id = 'import-user'").get() as { session_version: number }).session_version, 0)
+} finally { legacyImported.close() }
 
 if (process.argv.includes("--postgres")) {
   const cluster = mkdtempSync(join(artifactRoot, "run-postgres-"))
@@ -126,6 +142,10 @@ if (process.argv.includes("--postgres")) {
       const imported = new Map((await importedPool.query<{ id: string; key: string }>("SELECT id, key FROM api_keys")).rows.map(row => [row.id, row.key]))
       assert.equal(imported.get("raw"), digestApiKey("mk_import-legacy"))
       assert.equal(imported.get("digest"), hashed)
+      assert.deepEqual((await importedPool.query("SELECT access_level, mailbox_id FROM api_keys WHERE id = 'digest'")).rows[0], { access_level: "read", mailbox_id: "deleted-mailbox" })
+      assert.equal((await importedPool.query('SELECT session_version FROM "user" WHERE id = $1', ["import-user"])).rows[0].session_version, 4)
+      execFileSync(process.execPath, [tsxCli, resolve("scripts/postgres/import-d1.ts"), legacySourcePath, "--force"], { cwd: importWorkspace, stdio: "pipe", windowsHide: true })
+      assert.deepEqual((await importedPool.query("SELECT access_level, mailbox_id FROM api_keys WHERE id = 'digest'")).rows[0], { access_level: "full", mailbox_id: null })
     } finally {
       await importedPool.end()
     }

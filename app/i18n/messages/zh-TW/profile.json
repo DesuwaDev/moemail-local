@@ -1,4 +1,5 @@
 {
+  "security": {"title":"登入安全","description":"懷疑帳號在其他裝置登入時，可以讓所有裝置重新登入。API Key 不受影響，可在金鑰管理中個別停用。","revoke":"登出所有裝置","confirm":"包含目前裝置在內的所有登入工作階段都會失效。繼續使用需要重新登入，信箱和郵件不會被刪除。","failed":"登出所有裝置失敗，請重試。"},
   "title": "個人中心",
   "card": {
     "title": "使用者資訊",
@@ -55,6 +56,20 @@
     "units": { "second": "秒", "minute": "分鐘", "hour": "小時", "day": "天", "week": "週", "month": "30 天" }
   },
   "apiKey": {
+    "saveKey": "請立即複製並妥善保存，此金鑰只顯示一次。",
+    "policyHelp": "依用途選擇權限和有效期限，金鑰權限不會超過帳號本身。",
+    "accessLevel": "權限範圍",
+    "levels": {"read":"唯讀郵件","mail":"郵件管理","full":"完整權限"},
+    "levelHelp": {"read":"查看信箱、郵件和附件，不允許寄送、刪除或存取分享連結。","mail":"管理信箱、收發郵件及分享連結，不允許管理系統設定。","full":"繼承帳號在 OpenAPI 中的全部權限，管理員金鑰可能修改系統設定。"},
+    "validFor": "有效期限",
+    "days": "{days} 天",
+    "mailbox": "限定信箱（選填）",
+    "mailboxPlaceholder": "留空表示自己的所有信箱",
+    "mailboxHelp": "填寫自己現有信箱的完整地址。限定後不能建立新信箱或管理系統設定，信箱刪除後不會擴大權限。",
+    "mailboxRemoved": "原信箱已刪除",
+    "allMailboxes": "自己的所有信箱",
+    "expiresAt": "到期時間：{date}",
+    "toggleKey": "啟用或停用 {name}",
     "title": "API Key 管理",
     "description": "建立與管理用於存取 OpenAPI 的 API 金鑰",
     "create": "建立 API Key",

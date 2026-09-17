@@ -22,6 +22,7 @@ import { CONFIG_KEYS, getConfigValue } from "./config-store"
 import { AuthWorkloadOverloadedError } from "./auth-abuse-guard"
 import { getConfig } from "./config/runtime"
 import { verifyRegistrationLoginTicket } from "./registration-login-ticket"
+import { validateSessionToken } from "./session-security"
 
 class AuthenticationTemporarilyUnavailableError extends CredentialsSignin {
   code = "temporarily_unavailable"
@@ -349,7 +350,7 @@ export const {
         token.username = user.username
         token.image = user.image || generateAvatarUrl(token.name as string)
       }
-      return token
+      return validateSessionToken(token, Boolean(user))
     },
     async session({ session, token }) {
       if (token && session.user) {
@@ -359,12 +360,9 @@ export const {
         session.user.image = token.image as string
 
         const db = createDb()
-        const targetUser = await db.query.users.findFirst({
-          where: eq(users.id, session.user.id),
-          columns: { bannedAt: true },
-        })
-        session.user.bannedAt = targetUser?.bannedAt ?? null
-        if (targetUser?.bannedAt) return session
+        // JWT validation already loaded the current user status and revocation version.
+        session.user.bannedAt = typeof token.bannedAt === "string" ? new Date(token.bannedAt) : null
+        if (session.user.bannedAt) return session
 
         let userRoleRecords = await db.query.userRoles.findMany({
           where: eq(userRoles.userId, session.user.id),

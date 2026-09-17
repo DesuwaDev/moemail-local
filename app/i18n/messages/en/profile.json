@@ -1,4 +1,5 @@
 {
+  "security": {"title":"Sign-in security","description":"If you suspect access from another device, require all devices to sign in again. API keys remain active and can be disabled separately in key management.","revoke":"Sign out all devices","confirm":"All sessions, including this device, will be invalidated. You will need to sign in again. Your mailboxes and messages will be kept.","failed":"Could not sign out all devices. Please try again."},
   "title": "Profile",
   "card": {
     "title": "User Information",
@@ -55,6 +56,20 @@
     "units": { "second": "second(s)", "minute": "minute(s)", "hour": "hour(s)", "day": "day(s)", "week": "week(s)", "month": "30-day month(s)" }
   },
   "apiKey": {
+    "saveKey": "Copy and store this key now. It will only be shown once.",
+    "policyHelp": "Choose the permissions and lifetime needed. A key cannot exceed your account permissions.",
+    "accessLevel": "Access",
+    "levels": {"read":"Read-only mail","mail":"Mail management","full":"Full access"},
+    "levelHelp": {"read":"Read mailboxes, messages and attachments. Sending, deleting and accessing share links are not allowed.","mail":"Manage mailboxes, send and read messages, and manage share links. System configuration is excluded.","full":"Inherits all account permissions available through OpenAPI. Admin keys may modify system configuration."},
+    "validFor": "Valid for",
+    "days": "{days} days",
+    "mailbox": "Limit to mailbox (optional)",
+    "mailboxPlaceholder": "Leave empty for all your mailboxes",
+    "mailboxHelp": "Enter the full address of an existing mailbox you own. Restricted keys cannot create mailboxes or manage system configuration. Deleting the mailbox never expands access.",
+    "mailboxRemoved": "Original mailbox deleted",
+    "allMailboxes": "All your mailboxes",
+    "expiresAt": "Expires: {date}",
+    "toggleKey": "Enable or disable {name}",
     "title": "API Key Management",
     "description": "Create and manage API keys for accessing OpenAPI",
     "create": "Create API Key",

@@ -10,6 +10,7 @@ export const users = sqliteTable("user", {
   image: text("image"),
   username: text("username").unique(),
   password: text("password"),
+  sessionVersion: integer("session_version").notNull().default(0),
   bannedAt: integer("banned_at", { mode: "timestamp_ms" }),
 }, (table) => [
   index("user_banned_at_idx").on(table.bannedAt),
@@ -171,6 +172,9 @@ export const apiKeys = sqliteTable("api_keys", {
   name: text("name").notNull(),
   // Versioned SHA-256 lookup digest; never the issued bearer credential.
   key: text("key").notNull().unique(),
+  accessLevel: text("access_level").notNull().default("full"),
+  // No SET NULL foreign key: deleting a mailbox must never broaden this key.
+  mailboxId: text("mailbox_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   expiresAt: integer("expires_at", { mode: "timestamp" }),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),

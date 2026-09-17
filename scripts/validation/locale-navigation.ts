@@ -101,7 +101,7 @@ assert.match(currentOriginSignOutSource, /new URL\("\/", window\.location\.origi
 assert.match(currentOriginSignOutSource, /window\.location\.replace\(new URL\("\/", window\.location\.origin\)\.href\)/u)
 assert.doesNotMatch(`${signButtonSource}\n${profileSource}`, /callbackUrl/u)
 assert.match(authSource, /class UserBannedCredentialsError extends CredentialsSignin/u)
-assert.match(authSource, /session\.user\.bannedAt = targetUser\?\.bannedAt \?\? null/u)
+assert.match(authSource, /session\.user\.bannedAt = typeof token\.bannedAt === "string" \? new Date\(token\.bannedAt\) : null/u)
 // The ban notice now travels through the shared API catalog together with the
 // captcha codes, so the login toast maps whatever code the provider returned.
 assert.match(authSource, /class CaptchaRequiredError extends CredentialsSignin/u)

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { ROLES, type Permission, type Role } from "./permissions"
+import { PERMISSIONS, ROLES, type Permission, type Role } from "./permissions"
 import { isSetupCompleted } from "./config/runtime"
 import {
   getEffectiveAccessPolicy,
@@ -7,12 +7,15 @@ import {
 } from "./access-policies"
 import { apiError } from "./api-response"
 import { isSameOriginMutation } from "./request-origin"
+import { apiKeyAllowsRequest } from "./api-key-policy"
 
 export interface RequestPrincipal {
   userId: string
   roles: Role[]
   kind: "session" | "apiKey"
   access: EffectiveAccessPolicy
+  mailboxId?: string | null
+  apiKeyAccessLevel?: string
 }
 
 export type AuthorizationResult =
@@ -78,8 +81,13 @@ export async function authorizeRequest(
       }
     }
 
+    if (!apiKeyAllowsRequest(apiKeyPrincipal, request)) {
+      return { ok: false, response: apiError("API_KEY_ROUTE_FORBIDDEN", 403) }
+    }
+
     unresolvedPrincipal = {
       ...apiKeyPrincipal,
+      apiKeyAccessLevel: apiKeyPrincipal.accessLevel,
       kind: "apiKey",
     }
   } else {
@@ -125,6 +133,20 @@ export async function authorizeRequest(
   const principal: RequestPrincipal = {
     ...unresolvedPrincipal,
     access: await getEffectiveAccessPolicy(unresolvedPrincipal.userId, unresolvedPrincipal.roles),
+  }
+
+  if (principal.kind === "apiKey" && (principal.apiKeyAccessLevel !== "full" || principal.mailboxId)) {
+    const allowed = new Set<Permission>([PERMISSIONS.VIEW_EMAIL, PERMISSIONS.RECEIVE_EMAIL])
+    if (principal.apiKeyAccessLevel !== "read") {
+      if (!principal.mailboxId) allowed.add(PERMISSIONS.CREATE_EMAIL)
+      for (const permission of [PERMISSIONS.DELETE_EMAIL, PERMISSIONS.SEND_EMAIL,
+        PERMISSIONS.SHARE_EMAIL, PERMISSIONS.PRIVATE_RECIPIENT_DELIVERY]) allowed.add(permission)
+    }
+    principal.access = {
+      ...principal.access,
+      permissions: Object.fromEntries(Object.entries(principal.access.permissions).map(([permission, enabled]) =>
+        [permission, enabled && allowed.has(permission as Permission)])) as EffectiveAccessPolicy["permissions"],
+    }
   }
 
   if (options.permission && !principal.access.permissions[options.permission]) {

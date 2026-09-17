@@ -20,6 +20,7 @@ import { RuntimeConfigPanel } from "./runtime-config-panel"
 import { MyQuotaPanel } from "./my-quota-panel"
 import { WebsiteConfigPanel } from "./website-config-panel"
 import { WebhookConfig } from "./webhook-config"
+import { SessionSecurityPanel } from "./session-security-panel"
 
 interface ProfileCardProps { user: User }
 
@@ -162,6 +163,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
             </div>
           </div>
           <MyQuotaPanel />
+          <SessionSecurityPanel />
           </div>
         </TabsContent>}
         {(canManageConfig || canManageMailu) && visitedTabs.has("domains") && <TabsContent value="domains" forceMount className={persistentTabClass}><DomainPolicyPanel canManageConfig={canManageConfig} canManageMailu={canManageMailu} /></TabsContent>}

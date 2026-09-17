@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useId, useState } from "react"
 import { useFormatter, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,17 +24,22 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { useConfig } from "@/hooks/use-config"
 import { readApiErrorCode } from "@/lib/api-error-client"
 import { LocalizedUiError, localizedUiErrorMessage } from "@/lib/localized-ui-error"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { apiKeyLevels, type ApiKeyLevel } from "@/lib/api-key-policy"
 
 type ApiKey = {
   id: string
   name: string
-  key: string
-  createdAt: string
+  accessLevel: ApiKeyLevel
+  mailboxId: string | null
+  mailboxAddress: string | null
+  createdAt: string | null
   expiresAt: string | null
   enabled: boolean
 }
 
 export function ApiKeyPanel() {
+  const fieldId = useId()
   const format = useFormatter()
   const t = useTranslations("profile.apiKey")
   const tCommon = useTranslations("common.actions")
@@ -46,6 +51,9 @@ export function ApiKeyPanel() {
   const [loading, setLoading] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
+  const [accessLevel, setAccessLevel] = useState<ApiKeyLevel>("read")
+  const [mailboxAddress, setMailboxAddress] = useState("")
+  const [expiresInDays, setExpiresInDays] = useState("30")
   const [newKey, setNewKey] = useState<string | null>(null)
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
@@ -88,7 +96,7 @@ export function ApiKeyPanel() {
       const res = await fetch("/api/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newKeyName })
+        body: JSON.stringify({ name: newKeyName, accessLevel, mailboxAddress, expiresInDays: Number(expiresInDays) })
       })
 
       if (!res.ok) throw new LocalizedUiError(tApi(await readApiErrorCode(res, "API_KEY_CREATE_FAILED") as never))
@@ -103,7 +111,6 @@ export function ApiKeyPanel() {
         description: localizedUiErrorMessage(error, t("createFailed")),
         variant: "destructive"
       })
-      setCreateDialogOpen(false)
     } finally {
       setLoading(false)
     }
@@ -112,6 +119,9 @@ export function ApiKeyPanel() {
   const handleDialogClose = () => {
     setCreateDialogOpen(false)
     setNewKeyName("")
+    setAccessLevel("read")
+    setMailboxAddress("")
+    setExpiresInDays("30")
     setNewKey(null)
   }
 
@@ -164,42 +174,71 @@ export function ApiKeyPanel() {
   }
 
   return (
-    <div className="bg-background rounded-lg border-2 border-primary/20 p-6 space-y-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-w-0 bg-background rounded-lg border-2 border-primary/20 p-4 sm:p-6 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Key className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">{t("title")}</h2>
         </div>
         {
           canManageApiKey && (
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <Dialog open={createDialogOpen} onOpenChange={(open) => {
+              if (loading) return
+              if (open) setCreateDialogOpen(true)
+              else handleDialogClose()
+            }}>
               <DialogTrigger asChild>
                 <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
                   <Plus className="w-4 h-4" />
                   {t("create")}
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-lg p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle>
                     {newKey ? t("createSuccess") : t("create")}
                   </DialogTitle>
-                  {newKey && (
-                    <DialogDescription className="text-destructive">
-                      {t("description")}
-                    </DialogDescription>
-                  )}
+                  <DialogDescription className={newKey ? "text-destructive" : undefined}>
+                    {newKey ? t("saveKey") : t("policyHelp")}
+                  </DialogDescription>
                 </DialogHeader>
 
                 {!newKey ? (
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label>{t("name")}</Label>
+                      <Label htmlFor={`${fieldId}-name`}>{t("name")}</Label>
                       <Input
+                        id={`${fieldId}-name`}
+                        maxLength={100}
+                        disabled={loading}
                         value={newKeyName}
                         onChange={(e) => setNewKeyName(e.target.value)}
                         placeholder={t("namePlaceholder")}
                       />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="min-w-0 space-y-2">
+                        <Label htmlFor={`${fieldId}-level`}>{t("accessLevel")}</Label>
+                        <Select value={accessLevel} onValueChange={(value) => setAccessLevel(value as ApiKeyLevel)} disabled={loading}>
+                          <SelectTrigger id={`${fieldId}-level`}><SelectValue /></SelectTrigger>
+                          <SelectContent>{apiKeyLevels.map(level => <SelectItem key={level} value={level}>{t(`levels.${level}`)}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="min-w-0 space-y-2">
+                        <Label htmlFor={`${fieldId}-expiry`}>{t("validFor")}</Label>
+                        <Select value={expiresInDays} onValueChange={setExpiresInDays} disabled={loading}>
+                          <SelectTrigger id={`${fieldId}-expiry`}><SelectValue /></SelectTrigger>
+                          <SelectContent>{[7, 30, 90, 365].map(days => <SelectItem key={days} value={String(days)}>{t("days", { days })}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{t(`levelHelp.${accessLevel}`)}</p>
+                    <div className="space-y-2">
+                      <Label htmlFor={`${fieldId}-mailbox`}>{t("mailbox")}</Label>
+                      <Input id={`${fieldId}-mailbox`} value={mailboxAddress} onChange={event => setMailboxAddress(event.target.value)}
+                        disabled={loading} maxLength={320} autoCapitalize="none" spellCheck={false} inputMode="email"
+                        aria-describedby={`${fieldId}-mailbox-help`} placeholder={t("mailboxPlaceholder")} />
+                      <p id={`${fieldId}-mailbox-help`} className="text-sm text-muted-foreground">{t("mailboxHelp")}</p>
                     </div>
                   </div>
                 ) : (
@@ -210,11 +249,13 @@ export function ApiKeyPanel() {
                         <Input
                           value={newKey}
                           readOnly
-                          className="font-mono text-sm"
+                          className="min-w-0 font-mono text-sm"
                         />
                         <Button
                           variant="outline"
                           size="icon"
+                          className="shrink-0"
+                          aria-label={t("copy")}
                           onClick={() => copyToClipboard(newKey)}
                         >
                           <Copy className="w-4 h-4" />
@@ -224,7 +265,7 @@ export function ApiKeyPanel() {
                   </div>
                 )}
 
-                <DialogFooter>
+                <DialogFooter className="gap-2 sm:gap-0">
                   <DialogClose asChild>
                     <Button
                       variant="outline"
@@ -292,25 +333,29 @@ export function ApiKeyPanel() {
                 {apiKeys.map((key) => (
                   <div
                     key={key.id}
-                    className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-card"
                   >
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1 break-words [overflow-wrap:anywhere]">
                       <div className="font-medium">{key.name}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground">{t(`levels.${key.accessLevel}`)} · {key.mailboxId ? key.mailboxAddress || t("mailboxRemoved") : t("allMailboxes")}</div>
+                      {key.createdAt && <div className="text-sm text-muted-foreground">
                         {tFormat("labelValue", {
                           label: t("createdAt"),
                           value: format.dateTime(new Date(key.createdAt)),
                         })}
-                      </div>
+                      </div>}
+                      {key.expiresAt && <div className="text-sm text-muted-foreground">{t("expiresAt", { date: format.dateTime(new Date(key.expiresAt)) })}</div>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center justify-end gap-2">
                       <Switch
+                        aria-label={t("toggleKey", { name: key.name })}
                         checked={key.enabled}
                         onCheckedChange={(checked) => toggleApiKey(key.id, checked)}
                       />
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={t("delete")}
                         onClick={() => deleteApiKey(key.id)}
                       >
                         <Trash2 className="w-4 h-4" />

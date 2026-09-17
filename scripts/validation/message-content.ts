@@ -66,7 +66,7 @@ try {
   closeDatabase = database.closeDatabase
   const schema = await load('app/lib/schema.ts')
   const db = database.createDb()
-  const [owner] = await db.select().from(schema.users).where(eq(schema.users.username, 'content-owner'))
+  const [owner] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.username, 'content-owner'))
   const legacyHookId = crypto.randomUUID()
   if (postgresUrl) {
     await database.getPostgresPool().query('INSERT INTO webhook (id, user_id, url, enabled, created_at, updated_at) VALUES ($1, $2, $3, false, $4, $4)', [legacyHookId, owner.id, 'http://8.8.8.8/', new Date()])
