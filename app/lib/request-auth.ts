@@ -6,6 +6,7 @@ import {
   type EffectiveAccessPolicy,
 } from "./access-policies"
 import { apiError } from "./api-response"
+import { isSameOriginMutation } from "./request-origin"
 
 export interface RequestPrincipal {
   userId: string
@@ -91,6 +92,12 @@ export async function authorizeRequest(
       }
     }
 
+    // Auth.js protects its own authentication endpoints, not business APIs.
+    // SameSite cookies still accompany requests from sibling origins.
+    if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && !isSameOriginMutation(request)) {
+      return { ok: false, response: apiError("CROSS_ORIGIN_FORBIDDEN", 403) }
+    }
+
     unresolvedPrincipal = {
       userId: session.user.id,
       roles: normalizeRoles(session.user.roles?.map(role => role.name) ?? []),
@@ -125,6 +132,14 @@ export async function authorizeRequest(
       ok: false,
       response: apiError("PERMISSION_DENIED", 403),
     }
+  }
+
+  if (
+    principal.kind === "session"
+    && ["POST", "PUT", "PATCH"].includes(request.method)
+    && request.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase() !== "application/json"
+  ) {
+    return { ok: false, response: apiError("JSON_CONTENT_TYPE_REQUIRED", 415) }
   }
 
   return { ok: true, principal }

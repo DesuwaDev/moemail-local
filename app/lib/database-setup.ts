@@ -9,6 +9,7 @@ import type { ConfigIssue } from "./config/schema"
 import type { AppConfig } from "./config/schema"
 import { createPostgresPool, openSqliteConnection, resolveSqlitePath } from "./db"
 import { ROLES } from "./permissions"
+import { migratePostgresApiKeyDigests, migrateSqliteApiKeyDigests } from "./api-key-migration"
 
 /**
  * 初始化向导使用的数据库操作。这里全部显式指定 driver，
@@ -60,6 +61,7 @@ export async function runMigrations(config: AppConfig) {
       if (violations.length > 0) {
         throw new Error("SQLITE_FOREIGN_KEY_CHECK_FAILED")
       }
+      migrateSqliteApiKeyDigests(sqlite)
     } finally {
       sqlite.close()
     }
@@ -74,6 +76,7 @@ export async function runMigrations(config: AppConfig) {
       await migratePostgres(drizzlePostgres(client), {
         migrationsFolder: resolve(process.cwd(), POSTGRES_MIGRATIONS),
       })
+      await migratePostgresApiKeyDigests(client)
     } finally {
       await client.query("SELECT pg_advisory_unlock(hashtext('moemail:migrate'))")
     }

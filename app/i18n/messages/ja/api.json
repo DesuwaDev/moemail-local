@@ -66,6 +66,7 @@
   "INVALID_ROLE": "選択したロールが無効です。",
   "INVALID_SHARE_EXPIRY": "共有リンクの有効期間が無効です。",
   "JSON_CONTENT_TYPE_REQUIRED": "Content-Type に application/json を指定してください。",
+  "CROSS_ORIGIN_FORBIDDEN": "別のオリジンからの操作は許可されていません。",
   "LEGACY_EMAIL_SERVICE_REMOVED": "旧メールサービス API は廃止されました。",
   "MAIL_DOMAIN_FORBIDDEN": "このメールドメインは利用できません。",
   "MAIL_DOMAIN_RECEIVE_FORBIDDEN": "このドメインでは受信できません。",

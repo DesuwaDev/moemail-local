@@ -2,6 +2,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator"
 import { resolve } from "node:path"
 import { createDb, getDatabasePath, getSqlite } from "../../app/lib/db"
 import { requireValidatedRuntimeConfig } from "../ops/validated-runtime"
+import { migrateSqliteApiKeyDigests } from "../../app/lib/api-key-migration"
 
 await requireValidatedRuntimeConfig("SQLite migration")
 
@@ -13,6 +14,7 @@ try {
   migrate(createDb(), {
     migrationsFolder: resolve(process.cwd(), "drizzle-local"),
   })
+  migrateSqliteApiKeyDigests(sqlite)
 } finally {
   sqlite.pragma(`foreign_keys = ${foreignKeysEnabled ? "ON" : "OFF"}`)
 }

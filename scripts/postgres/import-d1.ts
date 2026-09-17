@@ -11,6 +11,7 @@ import {
 import { normalizeMailboxAddress } from "../../app/lib/email-address"
 import { verifyPostgres } from "./lib"
 import { requireValidatedRuntimeConfig } from "../ops/validated-runtime"
+import { storedApiKeyDigest } from "../../app/lib/api-key-digest"
 
 type ColumnKind = "boolean" | "date" | "value"
 type ColumnSpec = {
@@ -351,6 +352,9 @@ function normalizeValue(
   columnSpec: ColumnSpec,
   timestampStats: Record<string, TimestampStats>,
 ) {
+  if (table.name === "api_keys" && columnSpec.name === "key" && typeof value === "string") {
+    return storedApiKeyDigest(value)
+  }
   if (columnSpec.kind === "date") {
     return normalizeDate(
       value,

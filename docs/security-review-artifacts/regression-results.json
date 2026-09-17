@@ -1,0 +1,18 @@
+[
+  {
+    "check": "cross-origin-role-mutation",
+    "crossOriginStatus": 403,
+    "legitimatePromotion": "duke",
+    "unauthenticatedControl": 401,
+    "fixed": true
+  },
+  {
+    "check": "api-key-storage",
+    "databaseValueEqualsIssuedCredential": false,
+    "databaseValueReplayStatus": 401,
+    "fixed": true,
+    "coldStartMigration": true,
+    "originalCredentialWorks": true,
+    "disabledAndExpiredRejected": true
+  }
+]

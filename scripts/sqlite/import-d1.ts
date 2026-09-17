@@ -5,6 +5,7 @@ import { resolve } from "node:path"
 import { resolveDatabasePath } from "./lib"
 import { normalizeMailboxAddress } from "../../app/lib/email-address"
 import { requireValidatedRuntimeConfig } from "../ops/validated-runtime"
+import { storedApiKeyDigest } from "../../app/lib/api-key-digest"
 
 type TableSpec = {
   name: string
@@ -308,6 +309,9 @@ function validateSourceEmperor(sqlite: Database.Database) {
 }
 
 function sourceExpression(table: string, column: string, sourceColumns: Set<string>) {
+  if (table === "api_keys" && column === "key") {
+    return `moemail_api_key_digest(${quoteIdentifier(column)})`
+  }
   if (sourceColumns.has(column)) {
     return quoteIdentifier(column)
   }
@@ -403,6 +407,7 @@ function main() {
   const target = new Database(targetPath, { fileMustExist: true, timeout: 5_000 })
 
   try {
+    target.function("moemail_api_key_digest", { deterministic: true }, value => storedApiKeyDigest(String(value)))
     target.pragma("busy_timeout = 5000")
     target.pragma("foreign_keys = ON")
     validateTargetSchema(target)

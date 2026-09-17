@@ -66,6 +66,7 @@
   "INVALID_ROLE": "선택한 역할이 올바르지 않습니다.",
   "INVALID_SHARE_EXPIRY": "공유 링크 유효 기간이 올바르지 않습니다.",
   "JSON_CONTENT_TYPE_REQUIRED": "Content-Type을 application/json으로 지정하세요.",
+  "CROSS_ORIGIN_FORBIDDEN": "다른 출처에서의 요청은 허용되지 않습니다.",
   "LEGACY_EMAIL_SERVICE_REMOVED": "기존 메일 서비스 API는 더 이상 제공되지 않습니다.",
   "MAIL_DOMAIN_FORBIDDEN": "이 메일 도메인을 사용할 권한이 없습니다.",
   "MAIL_DOMAIN_RECEIVE_FORBIDDEN": "이 도메인에서는 메일을 받을 수 없습니다.",

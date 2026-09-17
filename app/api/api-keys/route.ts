@@ -6,6 +6,7 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { desc, eq } from "drizzle-orm"
 import { authorizeRequest } from "@/lib/request-auth"
 import { apiError } from "@/lib/api-response"
+import { digestApiKey } from "@/lib/api-key-digest"
 
 export const runtime = "nodejs"
 
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     
     await db.insert(apiKeys).values({
       name,
-      key,
+      key: digestApiKey(key),
       userId: authorization.principal.userId,
       expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
     })

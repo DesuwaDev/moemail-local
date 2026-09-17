@@ -66,6 +66,7 @@
   "INVALID_ROLE": "The selected role is invalid.",
   "INVALID_SHARE_EXPIRY": "The share-link expiry is invalid.",
   "JSON_CONTENT_TYPE_REQUIRED": "Use the application/json content type.",
+  "CROSS_ORIGIN_FORBIDDEN": "Requests from another origin are not allowed.",
   "LEGACY_EMAIL_SERVICE_REMOVED": "This legacy email-service endpoint is no longer available.",
   "MAIL_DOMAIN_FORBIDDEN": "You are not allowed to use this mail domain.",
   "MAIL_DOMAIN_RECEIVE_FORBIDDEN": "You are not allowed to receive mail on this domain.",

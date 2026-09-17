@@ -9,6 +9,7 @@ import * as localSchema from "../../app/lib/local-schema.postgres"
 import * as schema from "../../app/lib/schema.postgres"
 import { verifyPostgres } from "./lib"
 import { requireValidatedRuntimeConfig } from "../ops/validated-runtime"
+import { migratePostgresApiKeyDigests } from "../../app/lib/api-key-migration"
 
 await requireValidatedRuntimeConfig("PostgreSQL migration")
 
@@ -24,6 +25,7 @@ try {
   try {
     const db = drizzle(client, { schema: { ...schema, ...localSchema } })
     await migrate(db, { migrationsFolder: "drizzle-postgres" })
+    await migratePostgresApiKeyDigests(client)
     const verification = await verifyPostgres(client)
     console.log(JSON.stringify({
       event: "postgres.migrate.ok",

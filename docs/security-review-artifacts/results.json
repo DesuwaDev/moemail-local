@@ -1,0 +1,15 @@
+[
+  {
+    "finding": "cross-origin-role-mutation",
+    "status": 200,
+    "persistedRole": "duke",
+    "contentType": "text/plain",
+    "fetchSite": "same-site",
+    "unauthenticatedControl": 401
+  },
+  {
+    "finding": "plaintext-api-key",
+    "databaseValueEqualsIssuedCredential": true,
+    "replayStatus": 200
+  }
+]

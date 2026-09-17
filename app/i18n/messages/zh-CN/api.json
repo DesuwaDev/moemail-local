@@ -66,6 +66,7 @@
   "INVALID_ROLE": "所选角色无效。",
   "INVALID_SHARE_EXPIRY": "分享链接有效期无效。",
   "JSON_CONTENT_TYPE_REQUIRED": "请使用 application/json 内容类型。",
+  "CROSS_ORIGIN_FORBIDDEN": "不允许从其他来源发起此操作。",
   "LEGACY_EMAIL_SERVICE_REMOVED": "旧版邮件服务接口已停止提供。",
   "MAIL_DOMAIN_FORBIDDEN": "你无权使用该邮件域名。",
   "MAIL_DOMAIN_RECEIVE_FORBIDDEN": "你无权在该域名收件。",

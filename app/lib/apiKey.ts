@@ -2,6 +2,7 @@ import { and, eq, gt } from "drizzle-orm"
 import { createDb } from "./db"
 import { apiKeys, roles, userRoles, users } from "./schema"
 import { ROLES, type Role } from "./permissions"
+import { digestApiKey } from "./api-key-digest"
 
 export interface ApiKeyPrincipal {
   userId: string
@@ -21,7 +22,7 @@ export async function getApiKeyPrincipal(key: string): Promise<ApiKeyPrincipal |
     .leftJoin(userRoles, eq(apiKeys.userId, userRoles.userId))
     .leftJoin(roles, eq(userRoles.roleId, roles.id))
     .where(and(
-      eq(apiKeys.key, key),
+      eq(apiKeys.key, digestApiKey(key)),
       eq(apiKeys.enabled, true),
       gt(apiKeys.expiresAt, new Date())
     ))
