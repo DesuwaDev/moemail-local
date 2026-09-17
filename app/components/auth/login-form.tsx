@@ -148,6 +148,8 @@ export function LoginForm({ captcha }: LoginFormProps) {
         return
       }
 
+      // A full navigation clears cached anonymous server/session state.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = "/"
     } catch (error) {
       console.error("auth.login_request_failed", error)
@@ -207,6 +209,8 @@ export function LoginForm({ captcha }: LoginFormProps) {
         return
       }
 
+      // A full navigation clears cached anonymous server/session state.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = "/"
     } catch (error) {
       console.error("auth.registration_request_failed", error)

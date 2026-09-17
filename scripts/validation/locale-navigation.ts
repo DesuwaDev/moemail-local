@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { NextRequest } from "next/server"
-import { middleware } from "../../middleware"
+import { proxy } from "../../proxy"
 import { localizedHref } from "../../app/i18n/navigation"
 
 assert.equal(
@@ -13,7 +13,7 @@ assert.equal(localizedHref("/en", "", ""), "/")
 assert.equal(localizedHref("/shared/token", "cursor=abc", "message"), "/shared/token?cursor=abc#message")
 assert.equal(localizedHref("profile/", "?tab=domains", "#mail"), "/profile?tab=domains#mail")
 
-const cookieRewrite = middleware(new NextRequest("https://mail.example/profile?tab=runtime", {
+const cookieRewrite = proxy(new NextRequest("https://mail.example/profile?tab=runtime", {
   headers: { cookie: "NEXT_LOCALE=zh-CN" },
 }))
 assert.equal(cookieRewrite.status, 200)
@@ -26,7 +26,7 @@ assert.equal(cookieRewrite.headers.get("content-language"), "zh-CN")
 assert.match(cookieRewrite.headers.get("vary") ?? "", /Cookie/u)
 assert.match(cookieRewrite.headers.get("vary") ?? "", /Accept-Language/u)
 
-const headerRewrite = middleware(new NextRequest("https://mail.example/login", {
+const headerRewrite = proxy(new NextRequest("https://mail.example/login", {
   headers: { "accept-language": "zh-TW,zh;q=0.9,en;q=0.8" },
 }))
 assert.equal(
@@ -34,19 +34,22 @@ assert.equal(
   "/zh-TW/login",
 )
 
-const legacyPass = middleware(new NextRequest("https://mail.example/ja/profile?tab=appearance"))
+const legacyPass = proxy(new NextRequest("https://mail.example/ja/profile?tab=appearance"))
 assert.equal(legacyPass.status, 200)
 assert.equal(legacyPass.headers.get("x-middleware-next"), "1")
 assert.equal(legacyPass.headers.get("location"), null)
 assert.match(legacyPass.headers.get("set-cookie") ?? "", /NEXT_LOCALE=ja/u)
 
-const internalRewritePass = middleware(new NextRequest("https://mail.example/ja/profile", {
+const internalRewritePass = proxy(new NextRequest("https://mail.example/ja/profile", {
   headers: { "x-moemail-internal-locale-rewrite": "1" },
 }))
 assert.equal(internalRewritePass.headers.get("x-middleware-next"), "1")
 assert.equal(internalRewritePass.headers.get("location"), null)
 
-const apiPassThrough = middleware(new NextRequest("https://mail.example/api/internal/health"))
+const vendorPassThrough = proxy(new NextRequest("https://mail.example/vendor/cap/CAP-LICENSE"))
+assert.equal(vendorPassThrough.headers.get("x-middleware-rewrite"), null, "extensionless PWA assets must bypass locale rewriting")
+
+const apiPassThrough = proxy(new NextRequest("https://mail.example/api/internal/health"))
 assert.equal(apiPassThrough.headers.get("x-middleware-next"), "1")
 assert.equal(apiPassThrough.headers.get("x-middleware-rewrite"), null)
 

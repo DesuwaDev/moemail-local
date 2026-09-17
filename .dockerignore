@@ -31,3 +31,7 @@ wrangler.email.durable.json
 wrangler.email.d1.legacy.json
 wrangler.cleanup.json
 wrangler.json
+
+# Local agent state and audit snapshots are never build inputs.
+.agents
+docs/security-review-artifacts

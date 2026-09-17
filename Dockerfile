@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-bookworm-slim AS build-base
+FROM node:24-bookworm-slim AS build-base
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
@@ -30,7 +30,10 @@ COPY . .
 RUN pnpm build \
   && pnpm build:maintenance
 
-FROM node:22-bookworm-slim AS runtime-base
+FROM debian:bookworm-slim AS runtime-base
+
+# Ship the Node 24 runtime without build-time package managers.
+COPY --from=build-base /usr/local/bin/node /usr/local/bin/node
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -40,7 +43,7 @@ ENV PORT=3000
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install --yes --no-install-recommends tini \
+  && apt-get install --yes --no-install-recommends ca-certificates libstdc++6 libatomic1 tini \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --gid 10001 moemail \
   && useradd --uid 10001 --gid moemail --create-home --home-dir /home/moemail moemail \

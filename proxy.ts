@@ -5,11 +5,11 @@ const localeCookie = "NEXT_LOCALE"
 const localeCookieMaxAge = 365 * 24 * 60 * 60
 const internalLocaleRewriteHeader = "x-moemail-internal-locale-rewrite"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   const pathname = url.pathname
 
-  if (pathname.startsWith('/api')) {
+  if (pathname.startsWith('/api') || pathname.startsWith('/vendor/')) {
     return NextResponse.next()
   }
 
@@ -124,6 +124,6 @@ function matchLocale(lang: string): Locale | null {
 
 export const config = {
   matcher: [
-    '/((?!_next|.*\\..*).*)', // all pages excluding static assets
+    '/((?!_next|vendor/|.*\\..*).*)', // all pages excluding static assets
   ]
 } 

@@ -3,7 +3,7 @@ import { capEndpoint, validCapLinkUrl, type CaptchaChannelConfig } from "@/lib/c
 
 export function prepareCapAssets(timeoutMs: number) {
   window.CAP_CUSTOM_WASM_URL = "/vendor/cap/cap-0.0.7.wasm"
-  window.CAP_PAKO_URL = "/vendor/cap/pako-inflate-2.1.0.min.js"
+  window.CAP_PAKO_URL = "/vendor/cap/pako-inflate-2.2.0.min.js"
   // An unreachable challenge/redeem endpoint must reach the fallback UI.
   window.CAP_CUSTOM_FETCH = async (input, init) => {
     const controller = new AbortController()

@@ -74,7 +74,7 @@ async function ingest(raw: Buffer, options: IngestOptions = {}) {
       "X-MoeMail-Envelope-To": options.envelopeTo || testRecipient,
       "X-MoeMail-Raw-Size": String(options.declaredSize ?? raw.byteLength),
     },
-    body: raw,
+    body: new Uint8Array(raw),
     signal: AbortSignal.timeout(90_000),
   })
   const data = await response.json() as {
@@ -105,7 +105,7 @@ async function expectRejected(
       "X-MoeMail-Envelope-To": options.envelopeTo || testRecipient,
       "X-MoeMail-Raw-Size": String(options.declaredSize ?? raw.byteLength),
     },
-    body: raw,
+    body: new Uint8Array(raw),
     signal: AbortSignal.timeout(90_000),
   })
   const data = await response.json() as { error?: string }

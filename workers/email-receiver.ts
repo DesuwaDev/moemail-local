@@ -1,3 +1,9 @@
+import type { ForwardableEmailMessage, R2Bucket, Queue, MessageBatch, ReadableStream, ScheduledController, Response } from "@cloudflare/workers-types"
+
+// Module-local Worker types must not replace the Next.js / Node globals.
+declare const AbortController: typeof import("@cloudflare/workers-types").AbortController
+declare const fetch: typeof import("@cloudflare/workers-types").fetch
+
 const MAX_RAW_EMAIL_SIZE = 25 * 1024 * 1024
 const INGEST_TIMEOUT = 75_000
 

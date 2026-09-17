@@ -1,3 +1,4 @@
+import type { ForwardableEmailMessage, R2Bucket, R2ObjectBody, MessageBatch } from "@cloudflare/workers-types"
 import assert from "node:assert/strict"
 import worker from "../../workers/email-receiver"
 
@@ -17,7 +18,7 @@ function emailMessage(options: { rawSize?: number; onReject?: (reason: string) =
       },
     }),
     headers: new Headers(),
-    setReject(reason) {
+    setReject(reason: string) {
       if (options.onReject) options.onReject(reason)
       else throw new Error("UNEXPECTED_TEST_REJECTION")
     },
@@ -27,7 +28,7 @@ function emailMessage(options: { rawSize?: number; onReject?: (reason: string) =
     reply() {
       throw new Error("UNEXPECTED_REPLY_CALL")
     },
-  } as ForwardableEmailMessage
+  } as unknown as ForwardableEmailMessage
 }
 
 const env = {

@@ -4,6 +4,7 @@
     "lib": [
       "dom",
       "dom.iterable",
+      "dom.asynciterable",
       "esnext"
     ],
     "allowJs": true,
@@ -15,7 +16,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -26,17 +27,24 @@
       "@/*": [
         "./app/*"
       ]
-    }
+    },
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ]
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "docs",
-    "packages"
+    "packages",
+    "scripts/webhook-test-server.ts"
   ]
 }

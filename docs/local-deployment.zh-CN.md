@@ -12,7 +12,7 @@
 
 ## 1. 服务器与数据库选择
 
-- 推荐 Node.js 22 LTS、pnpm 11.21.0、Caddy 2；裸机构建原生依赖还需要 `build-essential` 与 `python3`。启用异地同步需安装 `rclone`；裸机 PostgreSQL 备份/恢复需安装与服务端同主版本的 `pg_dump`/`pg_restore`。`sqlite3` 只在把 D1 SQL 转成导入源库时需要；Wrangler 只用于 Email Worker 或 D1 导出。
+- 推荐 Node.js 24 LTS、pnpm 11.21.0、Caddy 2；裸机构建原生依赖还需要 `build-essential` 与 `python3`。启用异地同步需安装 `rclone`；裸机 PostgreSQL 备份/恢复需安装与服务端同主版本的 `pg_dump`/`pg_restore`。`sqlite3` 只在把 D1 SQL 转成导入源库时需要；Wrangler 只用于 Email Worker 或 D1 导出。
 - 数据库应放在本机 SSD/NVMe 持久化目录，不要把 SQLite 放在 NFS、SMB 或容器临时层。
 - 最小 1 vCPU / 1 GiB；生产建议从 2 vCPU / 2 GiB 起步。
 

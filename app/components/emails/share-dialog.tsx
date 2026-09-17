@@ -229,6 +229,8 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                           ? share.expiresAt
                           : new Date(share.expiresAt).getTime())
                         : null
+                      // Expiry badges intentionally reflect the clock on each render.
+                      // eslint-disable-next-line react-hooks/purity
                       const isExpired = expiresAtTime !== null && expiresAtTime < Date.now()
                       return (
                         <div

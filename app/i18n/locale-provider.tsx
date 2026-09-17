@@ -31,6 +31,9 @@ export function InstantLocaleProvider({
   children: React.ReactNode
 }) {
   const [locale, setLocale] = useState(initialLocale)
+  // Match the server for hydration, then format mail dates in the browser zone.
+  const [timeZone, setTimeZone] = useState("UTC")
+  useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone), [])
   const [switching, setSwitching] = useState(false)
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export function InstantLocaleProvider({
   const value = useMemo(() => ({ locale, switching, switchLocale }), [locale, switching, switchLocale])
   return (
     <LocaleContext.Provider value={value}>
-      <NextIntlClientProvider locale={locale} messages={catalogs[locale]}>
+      <NextIntlClientProvider locale={locale} messages={catalogs[locale]} timeZone={timeZone}>
         {children}
       </NextIntlClientProvider>
     </LocaleContext.Provider>

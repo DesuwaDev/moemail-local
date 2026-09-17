@@ -34,7 +34,7 @@ await new Promise(resolve => listener.close(resolve))
 const baseUrl = `http://127.0.0.1:${port}`
 let logs = ""
 function launch() {
-  const child = spawn(process.execPath, [resolve(root, "node_modules/next/dist/bin/next"), "dev", "--hostname", "127.0.0.1", "--port", String(port)], {
+  const child = spawn(process.execPath, [resolve(root, "node_modules/next/dist/bin/next"), "dev", "--webpack", "--hostname", "127.0.0.1", "--port", String(port)], {
     cwd: workspace,
     env: { ...process.env, NODE_ENV: "development", NEXT_TELEMETRY_DISABLED: "1" },
     stdio: ["ignore", "pipe", "pipe"],

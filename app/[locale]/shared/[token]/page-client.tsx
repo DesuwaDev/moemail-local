@@ -57,7 +57,7 @@ export function SharedEmailPageClient({
   const [loadingMore, setLoadingMore] = useState(false)
   const [total, setTotal] = useState(initialTotal)
   const [refreshing, setRefreshing] = useState(false)
-  const pollTimeoutRef = useRef<Timer | null>(null)
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const messagesRef = useRef<Message[]>(initialMessages)
 
   // 当 messages 改变时更新 ref

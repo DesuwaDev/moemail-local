@@ -1,15 +1,17 @@
+import type { NextConfig } from 'next'
 import withPWA from 'next-pwa'
 import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./app/i18n/request.ts')
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingExcludes: {
-    '*': [
-      'node_modules/typescript/**/*',
-      'node_modules/.pnpm/typescript@*/node_modules/typescript/**/*',
-    ],
+    // Standalone serializes its config; compilation tools are never used at runtime.
+    '*': ['typescript', 'esbuild', '@esbuild/*', '@swc/core', '@swc/core-*', 'webpack', 'terser', 'next-pwa', 'workbox-build', 'workbox-webpack-plugin'].flatMap(name => [
+      `node_modules/${name}/**/*`,
+      `node_modules/.pnpm/*/node_modules/${name}/**/*`,
+    ]),
   },
   serverExternalPackages: ['better-sqlite3', 'pg'],
   async headers() {
@@ -40,15 +42,15 @@ const nextConfig = {
 
 const withPWAConfigured = withPWA({
   dest: 'public',
-  register: true,
+  register: false,
   skipWaiting: true,
   cacheStartUrl: false,
   dynamicStartUrl: false,
   importScripts: ['/pwa-cache-cleanup.js'],
   runtimeCaching: [],
   disable: process.env.NODE_ENV === 'development',
-}) as any
+})
 
-const configWithPWA = withPWAConfigured(nextConfig as any) as any
+const configWithPWA = withPWAConfigured(nextConfig)
 
 export default withNextIntl(configWithPWA)

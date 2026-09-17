@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
+import { PwaRegistration } from "@/components/pwa-registration"
 import { SessionProvider } from "next-auth/react"
 import {
   DEFAULT_PUBLIC_RUNTIME_CONFIG,
@@ -73,6 +74,7 @@ export function Providers({
 
   return (
     <RuntimeConfigContext.Provider value={currentRuntimeConfig}>
+      <PwaRegistration />
       {content}
     </RuntimeConfigContext.Provider>
   )

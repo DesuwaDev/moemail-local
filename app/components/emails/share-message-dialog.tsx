@@ -238,7 +238,9 @@ export function ShareMessageDialog({ emailId, messageId, messageSubject, trigger
                           ? share.expiresAt 
                           : new Date(share.expiresAt).getTime())
                       : null
-                    const isExpired = expiresAtTime !== null && expiresAtTime < Date.now()
+                    // Expiry badges intentionally reflect the clock on each render.
+                      // eslint-disable-next-line react-hooks/purity
+                      const isExpired = expiresAtTime !== null && expiresAtTime < Date.now()
                     return (
                       <div
                         key={share.id}

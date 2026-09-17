@@ -369,6 +369,7 @@ export function SetupWizard({
         <Button
           className="w-full"
           disabled={!serverBack}
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           onClick={() => window.location.assign("/")}
         >
           {serverBack ? t.enter : (

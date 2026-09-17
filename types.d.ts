@@ -1,4 +1,4 @@
-/// <reference types="@cloudflare/workers-types" />
+
 
 import type { Locale } from "./app/i18n/config"
 import common from "./app/i18n/messages/en/common.json"
