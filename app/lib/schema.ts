@@ -9,6 +9,7 @@ const activeSchema = getBoundDriver() === "postgres"
 export const users = activeSchema.users
 export const accounts = activeSchema.accounts
 export const emails = activeSchema.emails
+export const messageAttachments = activeSchema.messageAttachments
 export const messages = activeSchema.messages
 export const sendQuotaEvents = activeSchema.sendQuotaEvents
 export const mailboxNameBlocks = activeSchema.mailboxNameBlocks

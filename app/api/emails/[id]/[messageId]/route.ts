@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { attachmentResponse, messageExtras } from "@/lib/message-attachments"
 import { createDb } from "@/lib/db"
 import { messages } from "@/lib/schema"
 import { and, eq } from "drizzle-orm"
@@ -85,13 +86,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return apiError("MESSAGE_NOT_FOUND", 404)
     }
     
+    const download = await attachmentResponse(request, message.id)
+    if (download) return download
+    const extras = await messageExtras(message, new URL(request.url).pathname)
+
     return NextResponse.json({ 
       message: {
         id: message.id,
         from_address: message.fromAddress,
         to_address: message.toAddress,
         subject: message.subject,
-        content: message.content,
+        ...extras,
         html: message.html,
         received_at: message.receivedAt.getTime(),
         sent_at: message.sentAt?.getTime() ?? null,

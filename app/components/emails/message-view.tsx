@@ -9,6 +9,8 @@ import { useToast } from "@/components/ui/use-toast"
 import { ShareMessageDialog } from "./share-message-dialog"
 import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
+import { MessageAttachments } from "./message-attachments"
+import type { MessageAttachment, InlineMessageImage } from "@/lib/attachment-types"
 import { HtmlMessageFrame } from "./html-message-frame"
 
 interface Message {
@@ -18,6 +20,8 @@ interface Message {
   subject: string
   content: string
   html?: string
+  attachments?: MessageAttachment[]
+  inline_images?: InlineMessageImage[]
   received_at?: number
   sent_at?: number
 }
@@ -68,9 +72,7 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
         
         const data = await response.json() as { message: Message }
         setMessage(data.message)
-        if (!data.message.html) {
-          setViewMode("text")
-        }
+        setViewMode(data.message.html ? "html" : "text")
       } catch (error) {
         const errorMessage = t("networkError")
         setError(errorMessage)
@@ -172,9 +174,10 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
         </div>
       )}
       
+      <MessageAttachments attachments={message.attachments} />
       <div className="relative min-h-0 flex-1 overflow-auto">
         {viewMode === "html" && message.html ? (
-          <HtmlMessageFrame html={message.html} title={t("htmlFormat")} />
+          <HtmlMessageFrame html={message.html} inlineImages={message.inline_images} title={t("htmlFormat")} />
         ) : (
           <div className="p-4 text-sm whitespace-pre-wrap">
             {message.content}

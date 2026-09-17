@@ -1,5 +1,7 @@
+import { emailText } from "./email-content"
+import { prepareAttachments } from "./message-attachments"
 import { createHash } from "node:crypto"
-import { and, eq, gt, sql } from "drizzle-orm"
+import { and, eq, gt, sql, or, isNull, lte } from "drizzle-orm"
 import PostalMime from "postal-mime"
 import { WEBHOOK_CONFIG } from "../config"
 import { createDb, getDatabaseDriver, getPostgresPool, getSqlite } from "./db"
@@ -87,6 +89,7 @@ interface InboundMessageInsert {
   subject: string
   content: string
   html: string
+  attachments: ReturnType<typeof prepareAttachments>
 }
 
 /**
@@ -131,6 +134,10 @@ async function commitInboundMessage(
           DELETE FROM send_quota_event WHERE id = ? AND status = 'reserved' AND direction = 'receive'
         `).run(reservation.id)
         return "duplicate"
+      }
+      const insertAttachment = getSqlite().prepare('INSERT INTO message_attachment (id, message_id, filename, content_type, content_id, size, data) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      for (const attachment of message.attachments) {
+        insertAttachment.run(attachment.id, message.id, attachment.filename, attachment.contentType, attachment.contentId, attachment.size, attachment.data)
       }
       const completed = getSqlite().prepare(`
         UPDATE send_quota_event SET status = 'sent', completed_at = ?
@@ -181,6 +188,12 @@ async function commitInboundMessage(
       `, [reservation.id])
       await client.query("COMMIT")
       return "duplicate"
+    }
+    for (let offset = 0; offset < message.attachments.length; offset += 100) {
+      const batch = message.attachments.slice(offset, offset + 100)
+      const values = batch.flatMap(attachment => [attachment.id, message.id, attachment.filename, attachment.contentType, attachment.contentId, attachment.size, attachment.data])
+      const placeholders = batch.map((_, index) => "(" + Array.from({ length: 7 }, (_, column) => "$" + (index * 7 + column + 1)).join(", ") + ")").join(", ")
+      await client.query('INSERT INTO message_attachment (id, message_id, filename, content_type, content_id, size, data) VALUES ' + placeholders, values)
     }
     const completed = await client.query(`
       UPDATE send_quota_event SET status = 'sent', completed_at = $1
@@ -235,16 +248,19 @@ export async function inspectInboundRecipient(
 
 async function deliverWebhook(
   targetEmail: typeof emails.$inferSelect,
-  savedMessage: typeof messages.$inferSelect,
+  savedMessage: Pick<typeof messages.$inferSelect, "id" | "fromAddress" | "subject" | "content" | "html" | "receivedAt">,
   envelopeFrom: string,
 ) {
   if (!targetEmail.userId) return
+  let attemptedWebhook: typeof webhooks.$inferSelect | undefined
+  const attemptedAt = new Date()
   try {
     const db = createDb()
     const webhook = await db.query.webhooks.findFirst({
       where: eq(webhooks.userId, targetEmail.userId),
     })
     if (!webhook?.enabled) return
+    attemptedWebhook = webhook
 
     const webhookMessage: EmailMessage = {
       emailId: targetEmail.id,
@@ -259,12 +275,24 @@ async function deliverWebhook(
     await callWebhook(webhook.url, {
       event: WEBHOOK_CONFIG.EVENTS.NEW_MESSAGE,
       data: webhookMessage,
-    })
+    }, webhook)
+    await recordWebhookResult(null)
   } catch (error) {
+    await recordWebhookResult(error instanceof Error && /^WEBHOOK_[A-Z_]+(?::\d+)?$/u.test(error.message) ? error.message : "WEBHOOK_REQUEST_FAILED")
     console.error("ingest.webhook.failed", {
       messageId: savedMessage.id,
       error: error instanceof Error ? error.message.slice(0, 500) : "unknown",
     })
+  }
+  async function recordWebhookResult(error: string | null) {
+    if (!attemptedWebhook) return
+    try {
+      // A concurrent configuration change or newer delivery must keep its own state.
+      await createDb().update(webhooks).set({ lastDeliveryAt: attemptedAt, lastDeliveryError: error }).where(and(
+        eq(webhooks.id, attemptedWebhook.id), eq(webhooks.updatedAt, attemptedWebhook.updatedAt),
+        or(isNull(webhooks.lastDeliveryAt), lte(webhooks.lastDeliveryAt, attemptedAt)),
+      ))
+    } catch (statusError) { console.error("ingest.webhook.status_failed", statusError) }
   }
 }
 
@@ -338,6 +366,8 @@ export async function ingestEmail(input: {
       throw new InboundIngestionError(INBOUND_INGESTION_ERROR.INVALID_EMAIL_MESSAGE)
     }
 
+    const content = emailText(parsedMessage.text, parsedMessage.html)
+    const attachments = prepareAttachments(parsedMessage.attachments)
     const quota = await reserveMailQuota(userId, envelopeTo, "receive", access)
     if (!quota.allowed || !quota.reservation) {
       const code: MailQuotaError = quota.error ?? "RECEIVE_PERMISSION_CHECK_FAILED"
@@ -357,8 +387,9 @@ export async function ingestEmail(input: {
         fromAddress: input.envelopeFrom,
         toAddress: envelopeTo,
         subject: parsedMessage.subject || "",
-        content: parsedMessage.text || "",
+        content,
         html: parsedMessage.html || "",
+        attachments,
       })
       if (commit === "duplicate") return { status: "duplicate", messageId }
       if (commit === "inactive") return { status: "ignored", reason: "unknown_recipient" }
@@ -368,15 +399,11 @@ export async function ingestEmail(input: {
     }
     await deliverWebhook(targetEmail, {
       id: messageId,
-      emailId: targetEmail.id,
       fromAddress: input.envelopeFrom,
-      toAddress: envelopeTo,
       subject: parsedMessage.subject || "",
-      content: parsedMessage.text || "",
+      content,
       html: parsedMessage.html || "",
-      type: "received",
       receivedAt: new Date(),
-      sentAt: new Date(),
     }, input.envelopeFrom)
     return { status: "created", messageId }
   }

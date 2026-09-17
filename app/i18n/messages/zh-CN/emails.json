@@ -110,6 +110,7 @@
     "textHelp": "纯文本会安全转义，并同时发送文本版与兼容的 HTML 版。"
   },
   "messageView": {
+    "attachments": "附件",
     "loading": "加载邮件详情...",
     "loadError": "获取邮件详情失败",
     "networkError": "网络错误，请稍后重试",

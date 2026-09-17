@@ -118,6 +118,11 @@
     "enabled": "送信権限が有効です"
   },
   "webhook": {
+    "textMode": "プレーンテキスト通知の要約",
+    "textModeHelp": "Bark や Telegram 向けに HTML を除き、本文のバイト数を制限します。元のメールは保持されます。オフの場合は元の全文を送信します。保存後に適用され、テストには現在の設定を使用します。",
+    "maxContentBytes": "本文の上限（UTF-8 バイト）",
+    "deliveryFailed": "前回の通知に失敗しました",
+    "deliverySucceeded": "前回の通知は受信先に受け付けられました",
     "title": "Webhook 設定",
     "description": "新しいメールを受信した際に指定した URL に通知します",
     "description2": "この URL に新しいメール情報を含む POST リクエストを送信します",

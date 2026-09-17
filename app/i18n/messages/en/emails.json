@@ -110,6 +110,7 @@
     "textHelp": "Plain text is escaped safely and sent with both text and compatible HTML alternatives."
   },
   "messageView": {
+    "attachments": "Attachments",
     "loading": "Loading message details...",
     "loadError": "Failed to load message details",
     "networkError": "Network error, please try again later",

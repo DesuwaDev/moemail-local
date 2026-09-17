@@ -110,6 +110,7 @@
     "textHelp": "純文字會安全逸出，並同時寄送文字版與相容的 HTML 版。"
   },
   "messageView": {
+    "attachments": "附件",
     "loading": "載入郵件詳情...",
     "loadError": "取得郵件詳情失敗",
     "networkError": "網路錯誤，請稍後再試",

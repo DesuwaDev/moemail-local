@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm"
 import {
   boolean,
+  customType,
   check,
   index,
   integer,
@@ -83,6 +84,16 @@ export const messages = pgTable("message", {
   index("message_email_id_received_at_type_idx").on(table.emailId, table.receivedAt, table.type),
 ])
 
+export const messageAttachments = pgTable("message_attachment", {
+  id: text("id").primaryKey(),
+  messageId: text("message_id").notNull().references(() => messages.id, { onDelete: "cascade" }),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  contentId: text("content_id"),
+  size: integer("size").notNull(),
+  data: customType<{ data: Buffer }>({ dataType: () => "bytea" })("data").notNull(),
+}, table => [index("message_attachment_message_id_idx").on(table.messageId)])
+
 export const sendQuotaEvents = pgTable("send_quota_event", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id")
@@ -132,6 +143,10 @@ export const webhooks = pgTable("webhook", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
+  notificationMode: text("notification_mode").notNull().default("full"),
+  maxContentBytes: integer("max_content_bytes").notNull().default(2048),
+  lastDeliveryAt: dateColumn("last_delivery_at"),
+  lastDeliveryError: text("last_delivery_error"),
   enabled: boolean("enabled").notNull().default(true),
   createdAt: dateColumn("created_at").notNull().$defaultFn(() => new Date()),
   updatedAt: dateColumn("updated_at").notNull().$defaultFn(() => new Date()),

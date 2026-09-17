@@ -1,3 +1,4 @@
+import { attachmentResponse, messageExtras } from "@/lib/message-attachments"
 import { createDb } from "@/lib/db"
 import { messageShares, messages, emails } from "@/lib/schema"
 import { eq } from "drizzle-orm"
@@ -47,13 +48,17 @@ export async function GET(
       return apiError("MAILBOX_EXPIRED", 410)
     }
 
+    const download = await attachmentResponse(request, message.id)
+    if (download) return download
+    const extras = await messageExtras(message, new URL(request.url).pathname)
+
     return NextResponse.json({
       message: {
         id: message.id,
         from_address: message.fromAddress,
         to_address: message.toAddress,
         subject: message.subject,
-        content: message.content,
+        ...extras,
         html: message.html,
         received_at: message.receivedAt,
         sent_at: message.sentAt

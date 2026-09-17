@@ -26,6 +26,10 @@ export function WebhookConfig() {
   const tApi = useTranslations("api")
   const [enabled, setEnabled] = useState(false)
   const [url, setUrl] = useState("")
+  const [notificationMode, setNotificationMode] = useState("full")
+  const [maxContentBytes, setMaxContentBytes] = useState(2048)
+  const [lastDeliveryAt, setLastDeliveryAt] = useState<string | null>(null)
+  const [lastDeliveryError, setLastDeliveryError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [testing, setTesting] = useState(false)
   const [showDocs, setShowDocs] = useState(false)
@@ -34,10 +38,14 @@ export function WebhookConfig() {
 
   useEffect(() => {
     fetch("/api/webhook")
-      .then(res => res.json() as Promise<{ enabled: boolean; url: string }>)
+      .then(res => res.json() as Promise<{ enabled: boolean; url: string; notificationMode?: string; maxContentBytes?: number; lastDeliveryAt?: string; lastDeliveryError?: string }>)
       .then(data => {
         setEnabled(data.enabled)
         setUrl(data.url)
+        setNotificationMode(data.notificationMode || "full")
+        setMaxContentBytes(data.maxContentBytes || 2048)
+        setLastDeliveryAt(data.lastDeliveryAt || null)
+        setLastDeliveryError(data.lastDeliveryError || null)
       })
       .catch(console.error)
       .finally(() => setInitialLoading(false))
@@ -65,11 +73,13 @@ export function WebhookConfig() {
       const res = await fetch("/api/webhook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, enabled })
+        body: JSON.stringify({ url, enabled, notificationMode, maxContentBytes })
       })
 
       if (!res.ok) throw new LocalizedUiError(tApi(await readApiErrorCode(res, "WEBHOOK_CONFIG_INVALID") as never))
 
+      setLastDeliveryAt(null)
+      setLastDeliveryError(null)
       toast({
         title: t("saveSuccess"),
         description: t("saveSuccess")
@@ -95,6 +105,8 @@ export function WebhookConfig() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url,
+          notificationMode,
+          maxContentBytes,
           sample: {
             subject: t("testPayload.subject"),
             content: t("testPayload.content"),
@@ -103,7 +115,10 @@ export function WebhookConfig() {
         })
       })
 
-      if (!res.ok) throw new LocalizedUiError(tApi(await readApiErrorCode(res, "WEBHOOK_TEST_FAILED") as never))
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { detail?: string }
+        throw new LocalizedUiError(t("testFailed") + (body.detail ? " (" + body.detail + ")" : ""))
+      }
 
       toast({
         title: t("testSuccess"),
@@ -182,6 +197,21 @@ export function WebhookConfig() {
             </p>
           </div>
 
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="webhook-text-mode">{t("textMode")}</Label>
+              <Switch id="webhook-text-mode" checked={notificationMode === "text"} onCheckedChange={checked => setNotificationMode(checked ? "text" : "full")} />
+            </div>
+            <p className="text-xs text-muted-foreground">{t("textModeHelp")}</p>
+            {notificationMode === "text" && <div className="space-y-1">
+              <Label htmlFor="webhook-max-bytes">{t("maxContentBytes")}</Label>
+              <Input id="webhook-max-bytes" type="number" min={256} max={65536} step={1} required value={maxContentBytes} onChange={event => setMaxContentBytes(Number(event.target.value))} />
+            </div>}
+            {lastDeliveryAt && <p className="break-words text-xs" role="status">
+              {lastDeliveryError ? t("deliveryFailed") + " (" + lastDeliveryError + ")" : t("deliverySucceeded")}
+              {" · "}{new Date(lastDeliveryAt).toLocaleString()}
+            </p>}
+          </div>
           <div className="space-y-2">
             <button
               type="button"

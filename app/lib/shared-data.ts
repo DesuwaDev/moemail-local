@@ -1,3 +1,5 @@
+import { messageExtras } from "./message-attachments"
+import type { MessageAttachment, InlineMessageImage } from "./attachment-types"
 import { createDb } from "@/lib/db"
 import { emailShares, messageShares, messages, emails } from "@/lib/schema"
 import { eq, desc, and, or, ne, isNull } from "drizzle-orm"
@@ -10,6 +12,8 @@ export interface SharedEmail {
 }
 
 export interface SharedMessage {
+  attachments?: MessageAttachment[]
+  inline_images?: InlineMessageImage[]
   id: string
   from_address?: string
   to_address?: string
@@ -190,7 +194,7 @@ export async function getSharedMessage(token: string): Promise<SharedMessage | n
       from_address: message.fromAddress ?? undefined,
       to_address: message.toAddress ?? undefined,
       subject: message.subject,
-      content: message.content ?? undefined,
+      ...await messageExtras(message, `/api/shared/message/${encodeURIComponent(token)}`),
       html: message.html ?? undefined,
       received_at: message.receivedAt,
       sent_at: message.sentAt,

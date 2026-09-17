@@ -1,4 +1,4 @@
-import { check, integer, sqliteTable, text, primaryKey, uniqueIndex, index } from "drizzle-orm/sqlite-core"
+import { check, integer, blob, sqliteTable, text, primaryKey, uniqueIndex, index } from "drizzle-orm/sqlite-core"
 import type { AdapterAccountType } from "next-auth/adapters"
 import { relations, sql } from "drizzle-orm"
 
@@ -74,6 +74,16 @@ export const messages = sqliteTable("message", {
   index("message_email_id_received_at_type_idx").on(table.emailId, table.receivedAt, table.type),
 ])
 
+export const messageAttachments = sqliteTable("message_attachment", {
+  id: text("id").primaryKey(),
+  messageId: text("message_id").notNull().references(() => messages.id, { onDelete: "cascade" }),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  contentId: text("content_id"),
+  size: integer("size").notNull(),
+  data: blob("data", { mode: "buffer" }).notNull(),
+}, table => [index("message_attachment_message_id_idx").on(table.messageId)])
+
 export const sendQuotaEvents = sqliteTable("send_quota_event", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id")
@@ -125,6 +135,10 @@ export const webhooks = sqliteTable("webhook", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
+  notificationMode: text("notification_mode").notNull().default("full"),
+  maxContentBytes: integer("max_content_bytes").notNull().default(2048),
+  lastDeliveryAt: integer("last_delivery_at", { mode: "timestamp_ms" }),
+  lastDeliveryError: text("last_delivery_error"),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()

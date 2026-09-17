@@ -1,3 +1,4 @@
+import { webhookMessage, webhookResponseFailed, type WebhookOptions } from "./webhook-options"
 import { lookup } from "node:dns/promises"
 import { request as httpRequest } from "node:http"
 import { request as httpsRequest } from "node:https"
@@ -128,12 +129,22 @@ async function sendWebhookRequest(url: URL, hostname: string, payload: WebhookPa
     "X-Webhook-Event": payload.event,
   }
 
-  return new Promise<number>((resolve, reject) => {
+  return new Promise<{ statusCode: number; rejected: boolean }>((resolve, reject) => {
     const handleResponse = (response: import("node:http").IncomingMessage) => {
-      clearTimeout(timeoutId)
       const statusCode = response.statusCode ?? 0
-      response.destroy()
-      resolve(statusCode)
+      const chunks: Buffer[] = []
+      let size = 0
+      response.on("data", (chunk: Buffer) => {
+        size += chunk.length
+        if (size <= 65536) chunks.push(chunk)
+        else chunks.length = 0
+      })
+      response.once("end", () => {
+        clearTimeout(timeoutId)
+        resolve({ statusCode, rejected: size <= 65536 && webhookResponseFailed(Buffer.concat(chunks).toString("utf8")) })
+      })
+      response.once("error", error => { clearTimeout(timeoutId); reject(error) })
+      response.once("aborted", () => { clearTimeout(timeoutId); reject(new Error("WEBHOOK_RESPONSE_ABORTED")) })
     }
 
     const request = url.protocol === "https:"
@@ -161,18 +172,20 @@ async function sendWebhookRequest(url: URL, hostname: string, payload: WebhookPa
   })
 }
 
-export async function callWebhook(urlValue: string, payload: WebhookPayload) {
+export async function callWebhook(urlValue: string, payload: WebhookPayload, options: WebhookOptions = {}) {
+  payload = { ...payload, data: webhookMessage(payload.data, options) }
   const { url, hostname } = parseWebhookUrl(urlValue)
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt < WEBHOOK_CONFIG.MAX_RETRIES; attempt++) {
     try {
-      const statusCode = await sendWebhookRequest(url, hostname, payload, attempt)
-      if (statusCode >= 200 && statusCode < 300) {
+      const { statusCode, rejected } = await sendWebhookRequest(url, hostname, payload, attempt)
+      if (statusCode >= 200 && statusCode < 300 && !rejected) {
         return true
       }
 
-      lastError = new Error(`WEBHOOK_HTTP_STATUS:${statusCode}`)
+      lastError = new Error(rejected ? "WEBHOOK_REMOTE_REJECTED" : `WEBHOOK_HTTP_STATUS:${statusCode}`)
+      if (rejected || (statusCode >= 400 && statusCode < 500 && statusCode !== 408 && statusCode !== 429)) break
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
     }

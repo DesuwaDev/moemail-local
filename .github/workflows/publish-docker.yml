@@ -136,6 +136,7 @@ jobs:
           pnpm validate:quota-rule-relations
           pnpm validate:policy-migrations
           pnpm validate:imap-inbound
+          pnpm validate:message-content
           pnpm validate:mailu
           pnpm validate:runtime-fields
           pnpm validate:i18n

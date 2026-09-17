@@ -1,6 +1,6 @@
 {
   "name": "moemail",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "private": true,
   "packageManager": "pnpm@11.21.0",
   "scripts": {
@@ -68,7 +68,8 @@
     "deploy:email:durable": "wrangler deploy --config wrangler.email.durable.json",
     "validate:runtime-fields": "tsx scripts/validation/runtime-config-fields.ts",
     "validate:i18n": "tsx scripts/validation/i18n.ts && tsx scripts/validation/locale-navigation.ts",
-    "validate:captcha": "tsx scripts/validation/captcha-cap.ts"
+    "validate:captcha": "tsx scripts/validation/captcha-cap.ts",
+    "validate:message-content": "tsx scripts/validation/message-content.ts"
   },
   "type": "module",
   "dependencies": {
@@ -90,6 +91,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "drizzle-orm": "^0.45.2",
+    "htmlparser2": "10.1.0",
     "imapflow": "1.7.8",
     "lucide-react": "0.577.0",
     "nanoid": "^5.1.16",
@@ -125,11 +127,11 @@
     "esbuild": "0.28.2",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.5",
+    "next-pwa": "^5.6.0",
     "postcss": "8.5.28",
     "tailwindcss": "^3.4.19",
-    "wrangler": "4.133.0",
     "typescript": "5.9.3",
-    "next-pwa": "^5.6.0"
+    "wrangler": "4.133.0"
   },
   "engines": {
     "node": ">=24 <25"

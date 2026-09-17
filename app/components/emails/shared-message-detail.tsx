@@ -5,6 +5,8 @@ import { Loader2 } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { useFormatter, useTranslations } from "next-intl"
+import { MessageAttachments } from "./message-attachments"
+import type { MessageAttachment, InlineMessageImage } from "@/lib/attachment-types"
 import { HtmlMessageFrame } from "./html-message-frame"
 
 interface MessageDetail {
@@ -14,6 +16,8 @@ interface MessageDetail {
   subject: string
   content?: string
   html?: string
+  attachments?: MessageAttachment[]
+  inline_images?: InlineMessageImage[]
   received_at?: number
   sent_at?: number
 }
@@ -123,9 +127,10 @@ export function SharedMessageDetail({
         </div>
       )}
 
+      <MessageAttachments attachments={message.attachments} />
       <div className="relative min-h-0 flex-1 overflow-auto">
         {viewMode === "html" && message.html ? (
-          <HtmlMessageFrame html={message.html} title={t.htmlFormat} />
+          <HtmlMessageFrame html={message.html} inlineImages={message.inline_images} title={t.htmlFormat} />
         ) : message.content ? (
           <div className="p-4 text-sm whitespace-pre-wrap">
             {message.content}

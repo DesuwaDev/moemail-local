@@ -1,3 +1,4 @@
+import { attachmentResponse, messageExtras } from "@/lib/message-attachments"
 import { createDb } from "@/lib/db"
 import { emailShares, messages } from "@/lib/schema"
 import { and, eq, isNull, ne, or } from "drizzle-orm"
@@ -52,13 +53,17 @@ export async function GET(
       return apiError("MESSAGE_NOT_FOUND", 404)
     }
 
+    const download = await attachmentResponse(request, message.id)
+    if (download) return download
+    const extras = await messageExtras(message, new URL(request.url).pathname)
+
     return NextResponse.json({
       message: {
         id: message.id,
         from_address: message.fromAddress,
         to_address: message.toAddress,
         subject: message.subject,
-        content: message.content,
+        ...extras,
         html: message.html,
         received_at: message.receivedAt,
         sent_at: message.sentAt

@@ -118,6 +118,11 @@
     "enabled": "已启用发件权限"
   },
   "webhook": {
+    "textMode": "纯文本通知摘要",
+    "textModeHelp": "适合 Bark、Telegram 等推送：不发送 HTML，超长正文按字节截断，完整邮件仍保留。关闭时发送原有完整正文。保存后生效；测试使用当前设置。",
+    "maxContentBytes": "正文上限（UTF-8 字节）",
+    "deliveryFailed": "最近一次通知失败",
+    "deliverySucceeded": "最近一次通知已被接收端接受",
     "title": "Webhook 配置",
     "description": "当收到新邮件时通知指定的 URL",
     "description2": "我们会向此 URL 发送 POST 请求,包含新邮件的相关信息",

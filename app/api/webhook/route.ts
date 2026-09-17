@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { authorizeRequest } from "@/lib/request-auth"
 import { PERMISSIONS } from "@/lib/permissions"
+import { webhookOptionsSchema } from "@/lib/webhook-options"
 import { validateWebhookUrl } from "@/lib/webhook"
 import { apiError } from "@/lib/api-response"
 
@@ -11,7 +12,8 @@ export const runtime = "nodejs"
 
 const webhookSchema = z.object({
   url: z.string().url(),
-  enabled: z.boolean()
+  enabled: z.boolean(),
+  ...webhookOptionsSchema.shape,
 })
 
 export async function GET(request: Request) {
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { url, enabled } = webhookSchema.parse(body)
+    const { url, enabled, notificationMode, maxContentBytes } = webhookSchema.parse(body)
     await validateWebhookUrl(url)
     
     const db = createDb()
@@ -54,6 +56,10 @@ export async function POST(request: Request) {
         .set({
           url,
           enabled,
+          notificationMode,
+          maxContentBytes,
+          lastDeliveryAt: null,
+          lastDeliveryError: null,
           updatedAt: now
         })
         .where(eq(webhooks.userId, userId))
@@ -64,6 +70,8 @@ export async function POST(request: Request) {
           userId,
           url,
           enabled,
+          notificationMode,
+          maxContentBytes,
         })
     }
 

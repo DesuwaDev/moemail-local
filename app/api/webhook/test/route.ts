@@ -1,15 +1,16 @@
+import { webhookOptionsSchema } from "@/lib/webhook-options"
 import { callWebhook } from "@/lib/webhook"
 import { WEBHOOK_CONFIG } from "@/config"
 import { z } from "zod"
 import { EmailMessage } from "@/lib/webhook"
 import { authorizeRequest } from "@/lib/request-auth"
 import { PERMISSIONS } from "@/lib/permissions"
-import { apiError } from "@/lib/api-response"
 
 export const runtime = "nodejs"
 
 const testSchema = z.object({
   url: z.string().url(),
+  ...webhookOptionsSchema.shape,
   sample: z.object({
     subject: z.string().trim().min(1).max(200),
     content: z.string().trim().min(1).max(2_000),
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { url, sample } = testSchema.parse(body)
+    const { url, sample, notificationMode, maxContentBytes } = testSchema.parse(body)
 
     await callWebhook(url, {
       event: WEBHOOK_CONFIG.EVENTS.NEW_MESSAGE,
@@ -39,11 +40,11 @@ export async function POST(request: Request) {
         receivedAt: "2023-03-01T12:00:00Z",
         toAddress: "recipient@example.com"
       } as EmailMessage
-    })
+    }, { notificationMode, maxContentBytes })
 
     return Response.json({ success: true })
   } catch (error) {
     console.error("webhook.test_failed", error)
-    return apiError("WEBHOOK_TEST_FAILED", 400)
+    return Response.json({ error: "WEBHOOK_TEST_FAILED", detail: error instanceof Error && /^WEBHOOK_[A-Z_]+(?::\d+)?$/u.test(error.message) ? error.message : "WEBHOOK_REQUEST_FAILED" }, { status: 400 })
   }
 }

@@ -118,6 +118,11 @@
     "enabled": "Sending permission enabled"
   },
   "webhook": {
+    "textMode": "Plain-text notification summary",
+    "textModeHelp": "For push services such as Bark and Telegram: omit HTML and limit text bytes. Full mail stays intact. Turn off to send the original full body. Save to apply; tests use the current settings.",
+    "maxContentBytes": "Text limit (UTF-8 bytes)",
+    "deliveryFailed": "Last notification failed",
+    "deliverySucceeded": "Last notification accepted by receiver",
     "title": "Webhook Configuration",
     "description": "Notify specified URL when new emails arrive",
     "description2": "We will send a POST request to this URL with information about the new email",
