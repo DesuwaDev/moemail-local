@@ -1,4 +1,5 @@
 {
+  "API_KEY_PERMANENT_FORBIDDEN": "Only the Emperor can create an API key that never expires.",
   "SESSION_REVOKE_FAILED": "Could not sign out all devices. Please try again.",
   "CAPTCHA_SERVER_URL_INVALID": "Enter a valid Cap HTTP(S) server URL without credentials, query parameters or fragments.",
   "ACCESS_POLICIES_READ_FAILED": "Failed to load access policies.",

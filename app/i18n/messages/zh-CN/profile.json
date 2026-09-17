@@ -56,6 +56,7 @@
     "units": { "second": "秒", "minute": "分钟", "hour": "小时", "day": "天", "week": "周", "month": "30 天" }
   },
   "apiKey": {
+    "permanent": "永久有效",
     "saveKey": "请立即复制并妥善保存，此密钥只显示一次。",
     "policyHelp": "按用途选择权限和有效期，密钥权限不会超过账号本身。",
     "accessLevel": "权限范围",

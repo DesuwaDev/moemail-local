@@ -20,7 +20,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useCopy } from "@/hooks/use-copy"
 import { useRolePermission } from "@/hooks/use-role-permission"
-import { PERMISSIONS } from "@/lib/permissions"
+import { PERMISSIONS, ROLES } from "@/lib/permissions"
 import { useConfig } from "@/hooks/use-config"
 import { readApiErrorCode } from "@/lib/api-error-client"
 import { LocalizedUiError, localizedUiErrorMessage } from "@/lib/localized-ui-error"
@@ -59,8 +59,9 @@ export function ApiKeyPanel() {
   const { copyToClipboard } = useCopy()
   const [showExamples, setShowExamples] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const { checkPermission } = useRolePermission()
+  const { checkPermission, hasRole } = useRolePermission()
   const canManageApiKey = checkPermission(PERMISSIONS.MANAGE_API_KEY)
+  const isEmperor = hasRole(ROLES.EMPEROR)
 
   const fetchApiKeys = useCallback(async () => {
     try {
@@ -228,7 +229,10 @@ export function ApiKeyPanel() {
                         <Label htmlFor={`${fieldId}-expiry`}>{t("validFor")}</Label>
                         <Select value={expiresInDays} onValueChange={setExpiresInDays} disabled={loading}>
                           <SelectTrigger id={`${fieldId}-expiry`}><SelectValue /></SelectTrigger>
-                          <SelectContent>{[7, 30, 90, 365].map(days => <SelectItem key={days} value={String(days)}>{t("days", { days })}</SelectItem>)}</SelectContent>
+                          <SelectContent>
+                            {[7, 30, 90, 365].map(days => <SelectItem key={days} value={String(days)}>{t("days", { days })}</SelectItem>)}
+                            {isEmperor && <SelectItem value="0">{t("permanent")}</SelectItem>}
+                          </SelectContent>
                         </Select>
                       </div>
                     </div>
@@ -344,7 +348,7 @@ export function ApiKeyPanel() {
                           value: format.dateTime(new Date(key.createdAt)),
                         })}
                       </div>}
-                      {key.expiresAt && <div className="text-sm text-muted-foreground">{t("expiresAt", { date: format.dateTime(new Date(key.expiresAt)) })}</div>}
+                      <div className="text-sm text-muted-foreground">{key.expiresAt ? t("expiresAt", { date: format.dateTime(new Date(key.expiresAt)) }) : t("permanent")}</div>
                     </div>
                     <div className="flex shrink-0 items-center justify-end gap-2">
                       <Switch

@@ -2,7 +2,7 @@ import { createDb } from "@/lib/db"
 import { apiKeys, emails } from "@/lib/schema"
 import { nanoid } from "nanoid"
 import { NextResponse } from "next/server"
-import { PERMISSIONS } from "@/lib/permissions"
+import { PERMISSIONS, ROLES } from "@/lib/permissions"
 import { and, desc, eq } from "drizzle-orm"
 import { authorizeRequest } from "@/lib/request-auth"
 import { apiError } from "@/lib/api-response"
@@ -48,6 +48,9 @@ export async function POST(request: Request) {
     const parsed = createApiKeySchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return apiError("INVALID_REQUEST", 400)
     const { name, accessLevel, mailboxAddress, expiresInDays } = parsed.data
+    if (expiresInDays === 0 && !authorization.principal.roles.includes(ROLES.EMPEROR)) {
+      return apiError("API_KEY_PERMANENT_FORBIDDEN", 403)
+    }
 
     const key = `mk_${nanoid(32)}`
     const db = createDb()
@@ -67,7 +70,7 @@ export async function POST(request: Request) {
       mailboxId,
       key: digestApiKey(key),
       userId: authorization.principal.userId,
-      expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
+      expiresAt: expiresInDays === 0 ? null : new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
     })
 
     return NextResponse.json({ key })

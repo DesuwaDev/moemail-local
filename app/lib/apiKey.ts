@@ -1,4 +1,4 @@
-import { and, eq, gt } from "drizzle-orm"
+import { and, eq, gt, isNull, or } from "drizzle-orm"
 import { createDb } from "./db"
 import { apiKeys, roles, userRoles, users } from "./schema"
 import { ROLES, type Role } from "./permissions"
@@ -18,6 +18,7 @@ export async function getApiKeyPrincipal(key: string): Promise<ApiKeyPrincipal |
       userId: apiKeys.userId,
       accessLevel: apiKeys.accessLevel,
       mailboxId: apiKeys.mailboxId,
+      expiresAt: apiKeys.expiresAt,
       roleName: roles.name,
     })
     .from(apiKeys)
@@ -27,10 +28,13 @@ export async function getApiKeyPrincipal(key: string): Promise<ApiKeyPrincipal |
     .where(and(
       eq(apiKeys.key, digestApiKey(key)),
       eq(apiKeys.enabled, true),
-      gt(apiKeys.expiresAt, new Date())
+      or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, new Date()))
     ))
 
   if (!rows.length) return null
+  // A permanent credential requires a current Emperor; do not activate old
+  // undated credentials belonging to ordinary users.
+  if (rows[0].expiresAt === null && !rows.some(row => row.roleName === ROLES.EMPEROR)) return null
 
   return {
     userId: rows[0].userId,

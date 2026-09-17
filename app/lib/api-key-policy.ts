@@ -8,7 +8,7 @@ export const createApiKeySchema = z.object({
   // Older clients only send a name; keep their existing automation working.
   accessLevel: z.enum(apiKeyLevels).default("full"),
   mailboxAddress: z.string().trim().max(320).default(""),
-  expiresInDays: z.number().int().min(1).max(365).default(365),
+  expiresInDays: z.number().int().min(0).max(365).default(365),
 }).strict()
 
 export interface ApiKeyPolicy {
