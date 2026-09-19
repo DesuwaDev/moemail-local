@@ -5,6 +5,7 @@ import {
 } from "@/lib/auth-abuse-guard"
 import { isSetupCompleted } from "@/lib/config/runtime"
 import { apiError } from "@/lib/api-response"
+import { normalizeAuthRequest } from "@/lib/auth-request"
 
 function setupRequired() {
   return apiError("SETUP_REQUIRED", 503, {
@@ -15,11 +16,13 @@ function setupRequired() {
 export async function GET(request: NextRequest) {
   if (!isSetupCompleted()) return setupRequired()
   const { GET: authGet } = await import("@/lib/auth")
-  return authGet(request)
+  return authGet(normalizeAuthRequest(request))
 }
 
 export async function POST(request: NextRequest) {
   if (!isSetupCompleted()) return setupRequired()
+
+  request = normalizeAuthRequest(request)
 
   const pathname = new URL(request.url).pathname.replace(/\/+$/, "")
   if (pathname.endsWith("/callback/credentials")) {

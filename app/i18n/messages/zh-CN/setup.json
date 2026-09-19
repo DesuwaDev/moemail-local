@@ -11,7 +11,7 @@
   "requestFailed": "无法连接服务器，请检查网络后重试",
   "siteSection": "站点",
   "baseUrl": "站点地址",
-  "baseUrlHint": "对外访问地址，用于生成绝对链接。",
+  "baseUrlHint": "须与浏览器访问地址一致，用于登录回调和绝对链接。",
   "trustProxy": "信任反向代理头",
   "trustProxyHint": "仅当 MoeMail 位于你自己的反向代理之后时开启，用于按客户端 IP 限流。",
   "pollInterval": "邮件轮询间隔（毫秒）",

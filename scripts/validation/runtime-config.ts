@@ -83,6 +83,9 @@ try {
   ).href)
 
   const defaults = schema.createDefaultConfig()
+  for (const baseUrl of ["https://[invalid", "http://host:invalid", "https://", "javascript:alert(1)"]) {
+    assert.equal(schema.parseConfig({ server: { baseUrl } }).ok, false)
+  }
   const typo = schema.parseConfig({
     server: { emailPollIntervlMs: 5_000 },
     databsae: { driver: "postgres" },

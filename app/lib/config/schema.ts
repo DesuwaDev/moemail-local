@@ -79,6 +79,7 @@ function httpUrl(defaultValue: string) {
     z
       .string()
       .trim()
+      .url("HTTP_URL_REQUIRED")
       .refine(value => /^https?:\/\/\S+$/i.test(value), "HTTP_URL_REQUIRED")
       .transform(value => value.replace(/\/+$/, "")),
   )

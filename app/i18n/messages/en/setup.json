@@ -11,7 +11,7 @@
   "requestFailed": "Cannot reach the server. Check the network and retry.",
   "siteSection": "Site",
   "baseUrl": "Base URL",
-  "baseUrlHint": "Public address of this instance; used to build absolute links.",
+  "baseUrlHint": "Must match the address in your browser; used for login callbacks and absolute links.",
   "trustProxy": "Trust proxy headers",
   "trustProxyHint": "Enable only behind your own reverse proxy; used for per-client rate limiting.",
   "pollInterval": "Mailbox poll interval (ms)",

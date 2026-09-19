@@ -9,6 +9,7 @@ declare module "next-pwa" {
     dynamicStartUrl?: boolean
     importScripts?: string[]
     runtimeCaching?: unknown[]
+    buildExcludes?: RegExp[]
     disable?: boolean
   }
 

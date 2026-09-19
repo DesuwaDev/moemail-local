@@ -73,7 +73,7 @@ pnpm start --hostname 127.0.0.1 --port 3000
 | `version` | `1` | 配置格式版本 |
 | `setup.completed` | 首次成功后为 `true` | 初始化状态，不要随意改回 `false` |
 | `setup.completedAt` | `null` | 由服务端写入的初始化完成时间 |
-| `server.baseUrl` | `http://localhost:3000` | 生成 metadata 与绝对链接时使用的公网根地址；OAuth 回调按实际请求 Host 推导 |
+| `server.baseUrl` | `http://localhost:3000` | 站点公网根地址，用于 metadata、绝对链接、登录/OAuth 回调和 HTTPS 会话 Cookie；须与浏览器访问地址一致 |
 | `server.trustProxyHeaders` | `false` | 仅在可信代理覆盖客户端 IP 头时开启 |
 | `server.autoRestartOnDriverChange` | `true` | 切换数据库类型后自动退出重启 |
 | `server.emailPollIntervalMs` | `25000`，范围 5000–600000 | 浏览器收件箱轮询间隔 |
@@ -339,6 +339,10 @@ OAuth 回调地址：
 
 - GitHub：`https://mail.example.com/api/auth/callback/github`
 - Google：`https://mail.example.com/api/auth/callback/google`
+
+登录地址由 `server.baseUrl` 统一生成，不需要设置 `NEXTAUTH_URL` 或 `AUTH_URL`。更换域名或启用 HTTPS 时，请同时更新此配置及 OAuth 服务商登记的回调地址；由 HTTP 切换 HTTPS 后需要重新登录。
+
+匿名 `/api/internal/health` 只返回运行状态，不公开数据库类型、配置版本和配置错误。Docker 健康检查继续依据 HTTP 状态码判断；详细配置诊断在皇帝的“运行配置”面板查看。
 
 代理必须覆盖而不是追加 `X-MoeMail-Client-IP`、`CF-Connecting-IP`、`X-Real-IP`、`X-Forwarded-For`，并正确传递 Host/Proto。仓库示例已这样处理。普通请求体限制为 1 MB，只有 `/api/internal/email` 放宽到 27 MB；应用和 Worker 的硬限制为 25 MiB。
 

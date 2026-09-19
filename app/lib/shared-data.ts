@@ -1,4 +1,5 @@
 import { messageExtras } from "./message-attachments"
+import { isValidShareToken } from "./share-token"
 import type { MessageAttachment, InlineMessageImage } from "./attachment-types"
 import { createDb } from "@/lib/db"
 import { emailShares, messageShares, messages, emails } from "@/lib/schema"
@@ -28,6 +29,7 @@ export interface SharedMessage {
 }
 
 export async function getSharedEmail(token: string): Promise<SharedEmail | null> {
+  if (!isValidShareToken(token)) return null
   const db = createDb()
 
   try {
@@ -71,6 +73,7 @@ export interface SharedMessagesResult {
 }
 
 export async function getSharedEmailMessages(token: string, limit = 20): Promise<SharedMessagesResult> {
+  if (!isValidShareToken(token)) return { messages: [], nextCursor: null, total: 0 }
   const db = createDb()
 
   try {
@@ -158,6 +161,7 @@ export async function getSharedEmailMessages(token: string, limit = 20): Promise
 }
 
 export async function getSharedMessage(token: string): Promise<SharedMessage | null> {
+  if (!isValidShareToken(token)) return null
   const db = createDb()
 
   try {

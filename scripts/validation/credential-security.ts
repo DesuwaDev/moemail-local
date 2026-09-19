@@ -5,6 +5,7 @@ import { createServer } from "node:net"
 import { join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import { eq } from "drizzle-orm"
+import { parse, stringify } from "yaml"
 
 const root = process.cwd()
 const scratch = resolve(root, "node_modules/.cache/credential-security")
@@ -95,6 +96,13 @@ try {
   }
   await login(first)
   await login(second)
+  for (const token of ["bad%00token", "a".repeat(129)]) {
+    for (const path of [`/api/shared/${token}`, `/api/shared/${token}/messages`, `/api/shared/${token}/messages/missing`, `/api/shared/message/${token}`]) {
+      const response = await fetch(base + path)
+      assert.equal(response.status, 404)
+      assert.equal((await response.json()).code, "SHARE_NOT_FOUND")
+    }
+  }
   const json = (body: unknown): RequestInit => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
   const issue = async (body: unknown) => {
     const response = await first("/api/api-keys", json(body))
@@ -178,6 +186,46 @@ try {
   assert.equal(page.headers.get("x-frame-options"), "SAMEORIGIN")
   assert.equal(page.headers.get("content-security-policy"), "frame-ancestors 'self'")
   assert.equal(page.headers.get("x-content-type-options"), "nosniff")
+  // Exercise TLS termination using an actual HTTP backend, including the
+  // server-side auth() reader and OAuth's provider redirect URI.
+  const runtimeResponse = await first("/api/runtime-config")
+  assert.equal(runtimeResponse.status, 200)
+  const originalRuntime = await runtimeResponse.json()
+  const publicOrigin = "https://mail.example.test"
+  const proxyConfig = parse(originalRuntime.yaml)
+  proxyConfig.server.baseUrl = publicOrigin
+  proxyConfig.auth.github = { clientId: "origin-fixture", clientSecret: "origin-fixture-secret" }
+  const saveOrigin = await first("/api/runtime-config", json({ yaml: stringify(proxyConfig), fingerprint: originalRuntime.fingerprint }))
+  assert.equal(saveOrigin.status, 200, await saveOrigin.clone().text())
+  const secure = makeClient()
+  const forwardedHeaders = { "X-Forwarded-Host": "attacker.invalid", "X-Forwarded-Proto": "http" }
+  const providers = await (await secure("/api/auth/providers", { headers: forwardedHeaders })).json()
+  assert.equal(providers.github.callbackUrl, `${publicOrigin}/api/auth/callback/github`)
+  const csrf = await secure("/api/auth/csrf", { headers: forwardedHeaders })
+  assert.ok(csrf.headers.getSetCookie().some(cookie => cookie.startsWith("__Host-authjs.csrf-token=") && /; Secure/i.test(cookie)))
+  const { csrfToken: proxyCsrf } = await csrf.json()
+  const secureLogin = await secure("/api/auth/callback/credentials", {
+    method: "POST", headers: forwardedHeaders,
+    body: new URLSearchParams({ csrfToken: proxyCsrf, username: "security-owner", password: "security-test-password-123", callbackUrl: "https://attacker.invalid/" }),
+  })
+  assert.equal(secureLogin.status, 302)
+  assert.equal(new URL(secureLogin.headers.get("location")!).origin, publicOrigin)
+  assert.ok(secureLogin.headers.getSetCookie().some(cookie => cookie.startsWith("__Secure-authjs.session-token=") && /; Secure/i.test(cookie)))
+  assert.equal((await (await secure("/api/auth/session")).json()).user?.id, owner.id)
+  assert.equal((await secure("/api/api-keys")).status, 200, "server auth() reads the same secure cookie over an HTTP backend")
+  const oauth = await secure("/api/auth/signin/github", {
+    method: "POST", headers: forwardedHeaders,
+    body: new URLSearchParams({ csrfToken: proxyCsrf, callbackUrl: "/" }),
+  })
+  assert.equal(oauth.status, 302)
+  const oauthUrl = new URL(oauth.headers.get("location")!)
+  assert.equal(oauthUrl.origin, "https://github.com")
+  assert.equal(oauthUrl.searchParams.get("redirect_uri"), `${publicOrigin}/api/auth/callback/github`)
+  const secureRuntime = await (await secure("/api/runtime-config")).json()
+  const restoreOrigin = await secure("/api/runtime-config", json({ yaml: originalRuntime.yaml, fingerprint: secureRuntime.fingerprint }))
+  assert.equal(restoreOrigin.status, 200)
+  assert.equal((await first("/api/auth/providers")).status, 200)
+  console.log("Auth origin: canonical redirects, hostile forwarded headers, HTTPS cookies, server sessions and GitHub redirect URI passed")
   console.log(JSON.stringify({ ok: true, driver: postgresUrl ? "postgres" : "sqlite", checks: ["emperor-permanent-key", "permanent-key-role-check", "permanent-key-scope-and-revocation", "upgrade-preserves-legacy-key-and-jwt", "read-and-mail-scopes", "mailbox-isolation", "config-redaction", "expiry-disable", "deleted-mailbox", "csrf", "two-session-revocation", "relogin", "security-headers"] }))
   if (process.argv.includes("--keep-server")) {
     console.log(`UI fixture: ${base}/login (security-owner / security-test-password-123)`)

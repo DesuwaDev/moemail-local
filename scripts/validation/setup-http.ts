@@ -440,8 +440,10 @@ try {
 
   await waitFor(async () => {
     const response = await fetch(`${baseUrl}/api/internal/health`)
-    const body = await response.json() as { status?: string; database?: string }
-    return response.ok && body.status === "ok" && body.database === expectedDriver ? body : null
+    const body = await response.json() as { status?: string }
+    if (!response.ok || body.status !== "ok") return null
+    assert.deepEqual(body, { status: "ok" })
+    return body
   })
 
   const setupClosed = await fetch(`${baseUrl}/api/setup`, {
@@ -872,7 +874,7 @@ try {
     body: JSON.stringify({ kind: "reconcile" }),
   })
   assert.equal(crossOriginMailuMutation.status, 403)
-  const proxiedSameOriginMailuMutation = await request("/api/config/mailu", {
+  const proxiedSameOriginMailuMutation = await memberRequest("/api/config/mailu", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -882,14 +884,12 @@ try {
     },
     body: JSON.stringify({ kind: "reconcile" }),
   })
-  // This test logs in over plain HTTP, while the simulated public request is
-  // HTTPS. Auth.js therefore looks for its secure session cookie and returns
-  // 401; reaching auth (instead of the old origin guard's 403) is the boundary
-  // this proxy regression needs to prove.
-  assert.equal(proxiedSameOriginMailuMutation.status, 401)
+  // Cookie naming follows the configured origin, even if forwarded headers
+  // differ. This reaches the member's permission check, not the origin guard.
+  assert.equal(proxiedSameOriginMailuMutation.status, 403)
   assert.equal(
     (await proxiedSameOriginMailuMutation.json() as { code?: string }).code,
-    "UNAUTHORIZED",
+    "PERMISSION_DENIED",
   )
   const mailboxPayload = (name: string) => JSON.stringify({
     name,
@@ -1877,8 +1877,10 @@ try {
     const response = await fetch(`${baseUrl}/api/internal/health`)
     const raw = await response.text()
     assert.doesNotMatch(raw, new RegExp(healthSecretCanary))
-    const body = JSON.parse(raw) as { configError?: unknown }
-    return response.ok && body.configError ? body : null
+    assert.deepEqual(JSON.parse(raw), { status: "ok" })
+    const diagnostics = await request("/api/runtime-config")
+    const body = await diagnostics.json() as { status?: { lastError?: unknown } }
+    return response.ok && diagnostics.ok && body.status?.lastError ? body : null
   }, 8_000)
 
   const publicAfterInvalid = await fetch(`${baseUrl}/api/runtime-config/public`)
@@ -1892,8 +1894,10 @@ try {
   writeFileSync(configPath, validDirectYaml, "utf8")
   await waitFor(async () => {
     const response = await fetch(`${baseUrl}/api/internal/health`)
-    const body = await response.json() as { status?: string; configError?: unknown }
-    return response.ok && body.status === "ok" && !body.configError ? body : null
+    assert.deepEqual(await response.json(), { status: "ok" })
+    const diagnostics = await request("/api/runtime-config")
+    const body = await diagnostics.json() as { status?: { lastError?: unknown } }
+    return response.ok && diagnostics.ok && body.status && !body.status.lastError ? body : null
   }, 8_000)
 
   let maintenanceBundleVerified = false

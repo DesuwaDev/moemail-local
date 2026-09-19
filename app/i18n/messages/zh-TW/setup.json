@@ -11,7 +11,7 @@
   "requestFailed": "無法連線伺服器，請檢查網路後重試",
   "siteSection": "站台",
   "baseUrl": "站台網址",
-  "baseUrlHint": "對外存取網址，用於產生絕對連結。",
+  "baseUrlHint": "須與瀏覽器存取網址一致，用於登入回呼與絕對連結。",
   "trustProxy": "信任反向代理標頭",
   "trustProxyHint": "僅當 MoeMail 位於你自己的反向代理之後時開啟，用於依用戶端 IP 限流。",
   "pollInterval": "郵件輪詢間隔（毫秒）",

@@ -179,8 +179,10 @@ export const {
   signOut
 } = NextAuth(() => ({
   secret: getConfig().auth.secret ?? undefined,
-  // 本地部署始终位于自有反向代理之后，回调地址由请求头推导。
+  // Auth routes normalize the origin from server.baseUrl. Keep cookie naming
+  // consistent when auth() reads a session behind an HTTP reverse proxy.
   trustHost: true,
+  useSecureCookies: new URL(getConfig().server.baseUrl).protocol === "https:",
   pages: {
     signIn: "/login",
     error: "/auth-error",

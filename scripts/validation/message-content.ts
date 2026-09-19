@@ -133,6 +133,26 @@ try {
   const sharedContext = { params: Promise.resolve({ token: mailboxToken, messageId: result.messageId }) }
   const sharedUrl = `http://127.0.0.1:3000/api/shared/${mailboxToken}/messages/${result.messageId}`
   assert.equal((await (await mailboxRoute.GET(new Request(sharedUrl), sharedContext)).json()).message.attachments.length, 2)
+  const mailboxInfoRoute = await load('app/api/shared/[token]/route.ts')
+  const mailboxMessagesRoute = await load('app/api/shared/[token]/messages/route.ts')
+  for (const invalidToken of ['\u0000', 'bad token', 'bad/token', '中文', 'a'.repeat(129)]) {
+    const invalidContext = { params: Promise.resolve({ token: invalidToken, messageId: result.messageId }) }
+    const invalidRequest = new Request(`http://127.0.0.1:3000/api/shared/${encodeURIComponent(invalidToken)}`)
+    for (const endpoint of [publicRoute, mailboxRoute, mailboxInfoRoute, mailboxMessagesRoute]) {
+      const response = await endpoint.GET(invalidRequest, invalidContext)
+      assert.equal(response.status, 404)
+      assert.equal((await response.json()).code, 'SHARE_NOT_FOUND')
+    }
+    assert.equal(await sharedData.getSharedMessage(invalidToken), null)
+    assert.equal(await sharedData.getSharedEmail(invalidToken), null)
+    assert.deepEqual(await sharedData.getSharedEmailMessages(invalidToken), { messages: [], nextCursor: null, total: 0 })
+  }
+  assert.equal((await mailboxInfoRoute.GET(new Request(sharedUrl), sharedContext)).status, 200)
+  assert.equal((await mailboxMessagesRoute.GET(new Request(sharedUrl), sharedContext)).status, 200)
+  const health = await load('app/api/internal/health/route.ts')
+  const healthResponse = await health.GET()
+  assert.equal(healthResponse.status, 200)
+  assert.deepEqual(await healthResponse.json(), { status: 'ok' })
   await db.update(schema.messageShares).set({ expiresAt: new Date(0) }).where(eq(schema.messageShares.token, token))
   assert.equal((await publicRoute.GET(new Request(publicUrl), publicContext)).status, 410)
   await db.update(schema.emailShares).set({ expiresAt: new Date(0) }).where(eq(schema.emailShares.token, mailboxToken))
@@ -172,6 +192,8 @@ try {
   await ingest.ingestEmail({ ...input, raw: Buffer.from(raw.toString().replace('Subject: CID', 'Subject: accepted CID')) })
   assert.equal((await db.select().from(schema.webhooks))[0].lastDeliveryError, null)
   await db.delete(schema.emails).where(eq(schema.emails.id, mailbox.id))
+  assert.equal((await publicRoute.GET(new Request(publicUrl), publicContext)).status, 404)
+  assert.equal((await mailboxInfoRoute.GET(new Request(sharedUrl), sharedContext)).status, 404)
   assert.equal((await db.select().from(schema.messageAttachments)).length, 0)
   console.log(JSON.stringify({ ok: true, driver: postgresUrl ? 'postgres' : 'sqlite', checks: ['legacy-schema-upgrade', 'html-fallback', 'utf8-summary', 'atomic-attachments', 'deduplication', 'binary-download', 'owner-permission', 'public-shares', 'expired-shares', 'cid-data', 'webhook-ack', 'retry-policy', 'delivery-status', 'cascade-cleanup'] }))
 } finally {

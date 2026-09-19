@@ -57,6 +57,8 @@ const withPWAConfigured = withPWA({
   dynamicStartUrl: false,
   importScripts: ['/pwa-cache-cleanup.js'],
   runtimeCaching: [],
+  // App Router emits empty client stubs for API routes; they have no offline use.
+  buildExcludes: [/^static\/chunks\/app\/api\//],
   disable: process.env.NODE_ENV === 'development',
 })
 

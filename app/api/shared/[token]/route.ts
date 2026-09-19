@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { setupRequiredResponse } from "@/lib/request-auth"
 import { apiError } from "@/lib/api-response"
+import { isValidShareToken } from "@/lib/share-token"
 
 export const runtime = "nodejs"
 
@@ -15,6 +16,7 @@ export async function GET(
   if (setupRequired) return setupRequired
 
   const { token } = await params
+  if (!isValidShareToken(token)) return apiError("SHARE_NOT_FOUND", 404)
   const db = createDb()
 
   try {
