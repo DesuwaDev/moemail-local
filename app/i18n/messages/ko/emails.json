@@ -119,7 +119,12 @@
     "to": "받는 사람",
     "time": "시간",
     "htmlFormat": "HTML 형식",
-    "textFormat": "일반 텍스트 형식"
+    "textFormat": "일반 텍스트 형식",
+    "remoteBlocked": "외부 리소스 차단됨",
+    "remoteAllowed": "불러옴 · 추적 가능",
+    "remoteAlwaysAllowed": "자동 불러오기 · 추적 가능",
+    "loadRemote": "불러오기",
+    "blockRemote": "이 메일 차단"
   },
   "share": {
     "title": "메일함 공유",

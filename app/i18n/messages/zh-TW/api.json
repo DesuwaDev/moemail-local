@@ -1,4 +1,5 @@
 {
+  "ACCOUNT_PREFERENCES_SAVE_FAILED": "儲存或同步設定失敗，請重新整理確認後重試。",
   "API_KEY_PERMANENT_FORBIDDEN": "只有皇帝可以建立永久有效的 API Key。",
   "SESSION_REVOKE_FAILED": "登出所有裝置失敗，請重試。",
   "CAPTCHA_SERVER_URL_INVALID": "請填入有效的 Cap HTTP(S) 服務位址，不可包含帳號密碼、查詢參數或片段。",

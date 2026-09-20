@@ -51,7 +51,7 @@ const TABLES: readonly TableSpec[] = [
     columns: [
       column("id"), column("name"), column("email"), column("emailVerified", "date"),
       column("image"), column("username"), column("password"),
-      column("session_version"),
+      column("session_version"), column("allow_remote_resources", "boolean"),
     ],
     primaryKey: ["id"],
   },
@@ -186,7 +186,7 @@ function listSourceColumns(sqlite: Database.Database, table: string) {
 
 function sourceExpression(table: string, columnName: string, sourceColumns: Set<string>) {
   if (sourceColumns.has(columnName)) return quoteIdentifier(columnName)
-  if (table === "user" && columnName === "session_version") return "0"
+  if (table === "user" && ["session_version", "allow_remote_resources"].includes(columnName)) return "0"
   if (table === "api_keys" && columnName === "access_level") return "'full'"
   if (table === "api_keys" && columnName === "mailbox_id") return "NULL"
   if (table === "message" && columnName === "to_address") return "NULL"
@@ -217,7 +217,7 @@ function inspectSource(sqlite: Database.Database) {
     const sourceColumns = listSourceColumns(sqlite, table.name)
     const compatibleMissing = table.name === "message"
       ? new Set(["to_address", "type", "sent_at"])
-      : new Set(table.name === "user" ? ["session_version"] : table.name === "api_keys" ? ["access_level", "mailbox_id"] : [])
+      : new Set(table.name === "user" ? ["session_version", "allow_remote_resources"] : table.name === "api_keys" ? ["access_level", "mailbox_id"] : [])
     const missingColumns = table.columns
       .map(item => item.name)
       .filter(name => !sourceColumns.has(name) && !compatibleMissing.has(name))

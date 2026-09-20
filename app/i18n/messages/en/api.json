@@ -1,4 +1,5 @@
 {
+  "ACCOUNT_PREFERENCES_SAVE_FAILED": "Could not save or sync this setting. Refresh to check it before retrying.",
   "API_KEY_PERMANENT_FORBIDDEN": "Only the Emperor can create an API key that never expires.",
   "SESSION_REVOKE_FAILED": "Could not sign out all devices. Please try again.",
   "CAPTCHA_SERVER_URL_INVALID": "Enter a valid Cap HTTP(S) server URL without credentials, query parameters or fragments.",

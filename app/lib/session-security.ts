@@ -7,7 +7,7 @@ export async function validateSessionToken(token: JWT, signingIn = false): Promi
   if (typeof token.id !== "string") return null
   const user = await createDb().query.users.findFirst({
     where: eq(users.id, token.id),
-    columns: { sessionVersion: true, bannedAt: true },
+    columns: { sessionVersion: true, bannedAt: true, allowRemoteResources: true },
   })
   if (!user || (signingIn && user.bannedAt)) return null
   if (signingIn) token.sessionVersion = user.sessionVersion
@@ -15,6 +15,7 @@ export async function validateSessionToken(token: JWT, signingIn = false): Promi
   if ((token.sessionVersion ?? 0) !== user.sessionVersion) return null
   // Preserve the existing client-side ban notice and forced sign-out behavior.
   token.bannedAt = user.bannedAt?.toISOString() ?? null
+  token.allowRemoteResources = !user.bannedAt && user.allowRemoteResources
   return token
 }
 

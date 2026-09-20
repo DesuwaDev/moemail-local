@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useId } from "react"
 import { useFormatter, useTranslations } from "next-intl"
 import { Loader2, Share2 } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -47,6 +47,7 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("html")
+  const viewId = useId()
   const { toast } = useToast()
 
   useEffect(() => {
@@ -116,10 +117,10 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
   if (!message) return null
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="p-4 space-y-3 border-b border-primary/20">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-auto">
+      <div className="shrink-0 p-4 space-y-3 border-b border-primary/20">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-bold flex-1">{message.subject || tMessages("noSubject")}</h3>
+          <h3 className="min-w-0 break-words text-base font-bold flex-1">{message.subject || tMessages("noSubject")}</h3>
           {canShare && <ShareMessageDialog
             emailId={emailId}
             messageId={message.id}
@@ -131,7 +132,7 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
             }
           />}
         </div>
-        <div className="text-xs text-gray-500 space-y-1">
+        <div className="break-words text-xs text-gray-500 space-y-1">
           {message.from_address && (
             <p>{tFormat("labelValue", { label: t("from"), value: message.from_address })}</p>
           )}
@@ -146,25 +147,25 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
       </div>
       
       {message.html && message.content && (
-        <div className="border-b border-primary/20 p-2">
+        <div className="shrink-0 border-b border-primary/20 p-2">
           <RadioGroup
             value={viewMode}
             onValueChange={(value) => setViewMode(value as ViewMode)}
             className="flex items-center gap-4"
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="html" id="html" />
+              <RadioGroupItem value="html" id={`${viewId}-html`} />
               <Label
-                htmlFor="html"
+                htmlFor={`${viewId}-html`}
                 className="text-xs cursor-pointer"
               >
                 {t("htmlFormat")}
               </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="text" id="text" />
+              <RadioGroupItem value="text" id={`${viewId}-text`} />
               <Label
-                htmlFor="text"
+                htmlFor={`${viewId}-text`}
                 className="text-xs cursor-pointer"
               >
                 {t("textFormat")}
@@ -175,9 +176,9 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
       )}
       
       <MessageAttachments attachments={message.attachments} />
-      <div className="relative min-h-0 flex-1 overflow-auto">
+      <div className="relative min-h-72 flex-1 shrink-0 overflow-auto">
         {viewMode === "html" && message.html ? (
-          <HtmlMessageFrame html={message.html} inlineImages={message.inline_images} title={t("htmlFormat")} />
+          <HtmlMessageFrame key={message.id} html={message.html} inlineImages={message.inline_images} title={t("htmlFormat")} />
         ) : (
           <div className="p-4 text-sm whitespace-pre-wrap">
             {message.content}

@@ -27,6 +27,7 @@ export const users = pgTable("user", {
   username: text("username").unique(),
   password: text("password"),
   sessionVersion: integer("session_version").notNull().default(0),
+  allowRemoteResources: boolean("allow_remote_resources").notNull().default(false),
   bannedAt: dateColumn("banned_at"),
 }, (table) => [
   index("user_banned_at_idx").on(table.bannedAt),

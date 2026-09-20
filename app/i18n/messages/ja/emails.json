@@ -119,7 +119,12 @@
     "to": "宛先",
     "time": "時間",
     "htmlFormat": "HTML 表示",
-    "textFormat": "テキスト表示"
+    "textFormat": "テキスト表示",
+    "remoteBlocked": "外部リソースをブロック中",
+    "remoteAllowed": "読込済み・追跡の可能性あり",
+    "remoteAlwaysAllowed": "自動読込・追跡の可能性あり",
+    "loadRemote": "読み込む",
+    "blockRemote": "このメールをブロック"
   },
   "share": {
     "title": "メールボックスを共有",

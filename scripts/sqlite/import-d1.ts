@@ -37,7 +37,7 @@ class ImportError extends Error {
 const TABLES: readonly TableSpec[] = [
   {
     name: "user",
-    columns: ["id", "name", "email", "emailVerified", "image", "username", "password", "session_version"],
+    columns: ["id", "name", "email", "emailVerified", "image", "username", "password", "session_version", "allow_remote_resources"],
   },
   {
     name: "role",
@@ -233,7 +233,7 @@ function inspectSourceSchema(sqlite: Database.Database) {
     const columns = listColumns(sqlite, "main", table.name)
     const compatibleMissingColumns = table.name === "message"
       ? new Set(["to_address", "type", "sent_at"])
-      : new Set(table.name === "user" ? ["session_version"] : table.name === "api_keys" ? ["access_level", "mailbox_id"] : [])
+      : new Set(table.name === "user" ? ["session_version", "allow_remote_resources"] : table.name === "api_keys" ? ["access_level", "mailbox_id"] : [])
     const missingColumns = table.columns.filter(
       (column) => !columns.has(column) && !compatibleMissingColumns.has(column),
     )
@@ -315,7 +315,7 @@ function sourceExpression(table: string, column: string, sourceColumns: Set<stri
   if (sourceColumns.has(column)) {
     return quoteIdentifier(column)
   }
-  if (table === "user" && column === "session_version") return "0"
+  if (table === "user" && ["session_version", "allow_remote_resources"].includes(column)) return "0"
   if (table === "api_keys" && column === "access_level") return "'full'"
   if (table === "api_keys" && column === "mailbox_id") return "NULL"
   if (table === "message" && column === "to_address") {

@@ -7,6 +7,7 @@ import { FloatingLanguageSwitcher } from "@/components/layout/floating-language-
 import { SharedMessageList } from "@/components/emails/shared-message-list"
 import { SharedMessageDetail } from "@/components/emails/shared-message-detail"
 import { useRuntimeConfig } from "@/providers"
+import { cn } from "@/lib/utils"
 
 interface Email {
   id: string
@@ -223,9 +224,9 @@ export function SharedEmailPageClient({
           ctaText={tShared("createOwnEmail")}
         />
 
-        {/* 桌面端双栏布局 */}
-        <div className="hidden lg:grid grid-cols-2 gap-4 h-[calc(100vh-280px)] mt-6">
-          <div className="min-h-0 overflow-hidden rounded-lg border-2 border-primary/20 bg-background">
+        {/* One detail instance keeps the per-message privacy choice when the viewport changes. */}
+        <div className="grid min-h-[28rem] grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100dvh-260px)] lg:h-[calc(100dvh-280px)] mt-6">
+          <div className={cn("min-w-0 min-h-0 overflow-hidden rounded-lg border-2 border-primary/20 bg-background", selectedMessage && "hidden lg:block")}>
             <SharedMessageList
               messages={messages.map(msg => ({
                 ...msg,
@@ -267,144 +268,52 @@ export function SharedEmailPageClient({
             />
           </div>
 
-          <div className="min-h-0 overflow-hidden rounded-lg border-2 border-primary/20 bg-background">
-            <SharedMessageDetail
-              message={selectedMessage ? {
-                ...selectedMessage,
-                received_at: (() => {
-                  if (!selectedMessage.received_at) return undefined
-                  try {
-                    const date = new Date(selectedMessage.received_at)
-                    return isNaN(date.getTime()) ? undefined : date.getTime()
-                  } catch {
-                    return undefined
-                  }
-                })(),
-                sent_at: (() => {
-                  if (!selectedMessage.sent_at) return undefined
-                  try {
-                    const date = new Date(selectedMessage.sent_at)
-                    return isNaN(date.getTime()) ? undefined : date.getTime()
-                  } catch {
-                    return undefined
-                  }
-                })()
-              } : null}
-              loading={messageLoading}
-              t={{
-                messageContent: t("layout.messageContent"),
-                selectMessage: t("layout.selectMessage"),
-                loading: t("messageView.loading"),
-                from: t("messageView.from"),
-                to: t("messageView.to"),
-                subject: t("messages.subject"),
-                time: t("messageView.time"),
-                htmlFormat: t("messageView.htmlFormat"),
-                textFormat: t("messageView.textFormat"),
-                noSubject: t("messages.noSubject")
-              }}
-            />
-          </div>
-        </div>
-
-        {/* 移动端单栏布局 */}
-        <div className="lg:hidden h-[calc(100vh-260px)] mt-6">
-          <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border-2 border-primary/20 bg-background">
-            {!selectedMessage ? (
-              // 消息列表视图
-              <SharedMessageList
-                messages={messages.map(msg => ({
-                  ...msg,
+          <div className={cn("flex min-w-0 min-h-0 flex-col overflow-hidden rounded-lg border-2 border-primary/20 bg-background", !selectedMessage && "hidden lg:flex")}>
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b-2 border-primary/20 p-2 lg:hidden">
+              <button onClick={() => setSelectedMessage(null)} className="shrink-0 text-sm text-primary">{t("layout.backToMessageList")}</button>
+              <span className="text-sm font-medium">{t("layout.messageContent")}</span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <SharedMessageDetail
+                message={selectedMessage ? {
+                  ...selectedMessage,
                   received_at: (() => {
-                    if (!msg.received_at) return undefined
+                    if (!selectedMessage.received_at) return undefined
                     try {
-                      const date = new Date(msg.received_at)
+                      const date = new Date(selectedMessage.received_at)
                       return isNaN(date.getTime()) ? undefined : date.getTime()
                     } catch {
                       return undefined
                     }
                   })(),
                   sent_at: (() => {
-                    if (!msg.sent_at) return undefined
+                    if (!selectedMessage.sent_at) return undefined
                     try {
-                      const date = new Date(msg.sent_at)
+                      const date = new Date(selectedMessage.sent_at)
                       return isNaN(date.getTime()) ? undefined : date.getTime()
                     } catch {
                       return undefined
                     }
                   })()
-                }))}
-                selectedMessageId={null}
-                onMessageSelect={fetchMessageDetail}
-                onLoadMore={handleLoadMore}
-                onRefresh={handleRefresh}
-                loading={false}
-                loadingMore={loadingMore}
-                refreshing={refreshing}
-                hasMore={!!nextCursor}
-                total={total}
+                } : null}
+                loading={messageLoading}
                 t={{
-                  received: t("messages.received"),
-                  noMessages: t("messages.noMessages"),
+                  messageContent: t("layout.messageContent"),
+                  selectMessage: t("layout.selectMessage"),
                   loading: t("messageView.loading"),
-                  loadingMore: t("messages.loadingMore"),
+                  from: t("messageView.from"),
+                  to: t("messageView.to"),
+                  subject: t("messages.subject"),
+                  time: t("messageView.time"),
+                  htmlFormat: t("messageView.htmlFormat"),
+                  textFormat: t("messageView.textFormat"),
                   noSubject: t("messages.noSubject")
                 }}
               />
-            ) : (
-              // 消息详情视图
-              <>
-                <div className="p-2 border-b-2 border-primary/20 flex items-center justify-between shrink-0">
-                  <button
-                    onClick={() => setSelectedMessage(null)}
-                    className="text-sm text-primary"
-                  >
-                    {t("layout.backToMessageList")}
-                  </button>
-                  <span className="text-sm font-medium">{t("layout.messageContent")}</span>
-                </div>
-                <div className="min-h-0 flex-1 overflow-auto">
-                  <SharedMessageDetail
-                    message={{
-                      ...selectedMessage,
-                      received_at: (() => {
-                        if (!selectedMessage.received_at) return undefined
-                        try {
-                          const date = new Date(selectedMessage.received_at)
-                          return isNaN(date.getTime()) ? undefined : date.getTime()
-                        } catch {
-                          return undefined
-                        }
-                      })(),
-                      sent_at: (() => {
-                        if (!selectedMessage.sent_at) return undefined
-                        try {
-                          const date = new Date(selectedMessage.sent_at)
-                          return isNaN(date.getTime()) ? undefined : date.getTime()
-                        } catch {
-                          return undefined
-                        }
-                      })()
-                    }}
-                    loading={messageLoading}
-                    t={{
-                      messageContent: t("layout.messageContent"),
-                      selectMessage: t("layout.selectMessage"),
-                      loading: t("messageView.loading"),
-                      from: t("messageView.from"),
-                      to: t("messageView.to"),
-                      subject: t("messages.subject"),
-                      time: t("messageView.time"),
-                      htmlFormat: t("messageView.htmlFormat"),
-                      textFormat: t("messageView.textFormat"),
-                      noSubject: t("messages.noSubject")
-                    }}
-                  />
-                </div>
-              </>
-            )}
+            </div>
           </div>
         </div>
+
       </div>
 
       <FloatingLanguageSwitcher />

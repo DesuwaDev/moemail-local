@@ -119,7 +119,12 @@
     "to": "收件者",
     "time": "時間",
     "htmlFormat": "HTML 格式",
-    "textFormat": "純文字格式"
+    "textFormat": "純文字格式",
+    "remoteBlocked": "外部資源已封鎖",
+    "remoteAllowed": "已載入，可能被追蹤",
+    "remoteAlwaysAllowed": "自動載入中，可能被追蹤",
+    "loadRemote": "載入資源",
+    "blockRemote": "封鎖此封"
   },
   "share": {
     "title": "分享郵箱",

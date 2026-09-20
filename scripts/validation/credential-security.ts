@@ -104,6 +104,21 @@ try {
     }
   }
   const json = (body: unknown): RequestInit => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+  const preferences = (body: unknown): RequestInit => ({ ...json(body), method: "PATCH" })
+  const currentPreference = async (request = first) => (await (await request("/api/auth/session")).json()).user?.allowRemoteResources
+  assert.equal(await currentPreference(), false, "upgrade defaults to blocking remote resources")
+  assert.equal((await fetch(base + "/api/account/preferences", preferences({ allowRemoteResources: true }))).status, 401)
+  assert.equal((await first("/api/account/preferences", { ...preferences({ allowRemoteResources: true }), headers: { "Content-Type": "application/json", Origin: "https://attacker.invalid" } })).status, 403)
+  assert.equal((await first("/api/account/preferences", { ...preferences({ allowRemoteResources: true }), headers: { "Content-Type": "application/json", "X-API-Key": oldKey } })).status, 403)
+  assert.equal((await first("/api/account/preferences", preferences({ allowRemoteResources: "true" }))).status, 400)
+  assert.equal((await first("/api/account/preferences", preferences({ userId: "another-user", allowRemoteResources: true }))).status, 400)
+  const [untouched] = await db.insert(schema.users).values({ username: "privacy-other" }).returning()
+  assert.equal((await first("/api/account/preferences", preferences({ allowRemoteResources: true }))).status, 200)
+  assert.equal((await db.select().from(schema.users).where(eq(schema.users.id, untouched.id)))[0].allowRemoteResources, false)
+  assert.equal(await currentPreference(second), true, "preference persists across sessions")
+  assert.equal((await validateSessionToken({ id: untouched.id, allowRemoteResources: true }))?.allowRemoteResources, false, "client data cannot override stored preference")
+  assert.equal((await first("/api/account/preferences", preferences({ allowRemoteResources: false }))).status, 200)
+  assert.equal(await currentPreference(second), false)
   const issue = async (body: unknown) => {
     const response = await first("/api/api-keys", json(body))
     assert.equal(response.status, 200, await response.clone().text())
@@ -226,7 +241,7 @@ try {
   assert.equal(restoreOrigin.status, 200)
   assert.equal((await first("/api/auth/providers")).status, 200)
   console.log("Auth origin: canonical redirects, hostile forwarded headers, HTTPS cookies, server sessions and GitHub redirect URI passed")
-  console.log(JSON.stringify({ ok: true, driver: postgresUrl ? "postgres" : "sqlite", checks: ["emperor-permanent-key", "permanent-key-role-check", "permanent-key-scope-and-revocation", "upgrade-preserves-legacy-key-and-jwt", "read-and-mail-scopes", "mailbox-isolation", "config-redaction", "expiry-disable", "deleted-mailbox", "csrf", "two-session-revocation", "relogin", "security-headers"] }))
+  console.log(JSON.stringify({ ok: true, driver: postgresUrl ? "postgres" : "sqlite", checks: ["mail-privacy-default-and-persistence", "mail-privacy-session-isolation-and-csrf", "emperor-permanent-key", "permanent-key-role-check", "permanent-key-scope-and-revocation", "upgrade-preserves-legacy-key-and-jwt", "read-and-mail-scopes", "mailbox-isolation", "config-redaction", "expiry-disable", "deleted-mailbox", "csrf", "two-session-revocation", "relogin", "security-headers"] }))
   if (process.argv.includes("--keep-server")) {
     console.log(`UI fixture: ${base}/login (security-owner / security-test-password-123)`)
     await new Promise<void>(done => { process.once("SIGINT", done); process.once("SIGTERM", done) })

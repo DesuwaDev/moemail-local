@@ -21,6 +21,7 @@ import { MyQuotaPanel } from "./my-quota-panel"
 import { WebsiteConfigPanel } from "./website-config-panel"
 import { WebhookConfig } from "./webhook-config"
 import { SessionSecurityPanel } from "./session-security-panel"
+import { MailPrivacyPanel } from "./mail-privacy-panel"
 
 interface ProfileCardProps { user: User }
 
@@ -148,22 +149,22 @@ export function ProfileCard({ user }: ProfileCardProps) {
         </div>
 
         {visitedTabs.has("account") && <TabsContent value="account" forceMount className={persistentTabClass}>
-          <div className="space-y-4">
-          <div className="rounded-lg border-2 border-primary/20 bg-background p-4 sm:p-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/20">
-                {user.image ? <Image src={user.image} alt={user.name || tAuth("userAvatar")} fill sizes="80px" className="object-cover" /> : <User2 className="m-5 h-10 w-10 text-primary" />}
+          <div className="space-y-3">
+          <div className="rounded-lg border-2 border-primary/20 bg-background p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/20">
+                {user.image ? <Image src={user.image} alt={user.name || tAuth("userAvatar")} fill sizes="48px" className="object-cover" /> : <User2 className="m-3 h-6 w-6 text-primary" />}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-xl font-bold">{user.name || user.username}</h2>{user.providers?.map(provider => { const config = providerConfigs[provider as keyof typeof providerConfigs]; if (!config) return null; const Icon = config.icon; return <span key={provider} className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${config.className}`}><Icon className="h-3 w-3" />{config.label}</span> })}</div>
+                <div className="flex flex-wrap items-center gap-2"><h2 className="break-words text-base font-bold">{user.name || user.username}</h2>{user.providers?.map(provider => { const config = providerConfigs[provider as keyof typeof providerConfigs]; if (!config) return null; const Icon = config.icon; return <span key={provider} className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${config.className}`}><Icon className="h-3 w-3" />{config.label}</span> })}</div>
                 <p className="mt-1 truncate text-sm text-muted-foreground">{user.email || tFormat("labelValue", { label: t("name"), value: user.username ?? "" })}</p>
-                <div className="mt-2 flex flex-wrap gap-2">{user.roles?.map(({ name }) => { const role = roleConfigs[name as keyof typeof roleConfigs]; if (!role) return null; const Icon = role.icon; return <span key={name} className="flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs text-primary"><Icon className="h-3 w-3" />{t(`roles.${role.key}` as never)}</span> })}</div>
+                <div className="mt-1 flex flex-wrap gap-1.5">{user.roles?.map(({ name }) => { const role = roleConfigs[name as keyof typeof roleConfigs]; if (!role) return null; const Icon = role.icon; return <span key={name} className="flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs text-primary"><Icon className="h-3 w-3" />{t(`roles.${role.key}` as never)}</span> })}</div>
               </div>
-              <div className="flex shrink-0 gap-2 sm:flex-col"><Button onClick={() => router.push("/moe")} className="flex-1 gap-2"><Mail className="h-4 w-4" />{tNav("backToMailbox")}</Button><Button variant="outline" disabled={isSigningOut} onClick={() => void signOutFromCurrentOrigin()} className="flex-1">{tAuth("logout")}</Button></div>
+              <div className="flex w-full shrink-0 gap-2 sm:w-auto"><Button onClick={() => router.push("/moe")} className="flex-1 gap-2 sm:flex-none"><Mail className="h-4 w-4" />{tNav("backToMailbox")}</Button><Button variant="outline" disabled={isSigningOut} onClick={() => void signOutFromCurrentOrigin()} className="flex-1 sm:flex-none">{tAuth("logout")}</Button></div>
             </div>
           </div>
+          <div className="grid min-w-0 gap-3 lg:grid-cols-2"><MailPrivacyPanel /><SessionSecurityPanel /></div>
           <MyQuotaPanel />
-          <SessionSecurityPanel />
           </div>
         </TabsContent>}
         {(canManageConfig || canManageMailu) && visitedTabs.has("domains") && <TabsContent value="domains" forceMount className={persistentTabClass}><DomainPolicyPanel canManageConfig={canManageConfig} canManageMailu={canManageMailu} /></TabsContent>}

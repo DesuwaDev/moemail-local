@@ -360,6 +360,7 @@ export const {
         session.user.name = token.name as string
         session.user.username = token.username as string
         session.user.image = token.image as string
+        session.user.allowRemoteResources = token.allowRemoteResources === true
 
         const db = createDb()
         // JWT validation already loaded the current user status and revocation version.

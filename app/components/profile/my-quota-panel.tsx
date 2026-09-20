@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BarChart3, Clock3, HardDrive, KeyRound, Mail } from "lucide-react"
+import { BarChart3, ChevronDown, Clock3, HardDrive, KeyRound, Mail } from "lucide-react"
 import { useFormatter, useTranslations } from "next-intl"
 import type { MailQuotaAssignment, MailQuotaUsage } from "./mail-quota-editor"
 
@@ -53,5 +53,22 @@ export function MyQuotaPanel() {
     { key: "messageBytes", icon: HardDrive, value: access.quotas.maxMessageBytes === 0 ? t("systemMaximum") : t("bytes", { count: format.number(access.quotas.maxMessageBytes) }) },
     { key: "activeApiKeys", icon: KeyRound, value: format.number(usage.activeApiKeys) },
   ] as const
-  return <section className="min-w-0 space-y-3 rounded-lg border-2 border-primary/20 bg-background p-4 sm:p-5"><div className="min-w-0"><h2 className="flex min-w-0 items-center gap-2 font-semibold"><BarChart3 className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 [overflow-wrap:anywhere]">{t("title")}</span></h2><p className="mt-1 text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{t("description")}</p></div><div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-4">{general.map(({ key, icon: Icon, value }) => <div key={key} className="min-w-0 rounded-md border p-3"><div className="flex min-w-0 items-start gap-1.5 text-xs leading-relaxed text-muted-foreground"><Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span className="min-w-0 [overflow-wrap:anywhere]">{t(`${key}.label` as never)}</span></div><div className="mt-1 min-w-0 font-semibold [overflow-wrap:anywhere]">{value}</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{t(`${key}.help` as never)}</p></div>)}</div><div className="grid min-w-0 gap-3 lg:grid-cols-2"><MailUsage direction="send" usage={usage.send} /><MailUsage direction="receive" usage={usage.receive} /></div><p className="text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{t("mailboxUsageHint")}</p></section>
+  return <section className="min-w-0 space-y-3 rounded-lg border-2 border-primary/20 bg-background p-3 sm:p-4">
+    <h2 className="flex items-center gap-2 text-sm font-semibold"><BarChart3 className="size-4 shrink-0 text-primary" />{t("title")}</h2>
+    <div className="grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-4">
+      {general.map(({ key, icon: Icon, value }) => <div key={key} className="min-w-0 rounded-md border px-2.5 py-2">
+        <div className="flex min-w-0 items-start gap-1.5 text-xs leading-relaxed text-muted-foreground"><Icon className="mt-0.5 size-3.5 shrink-0" /><span className="min-w-0 [overflow-wrap:anywhere]">{t(`${key}.label` as never)}</span></div>
+        <div className="mt-1 text-sm font-semibold [overflow-wrap:anywhere]">{value}</div>
+      </div>)}
+    </div>
+    <details className="group min-w-0 border-t pt-2">
+      <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-2 text-sm [&::-webkit-details-marker]:hidden"><span>{t("ruleDetails")}</span><ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" /></summary>
+      <div className="mt-2 space-y-3">
+        <p className="text-xs leading-relaxed text-muted-foreground">{t("description")}</p>
+        <dl className="grid gap-2 text-xs leading-relaxed sm:grid-cols-2">{general.map(({key}) => <div key={key}><dt className="font-medium">{t(`${key}.label` as never)}</dt><dd className="text-muted-foreground">{t(`${key}.help` as never)}</dd></div>)}</dl>
+        <div className="grid min-w-0 gap-3 lg:grid-cols-2"><MailUsage direction="send" usage={usage.send} /><MailUsage direction="receive" usage={usage.receive} /></div>
+        <p className="text-xs leading-relaxed text-muted-foreground">{t("mailboxUsageHint")}</p>
+      </div>
+    </details>
+  </section>
 }

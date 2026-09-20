@@ -60,6 +60,7 @@ declare module "next-auth" {
     username?: string | null
     providers?: string[]
     bannedAt?: Date | null
+    allowRemoteResources?: boolean
     permissions?: string[]
     quotas?: Record<string, number>
     allowedDomains?: string[] | null

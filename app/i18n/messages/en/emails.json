@@ -119,7 +119,12 @@
     "to": "To",
     "time": "Time",
     "htmlFormat": "HTML Format",
-    "textFormat": "Plain Text Format"
+    "textFormat": "Plain Text Format",
+    "remoteBlocked": "External resources blocked",
+    "remoteAllowed": "Loaded; tracking is possible",
+    "remoteAlwaysAllowed": "Auto-loading; tracking is possible",
+    "loadRemote": "Load resources",
+    "blockRemote": "Block this email"
   },
   "share": {
     "title": "Share Mailbox",

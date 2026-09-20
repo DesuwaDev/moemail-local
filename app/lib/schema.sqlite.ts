@@ -11,6 +11,7 @@ export const users = sqliteTable("user", {
   username: text("username").unique(),
   password: text("password"),
   sessionVersion: integer("session_version").notNull().default(0),
+  allowRemoteResources: integer("allow_remote_resources", { mode: "boolean" }).notNull().default(false),
   bannedAt: integer("banned_at", { mode: "timestamp_ms" }),
 }, (table) => [
   index("user_banned_at_idx").on(table.bannedAt),
