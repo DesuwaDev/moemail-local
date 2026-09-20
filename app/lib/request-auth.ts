@@ -136,10 +136,10 @@ export async function authorizeRequest(
   }
 
   if (principal.kind === "apiKey" && (principal.apiKeyAccessLevel !== "full" || principal.mailboxId)) {
-    const allowed = new Set<Permission>([PERMISSIONS.VIEW_EMAIL, PERMISSIONS.RECEIVE_EMAIL])
+    const allowed = new Set<Permission>([PERMISSIONS.VIEW_EMAIL, PERMISSIONS.VIEW_MESSAGE_CONTENT, PERMISSIONS.DOWNLOAD_ATTACHMENT, PERMISSIONS.RECEIVE_EMAIL])
     if (principal.apiKeyAccessLevel !== "read") {
       if (!principal.mailboxId) allowed.add(PERMISSIONS.CREATE_EMAIL)
-      for (const permission of [PERMISSIONS.DELETE_EMAIL, PERMISSIONS.SEND_EMAIL,
+      for (const permission of [PERMISSIONS.DELETE_EMAIL, PERMISSIONS.DELETE_MESSAGE, PERMISSIONS.SEND_EMAIL,
         PERMISSIONS.SHARE_EMAIL, PERMISSIONS.PRIVATE_RECIPIENT_DELIVERY]) allowed.add(permission)
     }
     principal.access = {

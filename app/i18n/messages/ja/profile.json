@@ -280,10 +280,10 @@
     "saveFailed": "設定の保存に失敗しました"
   },
   "promote": {
-    "title": "ロール管理",
-    "description": "ユーザーロールを管理（皇帝のみ利用可能）",
+    "title": "ユーザー管理",
+    "description": "ユーザーやメールボックスを検索し、メール・権限・資源を管理します。",
     "search": "ユーザーを検索",
-    "searchPlaceholder": "ユーザー名、メールまたは名前で検索",
+    "searchPlaceholder": "ユーザー名・ログインメール・所有メールボックスを検索",
     "username": "ユーザー名",
     "email": "メール",
     "role": "ロール",
@@ -399,9 +399,9 @@
         "allowedDomains": "許可されたドメイン：{domains}"
       },
       "permissions": {
-        "view_email": "メールを表示",
+        "view_email": "メールボックスと一覧の閲覧",
         "create_email": "メールボックスを作成",
-        "delete_email": "メールボックスを削除",
+        "delete_email": "メールボックスの削除",
         "receive_email": "メールを受信",
         "send_email": "メールを送信",
         "private_recipient_delivery": "個別宛先を非表示",
@@ -410,7 +410,10 @@
         "promote_user": "ユーザーを管理",
         "manage_config": "設定を管理",
         "manage_mailu": "Mailu を管理",
-        "manage_api_key": "API キーを管理"
+        "manage_api_key": "API キーを管理",
+        "view_message_content": "メール本文の閲覧",
+        "download_attachment": "添付ファイルのダウンロード",
+        "delete_message": "個別メールの削除"
       },
       "quotas": {
         "maxActiveMailboxes": "有効メールボックス上限",

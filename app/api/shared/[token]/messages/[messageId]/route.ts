@@ -1,3 +1,4 @@
+import { isMailboxShareAvailable } from "@/lib/mailbox-access"
 import { attachmentResponse, messageExtras } from "@/lib/message-attachments"
 import { createDb } from "@/lib/db"
 import { emailShares, messages } from "@/lib/schema"
@@ -36,7 +37,7 @@ export async function GET(
       return apiError("SHARE_EXPIRED", 410)
     }
 
-    if (share.email.expiresAt < new Date()) {
+    if (!await isMailboxShareAvailable(share.email)) {
       return apiError("MAILBOX_EXPIRED", 410)
     }
 

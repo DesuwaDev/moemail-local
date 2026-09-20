@@ -57,6 +57,13 @@
       "when": 1789862400000,
       "tag": "0007_mail_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790035200000,
+      "tag": "0008_mailbox_management",
+      "breakpoints": true
     }
   ]
 }

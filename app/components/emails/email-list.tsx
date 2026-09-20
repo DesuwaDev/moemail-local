@@ -28,6 +28,8 @@ interface Email {
   id: string
   address: string
   createdAt: number
+  disabledAt?: string | null
+  shareEnabled?: boolean
   expiresAt: number
 }
 
@@ -211,7 +213,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                   <div className="truncate flex-1">
                     <div className="font-medium truncate">{email.address}</div>
                     <div className="text-xs text-gray-500">
-                      {new Date(email.expiresAt).getFullYear() === 9999 ? (
+                      {email.disabledAt ? tApi("MAILBOX_DISABLED") : new Date(email.expiresAt).getUTCFullYear() === 9999 ? (
                         t("permanent")
                       ) : (
                         tFormat("labelValue", {
@@ -222,7 +224,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                     </div>
                   </div>
                   {(canShare || canDelete) && <div className="flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100" onClick={(e) => e.stopPropagation()}>
-                    {canShare && <ShareDialog emailId={email.id} emailAddress={email.address} />}
+                    {canShare && !email.disabledAt && email.shareEnabled !== false && <ShareDialog emailId={email.id} emailAddress={email.address} />}
                     {canDelete && <Button
                       variant="ghost"
                       size="icon"

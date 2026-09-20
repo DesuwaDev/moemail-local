@@ -93,9 +93,9 @@
       "resetMailboxUsage": "Mailbox quota usage was reset"
     },
     "permissions": {
-      "view_email": "View messages",
+      "view_email": "View mailboxes and message lists",
       "create_email": "Create mailboxes",
-      "delete_email": "Delete mailboxes and messages",
+      "delete_email": "Delete mailboxes",
       "receive_email": "Receive messages",
       "send_email": "Send messages",
       "private_recipient_delivery": "Hide recipients with separate delivery",
@@ -104,7 +104,10 @@
       "promote_user": "Manage user roles",
       "manage_config": "Manage site and domain settings",
       "manage_mailu": "Manage Mailu integration and credentials",
-      "manage_api_key": "Manage API keys"
+      "manage_api_key": "Manage API keys",
+      "view_message_content": "Read message body",
+      "download_attachment": "Download attachments",
+      "delete_message": "Delete individual messages"
     },
     "quotas": {
       "sectionHelp": "These three limits govern mailbox creation and individual inbound message size; they are not daily send/receive counters. Role values are the defaults for users in that role.",
@@ -485,5 +488,107 @@
       "saving": "Saving",
       "confirm": "I understand, continue"
     }
+  },
+  "management": {
+    "users": "Users",
+    "mailboxes": "Mailboxes",
+    "searchMailboxes": "Search mailbox name or address",
+    "searchMessages": "Search subject, sender or recipient",
+    "status": "Status",
+    "all": "All",
+    "active": "Active",
+    "disabled": "Disabled",
+    "expired": "Expired",
+    "empty": "No matching records",
+    "owner": "Owner: {owner}",
+    "unassigned": "Unassigned",
+    "counts": "Received {received} · Sent {sent}",
+    "expires": "Expires {date}",
+    "open": "Manage",
+    "pagination": "{total} records · {page}/{pages}",
+    "previous": "Previous",
+    "next": "Next",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "received": "Inbox",
+    "sent": "Sent",
+    "settings": "Manage",
+    "controlsHelp": "Disabling a mailbox blocks receiving, sending, reading and sharing while retaining stored mail. Direction and sharing switches also respect user and domain policies.",
+    "controls": {
+      "disabled": "Disable mailbox",
+      "receiveEnabled": "Allow receiving",
+      "sendEnabled": "Allow sending",
+      "shareEnabled": "Allow sharing"
+    },
+    "expiry": "Expires at (local time)",
+    "deleteMailbox": "Delete mailbox",
+    "deleteMailboxHelp": "Permanently delete {address}, all messages, attachments and shares. This cannot be undone and does not reset quota usage.",
+    "deleteMessage": "Delete message",
+    "deleteMessageHelp": "Permanently delete this message, attachments and shares. This cannot be undone and does not reset quota usage.",
+    "save": "Save",
+    "saved": "Saved",
+    "privacy": "Mail previews respect external-resource privacy settings.",
+    "message": {
+      "messageContent": "Message",
+      "selectMessage": "Select a message",
+      "loading": "Loading",
+      "from": "From",
+      "to": "To",
+      "subject": "Subject",
+      "time": "Time",
+      "htmlFormat": "HTML",
+      "textFormat": "Text",
+      "noSubject": "No subject"
+    },
+    "policyTabs": {
+      "permissions": "Permissions",
+      "quotas": "Limits",
+      "domains": "Domains"
+    },
+    "overrideHelp": "Override the role for this user, or inherit future role changes. Set sending and receiving quota rules by user or mailbox in Access → Mail quotas.",
+    "roleHelp": "Configure existing roles. Body access, attachment downloads and message deletion are separate controls; mailbox viewing permission is still required.",
+    "filterSettings": "Filter settings",
+    "roleValue": "Role: {value}",
+    "userTabs": {
+      "overview": "Overview",
+      "mailboxes": "Mailboxes",
+      "access": "Access",
+      "resources": "Resources",
+      "audit": "History"
+    },
+    "totalMessages": "Total messages",
+    "countsHelp": "Counts reflect messages currently stored, including expired and disabled mailboxes. Deletions reduce these counts, independently of historical quota usage.",
+    "role": "Role",
+    "username": "Username",
+    "loginEmail": "Login email",
+    "providers": "Sign-in methods",
+    "password": "Password",
+    "resourceCounts": "API keys {keys} · Webhooks {hooks} · Shares {shares}",
+    "actions": {
+      "sessions": "Sign out all devices",
+      "apiKeys": "Disable all API keys",
+      "webhooks": "Disable webhooks",
+      "shares": "Revoke all shares"
+    },
+    "actionHelp": {
+      "sessions": "Invalidate all current sessions. The user can sign in again; API keys are unaffected.",
+      "apiKeys": "Disable existing API keys. A user with permission can enable them or create new keys. Also revoke API key management permission for a lasting restriction.",
+      "webhooks": "Disable existing webhooks. Also revoke webhook management permission for a lasting restriction.",
+      "shares": "Permanently revoke all mailbox and message shares. Also revoke sharing permission to prevent new shares."
+    },
+    "auditHelp": "Records mailbox management, body and attachment access, and resource revocation after this upgrade. Bodies, attachment contents and secrets are never logged.",
+    "auditActions": {
+      "mailbox_update": "Updated mailbox",
+      "mailbox_delete": "Deleted mailbox",
+      "message_read": "Read message",
+      "attachment_read": "Accessed attachment",
+      "message_delete": "Deleted message",
+      "user_sessions": "Revoked sessions",
+      "user_apiKeys": "Disabled API keys",
+      "user_webhooks": "Disabled webhooks",
+      "user_shares": "Revoked shares"
+    },
+    "permanent": "Never expires"
   }
 }

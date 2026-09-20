@@ -1,6 +1,6 @@
 {
   "name": "moemail",
-  "version": "0.21.7",
+  "version": "0.21.8",
   "private": true,
   "packageManager": "pnpm@11.21.0",
   "scripts": {
@@ -70,7 +70,8 @@
     "validate:i18n": "tsx scripts/validation/i18n.ts && tsx scripts/validation/locale-navigation.ts",
     "validate:captcha": "tsx scripts/validation/captcha-cap.ts",
     "validate:message-content": "tsx scripts/validation/message-content.ts",
-    "validate:credential-security": "tsx scripts/validation/credential-security.ts"
+    "validate:credential-security": "tsx scripts/validation/credential-security.ts",
+    "validate:admin-management": "tsx scripts/validation/admin-management.ts"
   },
   "type": "module",
   "dependencies": {

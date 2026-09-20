@@ -211,7 +211,7 @@ export function SharedEmailPageClient({
             try {
               const expiresDate = new Date(email.expiresAt)
               if (isNaN(expiresDate.getTime())) return tShared("sharedMailbox")
-              return expiresDate.getFullYear() === 9999
+              return expiresDate.getUTCFullYear() === 9999
                 ? tShared("permanent")
                 : tFormat("labelValue", {
                   label: tShared("expiresAt"),

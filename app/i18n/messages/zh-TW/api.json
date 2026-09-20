@@ -170,5 +170,9 @@
   "USERS_READ_FAILED": "讀取使用者清單失敗。",
   "WEBHOOK_CONFIG_INVALID": "Webhook 設定無效。",
   "WEBHOOK_TEST_FAILED": "Webhook 測試失敗。",
-  "YAML_PARSE_FAILED": "無法解析 YAML 設定。"
+  "YAML_PARSE_FAILED": "無法解析 YAML 設定。",
+  "MAILBOX_DISABLED": "此信箱已被管理員停用",
+  "MAILBOX_SEND_DISABLED": "此信箱已暫停寄信",
+  "MAILBOX_SHARE_DISABLED": "此信箱已暫停分享",
+  "ADMIN_OPERATION_FAILED": "管理操作失敗，請重新整理後重試。"
 }

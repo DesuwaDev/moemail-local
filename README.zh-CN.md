@@ -190,7 +190,7 @@ mail.example.com {
 Worker 必须使用首次向导生成的同一个 `email.ingestSecret`。建议先部署直连模式；可以在安装了 Git、Node.js 24 和 Corepack 的电脑上完成，不必在 MoeMail 服务器上执行。只下载 Compose 的部署目录不含 Worker 源码，以下命令会取得完整的对应版本源码：
 
 ```bash
-git clone --branch v0.21.7 --depth 1 https://github.com/DesuwaDev/moemail-local.git
+git clone --branch v0.21.8 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile
@@ -380,7 +380,7 @@ docker compose --profile offsite up -d offsite-backup
 ## 开发与验证
 
 ```bash
-git clone --branch v0.21.7 --depth 1 https://github.com/DesuwaDev/moemail-local.git
+git clone --branch v0.21.8 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile

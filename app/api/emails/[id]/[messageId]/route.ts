@@ -14,10 +14,11 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string; messageId: string }> }
 ) {
   const authorization = await authorizeRequest(request, {
-    permission: PERMISSIONS.DELETE_EMAIL,
+    permission: PERMISSIONS.DELETE_MESSAGE,
   })
   if (!authorization.ok) return authorization.response
 
+  if (!authorization.principal.access.permissions[PERMISSIONS.VIEW_EMAIL]) return apiError("PERMISSION_DENIED", 403)
   const { userId } = authorization.principal
 
   try {
@@ -26,6 +27,7 @@ export async function DELETE(
     const email = await findOwnedActiveMailbox(userId, id)
     if (!email) {
       const state = await ownedMailboxState(userId, id)
+      if (state === "disabled") return apiError("MAILBOX_DISABLED", 403)
       if (state === "expired") return apiError("MAILBOX_EXPIRED", 410)
       return apiError(
         state === "not_found" ? "MAILBOX_NOT_FOUND" : "MAILBOX_FORBIDDEN",
@@ -58,10 +60,11 @@ export async function DELETE(
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string; messageId: string }> }) {
   const authorization = await authorizeRequest(request, {
-    permission: PERMISSIONS.VIEW_EMAIL,
+    permission: PERMISSIONS.VIEW_MESSAGE_CONTENT,
   })
   if (!authorization.ok) return authorization.response
 
+  if (!authorization.principal.access.permissions[PERMISSIONS.VIEW_EMAIL]) return apiError("PERMISSION_DENIED", 403)
   const { userId } = authorization.principal
 
   try {
@@ -71,6 +74,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const email = await findOwnedActiveMailbox(userId, id)
     if (!email) {
       const state = await ownedMailboxState(userId, id)
+      if (state === "disabled") return apiError("MAILBOX_DISABLED", 403)
       if (state === "expired") return apiError("MAILBOX_EXPIRED", 410)
       return apiError(state === "not_found" ? "MAILBOX_NOT_FOUND" : "MAILBOX_FORBIDDEN", state === "not_found" ? 404 : 403)
     }
@@ -86,9 +90,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return apiError("MESSAGE_NOT_FOUND", 404)
     }
     
+    if (!authorization.principal.access.permissions[PERMISSIONS.DOWNLOAD_ATTACHMENT] && new URL(request.url).searchParams.has("attachment")) return apiError("PERMISSION_DENIED", 403)
     const download = await attachmentResponse(request, message.id)
     if (download) return download
-    const extras = await messageExtras(message, new URL(request.url).pathname)
+    const extras = authorization.principal.access.permissions[PERMISSIONS.DOWNLOAD_ATTACHMENT]
+      ? await messageExtras(message, new URL(request.url).pathname)
+      : { content: message.content, attachments: [], inline_images: [] }
 
     return NextResponse.json({ 
       message: {

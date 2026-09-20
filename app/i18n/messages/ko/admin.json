@@ -93,9 +93,9 @@
       "resetMailboxUsage": "메일함 할당량 사용량을 초기화했습니다"
     },
     "permissions": {
-      "view_email": "메일 보기",
+      "view_email": "메일함과 메일 목록 보기",
       "create_email": "메일함 만들기",
-      "delete_email": "메일함 및 메일 삭제",
+      "delete_email": "메일함 삭제",
       "receive_email": "메일 받기",
       "send_email": "메일 보내기",
       "private_recipient_delivery": "받는 사람을 숨기고 개별 전송",
@@ -104,7 +104,10 @@
       "promote_user": "사용자 역할 관리",
       "manage_config": "사이트 및 도메인 설정 관리",
       "manage_mailu": "Mailu 통합 및 자격 증명 관리",
-      "manage_api_key": "API Key 관리"
+      "manage_api_key": "API Key 관리",
+      "view_message_content": "메일 본문 읽기",
+      "download_attachment": "첨부 파일 다운로드",
+      "delete_message": "개별 메일 삭제"
     },
     "quotas": {
       "sectionHelp": "이 세 항목은 메일함 생성과 수신 메일 한 통의 크기를 제어하며 일일 송수신 수가 아닙니다. 역할 값은 해당 역할 사용자의 기본값입니다.",
@@ -468,5 +471,107 @@
       "saving": "저장 중",
       "confirm": "이해했으며 계속"
     }
+  },
+  "management": {
+    "users": "사용자",
+    "mailboxes": "메일함",
+    "searchMailboxes": "메일함 이름 또는 주소 검색",
+    "searchMessages": "제목, 발신자 또는 수신자 검색",
+    "status": "상태",
+    "all": "전체",
+    "active": "정상",
+    "disabled": "중지됨",
+    "expired": "만료됨",
+    "empty": "일치하는 기록이 없습니다",
+    "owner": "소유자: {owner}",
+    "unassigned": "미할당",
+    "counts": "수신 {received} · 발신 {sent}",
+    "expires": "만료 {date}",
+    "open": "관리",
+    "pagination": "총 {total}개 · {page}/{pages}",
+    "previous": "이전",
+    "next": "다음",
+    "cancel": "취소",
+    "confirm": "확인",
+    "back": "뒤로",
+    "received": "받은편지함",
+    "sent": "보낸편지함",
+    "settings": "관리",
+    "controlsHelp": "메일함을 중지하면 수신, 발신, 읽기 및 공유가 차단되고 기존 메일은 보존됩니다. 각 스위치는 사용자 권한과 도메인 규칙의 제한도 받습니다.",
+    "controls": {
+      "disabled": "메일함 중지",
+      "receiveEnabled": "수신 허용",
+      "sendEnabled": "발신 허용",
+      "shareEnabled": "공유 허용"
+    },
+    "expiry": "만료 시간 (현지 시간)",
+    "deleteMailbox": "메일함 삭제",
+    "deleteMailboxHelp": "{address} 및 모든 메일, 첨부 파일과 공유 링크를 영구 삭제합니다. 되돌릴 수 없으며 할당량 사용량은 초기화되지 않습니다.",
+    "deleteMessage": "메일 삭제",
+    "deleteMessageHelp": "이 메일과 첨부 파일, 공유 링크를 영구 삭제합니다. 되돌릴 수 없으며 할당량 사용량은 초기화되지 않습니다.",
+    "save": "저장",
+    "saved": "저장되었습니다",
+    "privacy": "본문에는 외부 리소스 개인정보 보호 설정이 적용됩니다.",
+    "message": {
+      "messageContent": "메일 내용",
+      "selectMessage": "메일 선택",
+      "loading": "불러오는 중",
+      "from": "발신자",
+      "to": "수신자",
+      "subject": "제목",
+      "time": "시간",
+      "htmlFormat": "HTML",
+      "textFormat": "텍스트",
+      "noSubject": "제목 없음"
+    },
+    "policyTabs": {
+      "permissions": "권한",
+      "quotas": "한도",
+      "domains": "도메인"
+    },
+    "overrideHelp": "사용자별로 역할 설정을 재정의하거나 상속하여 이후 역할 변경을 따릅니다. 송수신 할당량은 권한 및 할당량에서 사용자나 메일함별로 설정할 수 있습니다.",
+    "roleHelp": "기존 역할을 설정합니다. 본문 읽기, 첨부 파일 다운로드 및 개별 메일 삭제를 독립적으로 제어하며, 메일함 보기 권한도 필요합니다.",
+    "filterSettings": "설정 필터",
+    "roleValue": "역할: {value}",
+    "userTabs": {
+      "overview": "개요",
+      "mailboxes": "메일함",
+      "access": "권한",
+      "resources": "리소스",
+      "audit": "기록"
+    },
+    "totalMessages": "전체 메일",
+    "countsHelp": "만료되거나 중지된 메일함을 포함하여 현재 저장된 메일 수입니다. 삭제 시 감소하며 과거 할당량 사용량과 별도로 계산됩니다.",
+    "role": "역할",
+    "username": "사용자 이름",
+    "loginEmail": "로그인 이메일",
+    "providers": "로그인 방식",
+    "password": "비밀번호",
+    "resourceCounts": "API 키 {keys} · Webhook {hooks} · 공유 {shares}",
+    "actions": {
+      "sessions": "모든 기기 로그아웃",
+      "apiKeys": "모든 API 키 중지",
+      "webhooks": "Webhook 중지",
+      "shares": "모든 공유 취소"
+    },
+    "actionHelp": {
+      "sessions": "현재 로그인 세션을 모두 무효화합니다. 사용자는 다시 로그인할 수 있으며 API 키는 영향을 받지 않습니다.",
+      "apiKeys": "기존 API 키를 모두 중지합니다. 권한이 있는 사용자는 다시 활성화하거나 새로 만들 수 있습니다. 계속 차단하려면 API 키 관리 권한도 해제하세요.",
+      "webhooks": "기존 Webhook을 중지합니다. 계속 차단하려면 Webhook 관리 권한도 해제하세요.",
+      "shares": "모든 메일함 및 메일 공유 링크를 영구 취소합니다. 새 공유를 막으려면 공유 권한도 해제하세요."
+    },
+    "auditHelp": "이번 업데이트 이후 메일함 관리, 본문 및 첨부 파일 접근, 리소스 취소 작업을 기록합니다. 본문, 첨부 파일 내용 또는 비밀 정보는 기록하지 않습니다.",
+    "auditActions": {
+      "mailbox_update": "메일함 변경",
+      "mailbox_delete": "메일함 삭제",
+      "message_read": "메일 읽기",
+      "attachment_read": "첨부 파일 접근",
+      "message_delete": "메일 삭제",
+      "user_sessions": "세션 취소",
+      "user_apiKeys": "API 키 중지",
+      "user_webhooks": "Webhook 중지",
+      "user_shares": "공유 취소"
+    },
+    "permanent": "무기한"
   }
 }

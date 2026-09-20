@@ -129,7 +129,7 @@ assert.equal(
 )
 
 const accessDefaults = parseAccessPolicies(createDefaultAccessPolicies())
-assert.equal(accessDefaults.version, 7)
+assert.equal(accessDefaults.version, 8)
 assert.equal(resolveMailQuotaAssignment(resolveAccessPolicy(accessDefaults, "duke-user", ["duke"]), "send", "box@example.test")?.rolling.limit, 5)
 assert.equal(resolveMailQuotaAssignment(resolveAccessPolicy(accessDefaults, "knight-user", ["knight"]), "send", "box@example.test")?.rolling.limit, 2)
 assert.equal(resolveMailQuotaAssignment(resolveAccessPolicy(accessDefaults, "civilian-user", ["civilian"]), "send", "box@example.test")?.rolling.limit, 0)
@@ -149,7 +149,7 @@ const version5Access = structuredClone(createDefaultAccessPolicies()) as unknown
 }
 version5Access.version = 5
 for (const role of Object.values(version5Access.roles)) delete role.permissions.private_recipient_delivery
-for (const role of Object.values(version5Access.roles)) delete role.permissions.manage_mailu
+for (const role of Object.values(version5Access.roles)) for (const key of ["manage_mailu", "view_message_content", "download_attachment", "delete_message"]) delete role.permissions[key]
 version5Access.users.allowedBeforeUpgrade = { permissions: { send_email: true }, quotas: {} }
 version5Access.users.deniedBeforeUpgrade = { permissions: { send_email: false }, quotas: {} }
 const migratedVersion5 = parseAccessPolicies(version5Access)
@@ -164,7 +164,7 @@ const version6Access = structuredClone(createDefaultAccessPolicies()) as unknown
   users: Record<string, { permissions: Record<string, boolean> }>
 }
 version6Access.version = 6
-for (const role of Object.values(version6Access.roles)) delete role.permissions.manage_mailu
+for (const role of Object.values(version6Access.roles)) for (const key of ["manage_mailu", "view_message_content", "download_attachment", "delete_message"]) delete role.permissions[key]
 version6Access.users.explicitOverrides = {
   permissions: { private_recipient_delivery: false },
 }
@@ -181,7 +181,8 @@ const legacyAccess = {
     return [role, {
       permissions: Object.fromEntries(Object.entries(current.permissions).filter(
         ([permission]) => permission !== PERMISSIONS.PRIVATE_RECIPIENT_DELIVERY
-          && permission !== PERMISSIONS.MANAGE_MAILU,
+          && permission !== PERMISSIONS.MANAGE_MAILU
+          && permission !== PERMISSIONS.VIEW_MESSAGE_CONTENT && permission !== PERMISSIONS.DOWNLOAD_ATTACHMENT && permission !== PERMISSIONS.DELETE_MESSAGE,
       )),
       quotas: {
         ...current.quotas,
@@ -194,7 +195,7 @@ const legacyAccess = {
 }
 const migratedLegacyAccess = parseAccessPolicies(legacyAccess)
 assert.equal(migratedLegacyAccess.roles.duke.domainAccess.default, "allow")
-assert.equal(migratedLegacyAccess.version, 7)
+assert.equal(migratedLegacyAccess.version, 8)
 assert.equal(migratedLegacyAccess.roles.duke.permissions.private_recipient_delivery, true)
 assert.equal(migratedLegacyAccess.roles.civilian.permissions.private_recipient_delivery, false)
 assert.equal(resolveMailQuotaAssignment(resolveAccessPolicy(migratedLegacyAccess, "legacy-duke", ["duke"]), "send", "box@example.test")?.rolling.limit, 5)
@@ -216,7 +217,7 @@ const version4Access = {
   roles: Object.fromEntries(((["emperor", "duke", "knight", "civilian"] as const)).map(role => {
     const current = structuredClone(version4Defaults.roles[role])
     delete (current.permissions as Partial<Record<string, boolean>>)[PERMISSIONS.PRIVATE_RECIPIENT_DELIVERY]
-    delete (current.permissions as Partial<Record<string, boolean>>)[PERMISSIONS.MANAGE_MAILU]
+    for (const key of [PERMISSIONS.MANAGE_MAILU, PERMISSIONS.VIEW_MESSAGE_CONTENT, PERMISSIONS.DOWNLOAD_ATTACHMENT, PERMISSIONS.DELETE_MESSAGE]) delete (current.permissions as Partial<Record<string, boolean>>)[key]
     return [role, {
       ...current,
       sendQuota: version4Quota(role === "duke" ? "role" : "user"),
@@ -653,3 +654,14 @@ console.log(JSON.stringify({
   roleAndUserDomainRestrictionsVerified: true,
   legacyAccessPolicyMigratesToAllDomains: true,
 }))
+
+const v7 = structuredClone(createDefaultAccessPolicies()) as unknown as { version: number; roles: Record<string, { permissions: Record<string, boolean> }>; users: Record<string, unknown> }
+v7.version = 7
+for (const role of Object.values(v7.roles)) for (const key of ["view_message_content", "download_attachment", "delete_message"]) delete role.permissions[key]
+v7.users.compat = { permissions: { view_email: true, delete_email: true }, quotas: {} }
+const v8 = parseAccessPolicies(v7)
+assert.equal(v8.version, 8)
+assert.equal(v8.users.compat.permissions.view_message_content, true)
+assert.equal(v8.users.compat.permissions.download_attachment, true)
+assert.equal(v8.users.compat.permissions.delete_message, true)
+assert.equal(v8.roles.civilian.permissions.view_message_content, false)

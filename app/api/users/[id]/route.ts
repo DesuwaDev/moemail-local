@@ -1,3 +1,4 @@
+import { mailboxCounts } from "@/lib/admin-management"
 import { and, desc, eq, gt, lt, sql } from "drizzle-orm"
 import { accounts, apiKeys, emailShares, emails, mailboxNameBlocks, messages, messageShares, sendQuotaEvents, users, webhooks } from "@/lib/schema"
 import { domainAccessMode, getAccessPolicies, resolveAccessPolicy } from "@/lib/access-policies"
@@ -13,7 +14,7 @@ import { setUserBannedAtomically } from "@/lib/user-status"
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"
 
-const DETAIL_MAILBOX_PAGE_SIZE = 40
+const DETAIL_MAILBOX_PAGE_SIZE = 8
 const DETAIL_BLOCK_LIMIT = 200
 const privateHeaders = { "Cache-Control": "private, no-store" }
 const validRoles = new Set<Role>(Object.values(ROLES))
@@ -123,18 +124,7 @@ export async function GET(
         address: emails.address,
         createdAt: emails.createdAt,
         expiresAt: emails.expiresAt,
-        messageCount: sql<number>`(
-          SELECT COUNT(*) FROM ${messages}
-          WHERE ${messages.emailId} = ${emails.id}
-        )`,
-        receivedCount: sql<number>`(
-          SELECT COUNT(*) FROM ${messages}
-          WHERE ${messages.emailId} = ${emails.id} AND COALESCE(${messages.type}, 'received') <> 'sent'
-        )`,
-        sentCount: sql<number>`(
-          SELECT COUNT(*) FROM ${messages}
-          WHERE ${messages.emailId} = ${emails.id} AND ${messages.type} = 'sent'
-        )`,
+        ...mailboxCounts,
       })
         .from(emails)
         .where(and(...mailboxConditions))

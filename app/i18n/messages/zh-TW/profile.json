@@ -280,10 +280,10 @@
     "saveFailed": "儲存設定失敗"
   },
   "promote": {
-    "title": "角色管理",
-    "description": "管理使用者角色（僅皇帝可用）",
+    "title": "使用者管理",
+    "description": "依使用者或信箱搜尋，檢視收發郵件並管理權限與資源。",
     "search": "搜尋使用者",
-    "searchPlaceholder": "搜尋使用者名稱、郵箱或暱稱",
+    "searchPlaceholder": "搜尋使用者名稱、登入信箱或名下信箱",
     "username": "使用者名稱",
     "email": "郵箱",
     "role": "角色",
@@ -399,7 +399,7 @@
         "allowedDomains": "允許的網域：{domains}"
       },
       "permissions": {
-        "view_email": "檢視郵件",
+        "view_email": "檢視信箱與郵件清單",
         "create_email": "建立信箱",
         "delete_email": "刪除信箱",
         "receive_email": "接收郵件",
@@ -410,7 +410,10 @@
         "promote_user": "管理使用者",
         "manage_config": "管理設定",
         "manage_mailu": "管理 Mailu",
-        "manage_api_key": "管理 API 金鑰"
+        "manage_api_key": "管理 API 金鑰",
+        "view_message_content": "讀取郵件內文",
+        "download_attachment": "下載郵件附件",
+        "delete_message": "刪除單封郵件"
       },
       "quotas": {
         "maxActiveMailboxes": "有效信箱上限",

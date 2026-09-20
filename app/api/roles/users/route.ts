@@ -39,7 +39,8 @@ export async function GET(request: Request) {
       ? or(
           sql`LOWER(COALESCE(${users.username}, '')) LIKE ${`%${search.toLowerCase()}%`}`,
           sql`LOWER(COALESCE(${users.email}, '')) LIKE ${`%${search.toLowerCase()}%`}`,
-          sql`LOWER(COALESCE(${users.name}, '')) LIKE ${`%${search.toLowerCase()}%`}`
+          sql`LOWER(COALESCE(${users.name}, '')) LIKE ${`%${search.toLowerCase()}%`}`,
+          exists(db.select({ id: emails.id }).from(emails).where(and(eq(emails.userId, users.id), sql`LOWER(${emails.address}) LIKE ${"%" + search.toLowerCase().replace(/[!%_]/g, character => "!" + character) + "%"} ESCAPE '!'`)))
         )
       : undefined
 
@@ -96,7 +97,7 @@ export async function GET(request: Request) {
       .leftJoin(emails, eq(emails.userId, users.id))
       .where(where)
       .groupBy(users.id, roles.name)
-      .orderBy(roleRank, sql`LENGTH(COALESCE(${users.username}, ${users.name}))`, sql`LOWER(COALESCE(${users.username}, ${users.name}))`)
+      .orderBy(roleRank, sql`LENGTH(COALESCE(${users.username}, ${users.name}))`, sql`LOWER(COALESCE(${users.username}, ${users.name}))`, users.id)
       .limit(pageSize)
       .offset((page - 1) * pageSize)
 

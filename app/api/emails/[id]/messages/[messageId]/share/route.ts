@@ -29,6 +29,7 @@ export async function GET(
     const email = await findOwnedActiveMailbox(userId, emailId)
     if (!email) {
       const state = await ownedMailboxState(userId, emailId)
+      if (state === "disabled") return apiError("MAILBOX_DISABLED", 403)
       if (state === "expired") return apiError("MAILBOX_EXPIRED", 410)
       return apiError(state === "not_found" ? "MAILBOX_NOT_FOUND" : "MAILBOX_FORBIDDEN", state === "not_found" ? 404 : 403)
     }
@@ -71,6 +72,7 @@ export async function POST(
     const email = await findOwnedActiveMailbox(userId, emailId)
     if (!email) {
       const state = await ownedMailboxState(userId, emailId)
+      if (state === "disabled") return apiError("MAILBOX_DISABLED", 403)
       if (state === "expired") return apiError("MAILBOX_EXPIRED", 410)
       return apiError(state === "not_found" ? "MAILBOX_NOT_FOUND" : "MAILBOX_FORBIDDEN", state === "not_found" ? 404 : 403)
     }
@@ -83,6 +85,8 @@ export async function POST(
       return apiError("MESSAGE_NOT_FOUND", 404)
     }
 
+    if (!email.shareEnabled) return apiError("MAILBOX_SHARE_DISABLED", 403)
+    if (![PERMISSIONS.VIEW_EMAIL, PERMISSIONS.VIEW_MESSAGE_CONTENT, PERMISSIONS.DOWNLOAD_ATTACHMENT].every(permission => authorization.principal.access.permissions[permission])) return apiError("PERMISSION_DENIED", 403)
     const body = await request.json().catch(() => null) as { expiresIn?: unknown } | null
     const expiresIn = parseShareExpiry(body?.expiresIn)
     if (expiresIn === null) return apiError("INVALID_SHARE_EXPIRY", 400)

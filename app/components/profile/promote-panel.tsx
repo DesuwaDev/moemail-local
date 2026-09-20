@@ -19,6 +19,10 @@ import {
   User2,
   Users,
 } from "lucide-react"
+import { useRolePermission } from "@/hooks/use-role-permission"
+import { ManagedMailboxes } from "./managed-mailboxes"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { adminRequest } from "./admin-controls"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -40,10 +44,13 @@ import { UserDetailsDialog, type ManagedUser } from "./user-details-dialog"
 
 type RoleWithoutEmperor = Exclude<Role, typeof ROLES.EMPEROR>
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 8
 
 export function PromotePanel({ currentUserId }: { currentUserId?: string }) {
   const t = useTranslations("profile.promote")
+  const m = useTranslations("admin.management")
+  const canAdmin = useRolePermission().hasRole(ROLES.EMPEROR)
+  const [view, setView] = useState("users")
   const tCard = useTranslations("profile.card")
   const tApi = useTranslations("api")
   const { toast } = useToast()
@@ -85,7 +92,7 @@ export function PromotePanel({ currentUserId }: { currentUserId?: string }) {
       })
       if (search.trim()) params.set("search", search.trim())
       const response = await fetch(`/api/roles/users?${params}`, { cache: "no-store", signal })
-      const body = await response.json() as { users?: ManagedUser[]; total?: number }
+      const body = await response.clone().json() as { users?: ManagedUser[]; total?: number }
       if (!response.ok || !body.users || body.total === undefined) {
         throw new LocalizedUiError(tApi(await readApiErrorCode(response, "USERS_READ_FAILED") as never))
       }
@@ -167,6 +174,8 @@ export function PromotePanel({ currentUserId }: { currentUserId?: string }) {
     <div className="rounded-lg border-2 border-primary/20 bg-background p-4 sm:p-6">
       <div className="mb-5 flex min-w-0 items-center gap-2"><Users className="h-5 w-5 shrink-0 text-primary" /><div className="min-w-0"><h2 className="truncate text-lg font-semibold">{t("title")}</h2><p className="text-xs leading-relaxed text-muted-foreground">{t("description")}</p></div><span className="ml-auto shrink-0 text-xs text-muted-foreground">{t("totalUsers", { count: total })}</span></div>
 
+      {canAdmin && <Tabs value={view} onValueChange={setView} className="mb-3"><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="users">{m("users")}</TabsTrigger><TabsTrigger value="mailboxes">{m("mailboxes")}</TabsTrigger></TabsList></Tabs>}
+      {canAdmin && view === "mailboxes" ? <ManagedMailboxes onChange={() => void fetchUsers()} onUser={id => void adminRequest<{ user: ManagedUser; summary: { mailboxes: number } }>("/api/users/" + encodeURIComponent(id) + "?mailboxPageSize=1").then(body => setDetailsUser({ ...body.user, role: (body.user as ManagedUser & { roles?: string[] }).roles?.[0] ?? null, mailboxCount: body.summary.mailboxes })).catch(() => toast({ title: t("details.loadFailed"), variant: "destructive" }))} /> : <>
       <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_10rem_10rem_10rem]">
         <div className="relative min-w-0 sm:col-span-2 lg:col-span-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={event => setSearch(event.target.value)} placeholder={t("searchPlaceholder")} className="min-w-0 pl-9" /></div>
         <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-8 w-full min-w-0 text-sm sm:w-auto sm:min-w-28" aria-label={t("filters.role")}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("filters.allRoles")}</SelectItem><SelectItem value={ROLES.EMPEROR}>{roleNames[ROLES.EMPEROR]}</SelectItem><SelectItem value={ROLES.DUKE}>{roleNames[ROLES.DUKE]}</SelectItem><SelectItem value={ROLES.KNIGHT}>{roleNames[ROLES.KNIGHT]}</SelectItem><SelectItem value={ROLES.CIVILIAN}>{roleNames[ROLES.CIVILIAN]}</SelectItem></SelectContent></Select>
@@ -174,12 +183,12 @@ export function PromotePanel({ currentUserId }: { currentUserId?: string }) {
         <Select value={mailboxFilter} onValueChange={setMailboxFilter}><SelectTrigger aria-label={t("filters.mailboxes")} className="min-w-0"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("filters.allMailboxes")}</SelectItem><SelectItem value="with">{t("filters.withMailboxes")}</SelectItem><SelectItem value="without">{t("filters.withoutMailboxes")}</SelectItem></SelectContent></Select>
       </div>
 
-      <div className="mt-4 min-h-56">
+      <div className="mt-4 min-h-56 max-h-[60dvh] overflow-y-auto">
         {loading ? <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin text-primary" />{t("loading")}</div> : users.length === 0 ? <div className="py-12 text-center text-sm text-muted-foreground">{t("noUsers")}</div> : <div className="space-y-2">{users.map(user => {
           const emperor = isEmperor(user)
           const self = isSelf(user)
           const updating = updatingUserId === user.id
-          return <div key={user.id} className={`grid min-w-0 gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50 sm:grid-cols-[auto_minmax(0,1fr)_auto] ${user.bannedAt ? "border-destructive/40 bg-destructive/[0.03]" : ""}`}>
+          return <div key={user.id} className={`grid grid-cols-[auto_minmax(0,1fr)] min-w-0 gap-2 rounded-lg border p-2.5 transition-colors hover:bg-accent/50 sm:grid-cols-[auto_minmax(0,1fr)_auto] ${user.bannedAt ? "border-destructive/40 bg-destructive/[0.03]" : ""}`}>
             {user.image ? <Image src={user.image} alt="" width={36} height={36} unoptimized className="h-9 w-9 rounded-full" /> : <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10"><User2 className="h-4 w-4 text-primary" /></div>}
             <div className="min-w-0"><div className="flex min-w-0 flex-wrap items-center gap-2"><span className="min-w-0 truncate text-sm font-medium">{displayName(user)}</span><span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${user.bannedAt ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>{user.bannedAt ? <ShieldCheck className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}{user.bannedAt ? t("status.banned") : t("status.active")}</span></div><div className="truncate text-xs text-muted-foreground">{user.email || user.username || user.id}</div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground"><span>{roleNames[(user.role || ROLES.CIVILIAN) as Role] || roleNames[ROLES.CIVILIAN]}</span><span>{t("mailboxCount", { count: user.mailboxCount })}</span></div></div>
             <div className="col-span-2 flex min-w-0 items-center justify-end gap-1 sm:col-span-1"><div className="min-w-0 flex-1 sm:flex-none">{emperor ? <div className="flex items-center justify-end gap-1.5 text-sm font-medium text-amber-600"><Crown className="h-4 w-4" />{roleNames[ROLES.EMPEROR]}</div> : <Select value={user.role || ROLES.CIVILIAN} onValueChange={value => void handleRoleChange(user.id, value as RoleWithoutEmperor)} disabled={updating}><SelectTrigger className="h-8 min-w-0 text-sm sm:w-28"><SelectValue /></SelectTrigger><SelectContent><SelectItem value={ROLES.DUKE}><span className="flex items-center gap-2"><Gem className="h-4 w-4" />{roleNames[ROLES.DUKE]}</span></SelectItem><SelectItem value={ROLES.KNIGHT}><span className="flex items-center gap-2"><Sword className="h-4 w-4" />{roleNames[ROLES.KNIGHT]}</span></SelectItem><SelectItem value={ROLES.CIVILIAN}><span className="flex items-center gap-2"><User2 className="h-4 w-4" />{roleNames[ROLES.CIVILIAN]}</span></SelectItem></SelectContent></Select>}</div><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setDetailsUser(user)} title={t("details.open")} aria-label={t("details.openFor", { name: displayName(user) })}><Eye className="h-4 w-4" /></Button>{!emperor && <Button variant="ghost" size="icon" className={`h-8 w-8 shrink-0 ${user.bannedAt ? "text-emerald-600 hover:text-emerald-700" : "text-amber-600 hover:text-amber-700"}`} disabled={self || updating} onClick={() => setUserToToggle(user)} title={self ? t("status.selfDisabled") : user.bannedAt ? t("unban") : t("ban")} aria-label={user.bannedAt ? t("unbanFor", { name: displayName(user) }) : t("banFor", { name: displayName(user) })}>{updating ? <Loader2 className="h-4 w-4 animate-spin" /> : user.bannedAt ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}</Button>}{!emperor && <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" disabled={self || !!updatingUserId || !!deletingUserId} onClick={() => setUserToDelete(user)} title={self ? t("deleteSelfDisabled") : t("deleteUser")} aria-label={t("deleteFor", { name: displayName(user) })}><Trash2 className="h-4 w-4" /></Button>}</div>
@@ -191,9 +200,10 @@ export function PromotePanel({ currentUserId }: { currentUserId?: string }) {
 
       <AlertDialog open={!!userToToggle} onOpenChange={open => { if (!open && !updatingUserId) setUserToToggle(null) }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{userToToggle?.bannedAt ? t("unbanTitle") : t("banTitle")}</AlertDialogTitle><AlertDialogDescription>{userToToggle?.bannedAt ? t("unbanDescription", { name: userToToggle ? displayName(userToToggle) : "" }) : t("banDescription", { name: userToToggle ? displayName(userToToggle) : "" })}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={!!updatingUserId}>{t("cancel")}</AlertDialogCancel><AlertDialogAction disabled={!!updatingUserId} onClick={event => { event.preventDefault(); if (userToToggle) void handleStatusChange(userToToggle) }}>{updatingUserId ? <Loader2 className="h-4 w-4 animate-spin" /> : userToToggle?.bannedAt ? t("unban") : t("ban")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
 
+      </>}
       <AlertDialog open={!!userToDelete} onOpenChange={open => { if (!open && !deletingUserId) setUserToDelete(null) }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle><AlertDialogDescription>{t("deleteConfirm", { name: userToDelete ? displayName(userToDelete) : "" })}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={!!deletingUserId}>{t("cancel")}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={!!deletingUserId} onClick={event => { event.preventDefault(); if (userToDelete) void handleDelete(userToDelete) }}>{deletingUserId ? <Loader2 className="h-4 w-4 animate-spin" /> : t("deleteConfirmButton")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
 
-      <UserDetailsDialog user={detailsUser} open={!!detailsUser} onOpenChange={open => { if (!open) setDetailsUser(null) }} />
+      <UserDetailsDialog canAdmin={canAdmin} onChange={() => void fetchUsers()} user={detailsUser} open={!!detailsUser} onOpenChange={open => { if (!open) setDetailsUser(null) }} />
     </div>
   )
 }

@@ -28,3 +28,5 @@ export const emailSharesRelations = activeSchema.emailSharesRelations
 export const messageSharesRelations = activeSchema.messageSharesRelations
 export const sendQuotaEventsRelations = activeSchema.sendQuotaEventsRelations
 export const mailboxNameBlocksRelations = activeSchema.mailboxNameBlocksRelations
+
+export const adminAuditLogs = activeSchema.adminAuditLogs

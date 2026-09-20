@@ -82,7 +82,8 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
   const { toast } = useToast()
   const { checkPermission } = useRolePermission()
   const canShare = checkPermission(PERMISSIONS.SHARE_EMAIL)
-  const canDelete = checkPermission(PERMISSIONS.DELETE_EMAIL)
+  const canReadBody = checkPermission(PERMISSIONS.VIEW_MESSAGE_CONTENT)
+  const canDelete = checkPermission(PERMISSIONS.DELETE_MESSAGE)
 
   const fetchQuota = async () => {
     try {
@@ -317,9 +318,11 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
             {messages.map(message => (
               <div
                 key={message.id}
-                onClick={() => onMessageSelect(message.id, messageType)}
+                onClick={canReadBody ? () => onMessageSelect(message.id, messageType) : undefined}
+                title={canReadBody ? undefined : tApi("PERMISSION_DENIED")}
                 className={cn(
-                  "p-3 hover:bg-primary/5 cursor-pointer group",
+                  "p-3 group",
+                  canReadBody && "hover:bg-primary/5 cursor-pointer",
                   selectedMessageId === message.id && "bg-primary/10"
                 )}
               >

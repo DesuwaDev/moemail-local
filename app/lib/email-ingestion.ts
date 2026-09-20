@@ -106,7 +106,7 @@ async function commitInboundMessage(
       const now = new Date()
       const activeMailbox = getSqlite().prepare(`
         SELECT id FROM email
-        WHERE id = ? AND "userId" = ? AND LOWER(address) = ? AND expires_at > ?
+        WHERE id = ? AND "userId" = ? AND LOWER(address) = ? AND expires_at > ? AND disabled_at IS NULL AND receive_enabled = 1
       `).get(message.emailId, reservation.userId, reservation.mailboxAddress, now.getTime())
       if (!activeMailbox) {
         getSqlite().prepare(`
@@ -154,7 +154,7 @@ async function commitInboundMessage(
     const now = new Date()
     const activeMailbox = await client.query(`
       SELECT id FROM email
-      WHERE id = $1 AND "userId" = $2 AND LOWER(address) = $3 AND expires_at > $4
+      WHERE id = $1 AND "userId" = $2 AND LOWER(address) = $3 AND expires_at > $4 AND disabled_at IS NULL AND receive_enabled = true
       FOR UPDATE
     `, [message.emailId, reservation.userId, reservation.mailboxAddress, now])
     if (activeMailbox.rowCount !== 1) {
@@ -229,6 +229,7 @@ export async function inspectInboundRecipient(
     ),
   })
   if (!targetEmail) return { accepted: false, reason: "unknown_recipient" }
+  if (targetEmail.disabledAt || !targetEmail.receiveEnabled) return { accepted: false, reason: "permission_denied" }
   if (!targetEmail.userId) return { accepted: false, reason: "owner_missing" }
 
   const access = await getUserAccessPolicy(targetEmail.userId)

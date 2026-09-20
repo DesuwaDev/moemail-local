@@ -34,7 +34,7 @@ export function SharedMessagePageClient({ message }: SharedMessagePageClientProp
       <div className="container mx-auto p-4 max-w-7xl">
         <BrandHeader
           title={message.emailAddress || message.to_address || message.subject}
-          subtitle={message.emailExpiresAt && new Date(message.emailExpiresAt).getFullYear() === 9999
+          subtitle={message.emailExpiresAt && new Date(message.emailExpiresAt).getUTCFullYear() === 9999
             ? tShared("permanent")
             : message.emailExpiresAt
               ? tFormat("labelValue", {

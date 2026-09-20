@@ -75,3 +75,18 @@ export async function PUT(request: Request) {
     return apiError("ACCESS_POLICIES_SAVE_FAILED", 400, { headers })
   }
 }
+
+/** Update one existing role without overwriting other roles or quota rules. */
+export async function PATCH(request: Request) {
+  const authorization = await authorizeEmperor(request)
+  if (!authorization.ok) return authorization.response
+  const payload = await request.json().catch(() => null) as { role?: unknown; policy?: unknown } | null
+  if (!payload || ![ROLES.DUKE, ROLES.KNIGHT, ROLES.CIVILIAN].includes(payload.role as typeof ROLES.DUKE) || !payload.policy || Object.keys(payload).some(key => !["role", "policy"].includes(key))) {
+    return apiError("INVALID_REQUEST", 400, { headers })
+  }
+  try {
+    const policies = await updateAccessPolicies(current => ({ ...current, roles: { ...current.roles, [payload.role as string]: payload.policy } }))
+    void import("@/lib/mailu/reconcile").then(m => m.reconcileCurrentMailuIfEnabled()).catch(() => undefined)
+    return Response.json({ ok: true, policies }, { headers })
+  } catch { return apiError("ACCESS_POLICIES_SAVE_FAILED", 400, { headers }) }
+}

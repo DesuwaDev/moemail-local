@@ -139,11 +139,13 @@ const permissionShape = Object.fromEntries(
 type LegacyPermission = Exclude<
   Permission,
   typeof PERMISSIONS.PRIVATE_RECIPIENT_DELIVERY | typeof PERMISSIONS.MANAGE_MAILU
+  | typeof PERMISSIONS.VIEW_MESSAGE_CONTENT | typeof PERMISSIONS.DOWNLOAD_ATTACHMENT | typeof PERMISSIONS.DELETE_MESSAGE
 >
 const legacyPermissionValues = Object.values(PERMISSIONS).filter(
   (permission): permission is LegacyPermission => (
     permission !== PERMISSIONS.PRIVATE_RECIPIENT_DELIVERY
     && permission !== PERMISSIONS.MANAGE_MAILU
+    && permission !== PERMISSIONS.VIEW_MESSAGE_CONTENT && permission !== PERMISSIONS.DOWNLOAD_ATTACHMENT && permission !== PERMISSIONS.DELETE_MESSAGE
   ),
 )
 const legacyPermissionShape = Object.fromEntries(
@@ -454,7 +456,15 @@ const version4AccessPoliciesSchema = z.object({
 }).strict()
 
 const rolePolicySchema = z.object({
-  permissions: z.object(permissionShape).strict(),
+  permissions: z.object({ ...permissionShape,
+    [PERMISSIONS.VIEW_MESSAGE_CONTENT]: z.boolean().optional(),
+    [PERMISSIONS.DOWNLOAD_ATTACHMENT]: z.boolean().optional(),
+    [PERMISSIONS.DELETE_MESSAGE]: z.boolean().optional(),
+  }).strict().transform(value => ({ ...value,
+    [PERMISSIONS.VIEW_MESSAGE_CONTENT]: value.view_message_content ?? value.view_email,
+    [PERMISSIONS.DOWNLOAD_ATTACHMENT]: value.download_attachment ?? value.view_email,
+    [PERMISSIONS.DELETE_MESSAGE]: value.delete_message ?? value.delete_email,
+  })),
   quotas: z.object(quotaShape).strict(),
   domainAccess: domainAccessPolicySchema,
 }).strict()
@@ -540,7 +550,7 @@ const version6AccessPoliciesSchema = z.object({
 }).strict()
 
 const accessPoliciesSchema = z.object({
-  version: z.literal(7),
+  version: z.literal(8),
   roles: z.object({
     [ROLES.EMPEROR]: rolePolicySchema,
     [ROLES.DUKE]: rolePolicySchema,
@@ -675,6 +685,9 @@ Object.freeze(EMPEROR_ACCESS_POLICY)
 function roleDefaults(maxActiveMailboxes: number, sendLimits: { duke: number; knight: number }) {
   const commonMailPermissions = [
     PERMISSIONS.VIEW_EMAIL,
+    PERMISSIONS.VIEW_MESSAGE_CONTENT,
+    PERMISSIONS.DOWNLOAD_ATTACHMENT,
+    PERMISSIONS.DELETE_MESSAGE,
     PERMISSIONS.CREATE_EMAIL,
     PERMISSIONS.DELETE_EMAIL,
     PERMISSIONS.RECEIVE_EMAIL,
@@ -728,7 +741,7 @@ function roleDefaults(maxActiveMailboxes: number, sendLimits: { duke: number; kn
 export function createDefaultAccessPolicies(): AccessPolicies {
   const roles = roleDefaults(30, { duke: 5, knight: 2 })
   return {
-    version: 7,
+    version: 8,
     roles,
     users: {},
     mailQuotaRules: [
@@ -887,7 +900,7 @@ function migrateVersion4(input: z.infer<typeof version4AccessPoliciesSchema>): A
   const deduplicated = new Map<string, MailQuotaAssignment>()
   for (const assignment of [...roleRules, ...userRules]) deduplicated.set(assignmentKey(assignment), assignment)
   return accessPoliciesSchema.parse({
-    version: 7,
+    version: 8,
     roles: Object.fromEntries(allRoles.map(role => [role, {
       ...stripLegacyRole(input.roles[role]),
       permissions: {
@@ -900,7 +913,7 @@ function migrateVersion4(input: z.infer<typeof version4AccessPoliciesSchema>): A
   })
 }
 
-function parseStoredAccessPolicies(input: unknown): AccessPolicies {
+function parseHistoricalAccessPolicies(input: unknown): AccessPolicies {
   const version = typeof input === "object" && input !== null && !Array.isArray(input)
     ? (input as { version?: unknown }).version
     : undefined
@@ -951,7 +964,7 @@ function parseStoredAccessPolicies(input: unknown): AccessPolicies {
     const legacy = version5AccessPoliciesSchema.parse(input)
     return accessPoliciesSchema.parse({
       ...legacy,
-      version: 7,
+      version: 8,
       roles: Object.fromEntries(allRoles.map(role => [role, {
         ...legacy.roles[role],
         permissions: {
@@ -975,7 +988,7 @@ function parseStoredAccessPolicies(input: unknown): AccessPolicies {
     const legacy = version6AccessPoliciesSchema.parse(input)
     return accessPoliciesSchema.parse({
       ...legacy,
-      version: 7,
+      version: 8,
       roles: Object.fromEntries(allRoles.map(role => [role, {
         ...legacy.roles[role],
         permissions: {
@@ -985,7 +998,23 @@ function parseStoredAccessPolicies(input: unknown): AccessPolicies {
       }])),
     })
   }
+  if (version === 7) return accessPoliciesSchema.parse({ ...(input as Record<string, unknown>), version: 8 })
   return accessPoliciesSchema.parse(input)
+}
+
+function parseStoredAccessPolicies(input: unknown): AccessPolicies {
+  const policies = parseHistoricalAccessPolicies(input)
+  const version = (input as { version?: number } | null)?.version
+  if (version !== undefined && version < 8) {
+    for (const user of Object.values(policies.users)) {
+      if (user.permissions.view_email !== undefined) {
+        user.permissions.view_message_content ??= user.permissions.view_email
+        user.permissions.download_attachment ??= user.permissions.view_email
+      }
+      if (user.permissions.delete_email !== undefined) user.permissions.delete_message ??= user.permissions.delete_email
+    }
+  }
+  return policies
 }
 
 /** Removes a deleted user's override while preserving/migrating the complete
@@ -1052,7 +1081,7 @@ async function legacyDefaults(): Promise<AccessPolicies> {
     knight: numberLimit("knight", 2),
   }
   return {
-    version: 7,
+    version: 8,
     roles: roleDefaults(safePositiveInteger(values.MAX_EMAILS, 30), sendLimits),
     users: {},
     mailQuotaRules: [
@@ -1514,7 +1543,7 @@ export function quotaAssignmentScope(assignment: MailQuotaAssignment) {
 }
 
 export function parseUserAccessOverride(input: unknown): UserAccessOverride {
-  return userOverrideSchema.parse(input)
+  return currentUserOverrideSchema.parse(input)
 }
 
 export function isEmperorSafeOverride(override: UserAccessOverride) {

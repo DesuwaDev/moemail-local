@@ -48,6 +48,10 @@ export const emails = sqliteTable("email", {
     .notNull()
     .$defaultFn(() => new Date()),
   expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  disabledAt: integer("disabled_at", { mode: "timestamp_ms" }),
+  receiveEnabled: integer("receive_enabled", { mode: "boolean" }).notNull().default(true),
+  sendEnabled: integer("send_enabled", { mode: "boolean" }).notNull().default(true),
+  shareEnabled: integer("share_enabled", { mode: "boolean" }).notNull().default(true),
 }, (table) => [
   index("email_expires_at_idx").on(table.expiresAt),
   index("email_user_id_idx").on(table.userId),
@@ -264,3 +268,13 @@ export const messageSharesRelations = relations(messageShares, ({ one }) => ({
     references: [messages.id],
   }),
 }))
+
+export const adminAuditLogs = sqliteTable("admin_audit_log", {
+  id: text("id").primaryKey(),
+  actorId: text("actor_id").notNull(),
+  userId: text("user_id"),
+  mailboxId: text("mailbox_id"),
+  action: text("action").notNull(),
+  target: text("target").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+}, table => [index("admin_audit_user_time_idx").on(table.userId, table.createdAt)])

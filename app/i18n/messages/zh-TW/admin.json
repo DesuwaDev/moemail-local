@@ -93,9 +93,9 @@
       "resetMailboxUsage": "此信箱的額度用量已重設"
     },
     "permissions": {
-      "view_email": "檢視郵件",
+      "view_email": "檢視信箱與郵件清單",
       "create_email": "建立信箱",
-      "delete_email": "刪除信箱與郵件",
+      "delete_email": "刪除信箱",
       "receive_email": "接收郵件",
       "send_email": "傳送郵件",
       "private_recipient_delivery": "隱藏收件者並個別投遞",
@@ -104,7 +104,10 @@
       "promote_user": "管理使用者角色",
       "manage_config": "管理站台與網域設定",
       "manage_mailu": "管理 Mailu 整合與憑據",
-      "manage_api_key": "管理 API Key"
+      "manage_api_key": "管理 API Key",
+      "view_message_content": "讀取郵件內文",
+      "download_attachment": "下載郵件附件",
+      "delete_message": "刪除單封郵件"
     },
     "quotas": {
       "sectionHelp": "這三項控制信箱建立與單封入站郵件，不是每日收發封數。角色值會成為該角色使用者的預設值。",
@@ -468,5 +471,107 @@
       "saving": "儲存中",
       "confirm": "我已瞭解並繼續"
     }
+  },
+  "management": {
+    "users": "使用者",
+    "mailboxes": "信箱",
+    "searchMailboxes": "搜尋信箱名稱或完整地址",
+    "searchMessages": "搜尋主旨、寄件人或收件人",
+    "status": "狀態",
+    "all": "全部",
+    "active": "正常",
+    "disabled": "已停用",
+    "expired": "已過期",
+    "empty": "沒有符合條件的紀錄",
+    "owner": "所屬：{owner}",
+    "unassigned": "未分配使用者",
+    "counts": "收件 {received} · 寄件 {sent}",
+    "expires": "到期 {date}",
+    "open": "管理",
+    "pagination": "共 {total} 筆 · {page}/{pages} 頁",
+    "previous": "上一頁",
+    "next": "下一頁",
+    "cancel": "取消",
+    "confirm": "確認",
+    "back": "返回",
+    "received": "收件匣",
+    "sent": "寄件匣",
+    "settings": "管理",
+    "controlsHelp": "停用後，此信箱的收信、寄信、讀取及分享皆不可用，既有郵件保留。收發與分享開關亦受使用者權限及網域規則限制。",
+    "controls": {
+      "disabled": "停用信箱",
+      "receiveEnabled": "允許收信",
+      "sendEnabled": "允許寄信",
+      "shareEnabled": "允許分享"
+    },
+    "expiry": "有效期限（本地時間）",
+    "deleteMailbox": "刪除信箱",
+    "deleteMailboxHelp": "永久刪除 {address} 及其所有郵件、附件與分享連結，無法復原。既有配額用量不會重設。",
+    "deleteMessage": "刪除郵件",
+    "deleteMessageHelp": "永久刪除此郵件及其附件與分享連結，無法復原。配額用量不會重設。",
+    "save": "儲存",
+    "saved": "已儲存",
+    "privacy": "內文沿用外部資源防追蹤設定。",
+    "message": {
+      "messageContent": "郵件內容",
+      "selectMessage": "選擇郵件查看詳情",
+      "loading": "載入中",
+      "from": "寄件人",
+      "to": "收件人",
+      "subject": "主旨",
+      "time": "時間",
+      "htmlFormat": "圖文",
+      "textFormat": "純文字",
+      "noSubject": "無主旨"
+    },
+    "policyTabs": {
+      "permissions": "權限",
+      "quotas": "一般配額",
+      "domains": "網域"
+    },
+    "overrideHelp": "依使用者覆寫角色規則；選擇「繼承」隨角色策略變更。收發配額可在「權限配額 → 收發配額」依使用者或信箱設定。",
+    "roleHelp": "只調整既有角色。內文、附件及郵件刪除可獨立控制；使用者仍須具備信箱檢視權限。",
+    "filterSettings": "篩選設定",
+    "roleValue": "角色：{value}",
+    "userTabs": {
+      "overview": "概覽",
+      "mailboxes": "信箱",
+      "access": "權限",
+      "resources": "資源",
+      "audit": "紀錄"
+    },
+    "totalMessages": "郵件總數",
+    "countsHelp": "統計目前仍保存在資料庫的郵件（含過期及停用信箱）；刪除後減少，與歷史收發配額用量分開計算。",
+    "role": "角色",
+    "username": "使用者名稱",
+    "loginEmail": "登入信箱",
+    "providers": "登入方式",
+    "password": "密碼",
+    "resourceCounts": "API Key {keys} · Webhook {hooks} · 分享連結 {shares}",
+    "actions": {
+      "sessions": "登出所有裝置",
+      "apiKeys": "停用全部 API Key",
+      "webhooks": "停用 Webhook",
+      "shares": "撤銷全部分享"
+    },
+    "actionHelp": {
+      "sessions": "使此使用者所有既有登入工作階段失效。使用者仍可重新登入，API Key 不受影響。",
+      "apiKeys": "停用此使用者全部既有 API Key。有權限的使用者可重新啟用或建立金鑰；若需持續禁止，請同時關閉其 API Key 管理權限。",
+      "webhooks": "停用此使用者既有 Webhook。若需持續禁止，請同時關閉其 Webhook 管理權限。",
+      "shares": "永久撤銷此使用者全部信箱與郵件分享連結。若需持續禁止，請同時關閉其分享權限。"
+    },
+    "auditHelp": "記錄本次升級後的信箱管理、內文及附件存取與資源撤銷操作；不記錄內文、附件內容或金鑰。",
+    "auditActions": {
+      "mailbox_update": "調整信箱",
+      "mailbox_delete": "刪除信箱",
+      "message_read": "檢視郵件",
+      "attachment_read": "存取附件",
+      "message_delete": "刪除郵件",
+      "user_sessions": "撤銷登入工作階段",
+      "user_apiKeys": "停用 API Key",
+      "user_webhooks": "停用 Webhook",
+      "user_shares": "撤銷分享"
+    },
+    "permanent": "永久有效"
   }
 }

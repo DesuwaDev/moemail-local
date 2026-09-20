@@ -170,5 +170,9 @@
   "USERS_READ_FAILED": "ユーザーを読み込めませんでした。",
   "WEBHOOK_CONFIG_INVALID": "Webhook 設定が無効です。",
   "WEBHOOK_TEST_FAILED": "Webhook テストに失敗しました。",
-  "YAML_PARSE_FAILED": "YAML 設定を解析できませんでした。"
+  "YAML_PARSE_FAILED": "YAML 設定を解析できませんでした。",
+  "MAILBOX_DISABLED": "このメールボックスは管理者により停止されています",
+  "MAILBOX_SEND_DISABLED": "このメールボックスからの送信は停止されています",
+  "MAILBOX_SHARE_DISABLED": "このメールボックスの共有は停止されています",
+  "ADMIN_OPERATION_FAILED": "管理操作に失敗しました。更新して再試行してください。"
 }

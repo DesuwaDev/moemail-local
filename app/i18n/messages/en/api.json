@@ -170,5 +170,9 @@
   "USERS_READ_FAILED": "Failed to load users.",
   "WEBHOOK_CONFIG_INVALID": "The webhook configuration is invalid.",
   "WEBHOOK_TEST_FAILED": "The webhook test failed.",
-  "YAML_PARSE_FAILED": "The YAML configuration could not be parsed."
+  "YAML_PARSE_FAILED": "The YAML configuration could not be parsed.",
+  "MAILBOX_DISABLED": "This mailbox has been disabled by an administrator",
+  "MAILBOX_SEND_DISABLED": "Sending is paused for this mailbox",
+  "MAILBOX_SHARE_DISABLED": "Sharing is paused for this mailbox",
+  "ADMIN_OPERATION_FAILED": "Management operation failed. Refresh and try again."
 }

@@ -280,10 +280,10 @@
     "saveFailed": "保存配置失败"
   },
   "promote": {
-    "title": "角色管理",
-    "description": "管理用户角色（仅皇帝可用）",
+    "title": "用户管理",
+    "description": "按用户或邮箱查找，查看收发件并管理权限与资源。",
     "search": "搜索用户",
-    "searchPlaceholder": "搜索用户名、邮箱或昵称",
+    "searchPlaceholder": "搜索用户名、登录邮箱或名下邮箱",
     "username": "用户名",
     "email": "邮箱",
     "role": "角色",
@@ -399,7 +399,7 @@
         "allowedDomains": "允许的域名：{domains}"
       },
       "permissions": {
-        "view_email": "查看邮件",
+        "view_email": "查看邮箱与邮件列表",
         "create_email": "创建邮箱",
         "delete_email": "删除邮箱",
         "receive_email": "接收邮件",
@@ -410,7 +410,10 @@
         "promote_user": "管理用户",
         "manage_config": "管理配置",
         "manage_mailu": "管理 Mailu",
-        "manage_api_key": "管理 API 密钥"
+        "manage_api_key": "管理 API 密钥",
+        "view_message_content": "读取邮件正文",
+        "download_attachment": "下载邮件附件",
+        "delete_message": "删除单封邮件"
       },
       "quotas": {
         "maxActiveMailboxes": "有效邮箱上限",

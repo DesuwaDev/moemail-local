@@ -41,9 +41,12 @@ export async function POST(
 
     if (!email) {
       const state = await ownedMailboxState(userId, id)
+      if (state === "disabled") return apiError("MAILBOX_DISABLED", 403)
       if (state === "expired") return apiError("MAILBOX_EXPIRED", 410)
       return apiError(state === "forbidden" ? "MAILBOX_FORBIDDEN" : "MAILBOX_NOT_FOUND", state === "forbidden" ? 403 : 404)
     }
+
+    if (!email.sendEnabled) return apiError("MAILBOX_SEND_DISABLED", 403)
 
     const domainPolicy = await resolveOutboundPolicy(email.address)
     if (!domainPolicy || domainPolicy.outbound.mode === "disabled") {

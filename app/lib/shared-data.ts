@@ -1,3 +1,4 @@
+import { isMailboxShareAvailable } from "@/lib/mailbox-access"
 import { messageExtras } from "./message-attachments"
 import { isValidShareToken } from "./share-token"
 import type { MessageAttachment, InlineMessageImage } from "./attachment-types"
@@ -50,7 +51,7 @@ export async function getSharedEmail(token: string): Promise<SharedEmail | null>
     }
 
     // 检查邮箱是否过期
-    if (share.email.expiresAt < new Date()) {
+    if (!await isMailboxShareAvailable(share.email)) {
       return null
     }
 
@@ -93,7 +94,7 @@ export async function getSharedEmailMessages(token: string, limit = 20): Promise
       return { messages: [], nextCursor: null, total: 0 }
     }
 
-    if (share.email.expiresAt.getTime() <= Date.now()) {
+    if (!await isMailboxShareAvailable(share.email)) {
       return { messages: [], nextCursor: null, total: 0 }
     }
 
@@ -191,7 +192,7 @@ export async function getSharedMessage(token: string): Promise<SharedMessage | n
     const email = await db.query.emails.findFirst({
       where: eq(emails.id, message.emailId)
     })
-    if (!email || email.expiresAt.getTime() <= Date.now()) return null
+    if (!email || !await isMailboxShareAvailable(email)) return null
 
     return {
       id: message.id,

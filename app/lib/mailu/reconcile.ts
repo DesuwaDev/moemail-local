@@ -173,17 +173,17 @@ async function reconcileMailuUnlocked(integration: MailuIntegration) {
   const activeRows = managedDomains.length === 0
     ? []
     : await createDb()
-        .select({ address: emails.address, userId: emails.userId, roleName: roles.name })
+        .select({ address: emails.address, userId: emails.userId, roleName: roles.name, receiveEnabled: emails.receiveEnabled, sendEnabled: emails.sendEnabled })
         .from(emails)
         .leftJoin(userRoles, eq(userRoles.userId, emails.userId))
         .leftJoin(roles, eq(roles.id, userRoles.roleId))
-        .where(gt(emails.expiresAt, new Date()))
+        .where(and(gt(emails.expiresAt, new Date()), sql`${emails.disabledAt} IS NULL`))
   const validRoles = new Set<Role>(Object.values(ROLES))
-  const activeMailboxes = new Map<string, { address: string; userId: string | null; roles: Set<Role> }>()
+  const activeMailboxes = new Map<string, { address: string; userId: string | null; receiveEnabled: boolean; sendEnabled: boolean; roles: Set<Role> }>()
   for (const row of activeRows) {
     const address = normalizeMailboxAddress(row.address)
     if (!address || !managedDomains.includes(address.slice(address.lastIndexOf("@") + 1))) continue
-    const mailbox = activeMailboxes.get(address) ?? { address, userId: row.userId, roles: new Set<Role>() }
+    const mailbox = activeMailboxes.get(address) ?? { address, userId: row.userId, receiveEnabled: row.receiveEnabled, sendEnabled: row.sendEnabled, roles: new Set<Role>() }
     if (row.roleName && validRoles.has(row.roleName as Role)) mailbox.roles.add(row.roleName as Role)
     activeMailboxes.set(address, mailbox)
   }
@@ -199,11 +199,13 @@ async function reconcileMailuUnlocked(integration: MailuIntegration) {
       : null
     const canSend = Boolean(
       access
+      && mailbox.sendEnabled
       && outboundDomainSet.has(domain)
       && access.permissions[PERMISSIONS.SEND_EMAIL]
       && isDomainOperationAllowed(access, domain, "send"),
     )
-    if (canSend || inboundDomainSet.has(domain)) {
+    const canReceive = mailbox.receiveEnabled && inboundDomainSet.has(domain)
+    if (canSend || canReceive) {
       desired.set(address, expectedMailboxAlias(
         integration,
         address,
@@ -313,6 +315,7 @@ export async function ensureMailuSenderAlias(integration: MailuIntegration, rawA
     where: and(
       eq(sql`LOWER(${emails.address})`, address),
       gt(emails.expiresAt, new Date()),
+      sql`${emails.disabledAt} IS NULL`, eq(emails.sendEnabled, true),
     ),
     columns: { id: true, userId: true },
   })

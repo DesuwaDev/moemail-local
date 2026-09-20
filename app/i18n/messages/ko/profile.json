@@ -280,10 +280,10 @@
     "saveFailed": "설정 저장에 실패했습니다"
   },
   "promote": {
-    "title": "역할 관리",
-    "description": "사용자 역할 관리 (황제 전용)",
+    "title": "사용자 관리",
+    "description": "사용자나 메일함을 검색하고 메일, 권한 및 리소스를 관리합니다.",
     "search": "사용자 검색",
-    "searchPlaceholder": "사용자 이름, 이메일 또는 이름으로 검색",
+    "searchPlaceholder": "사용자 이름, 로그인 이메일 또는 소유 메일함 검색",
     "username": "사용자 이름",
     "email": "이메일",
     "role": "역할",
@@ -399,7 +399,7 @@
         "allowedDomains": "허용된 도메인: {domains}"
       },
       "permissions": {
-        "view_email": "메일 보기",
+        "view_email": "메일함과 메일 목록 보기",
         "create_email": "메일함 만들기",
         "delete_email": "메일함 삭제",
         "receive_email": "메일 수신",
@@ -410,7 +410,10 @@
         "promote_user": "사용자 관리",
         "manage_config": "구성 관리",
         "manage_mailu": "Mailu 관리",
-        "manage_api_key": "API 키 관리"
+        "manage_api_key": "API 키 관리",
+        "view_message_content": "메일 본문 읽기",
+        "download_attachment": "첨부 파일 다운로드",
+        "delete_message": "개별 메일 삭제"
       },
       "quotas": {
         "maxActiveMailboxes": "활성 메일함 한도",

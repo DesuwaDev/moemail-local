@@ -73,6 +73,7 @@ export async function GET(
     const email = await findOwnedActiveMailbox(userId, id)
     if (!email) {
       const state = await ownedMailboxState(userId, id)
+      if (state === "disabled") return apiError("MAILBOX_DISABLED", 403)
       if (state === "expired") return apiError("MAILBOX_EXPIRED", 410)
       return apiError(state === "not_found" ? "MAILBOX_NOT_FOUND" : "MAILBOX_FORBIDDEN", state === "not_found" ? 404 : 403)
     }

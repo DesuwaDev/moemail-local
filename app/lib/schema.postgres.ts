@@ -62,6 +62,10 @@ export const emails = pgTable("email", {
   userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
   createdAt: dateColumn("created_at").notNull().$defaultFn(() => new Date()),
   expiresAt: dateColumn("expires_at").notNull(),
+  disabledAt: dateColumn("disabled_at"),
+  receiveEnabled: boolean("receive_enabled").notNull().default(true),
+  sendEnabled: boolean("send_enabled").notNull().default(true),
+  shareEnabled: boolean("share_enabled").notNull().default(true),
 }, (table) => [
   index("email_expires_at_idx").on(table.expiresAt),
   index("email_user_id_idx").on(table.userId),
@@ -249,3 +253,13 @@ export const emailSharesRelations = relations(emailShares, ({ one }) => ({
 export const messageSharesRelations = relations(messageShares, ({ one }) => ({
   message: one(messages, { fields: [messageShares.messageId], references: [messages.id] }),
 }))
+
+export const adminAuditLogs = pgTable("admin_audit_log", {
+  id: text("id").primaryKey(),
+  actorId: text("actor_id").notNull(),
+  userId: text("user_id"),
+  mailboxId: text("mailbox_id"),
+  action: text("action").notNull(),
+  target: text("target").notNull(),
+  createdAt: dateColumn("created_at").notNull(),
+}, table => [index("admin_audit_user_time_idx").on(table.userId, table.createdAt)])

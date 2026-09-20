@@ -93,9 +93,9 @@
       "resetMailboxUsage": "メールボックスのクォータ使用量をリセットしました"
     },
     "permissions": {
-      "view_email": "メールを表示",
+      "view_email": "メールボックスと一覧の閲覧",
       "create_email": "メールボックスを作成",
-      "delete_email": "メールボックスとメールを削除",
+      "delete_email": "メールボックスの削除",
       "receive_email": "メールを受信",
       "send_email": "メールを送信",
       "private_recipient_delivery": "宛先を隠して個別に配信",
@@ -104,7 +104,10 @@
       "promote_user": "ユーザーロールを管理",
       "manage_config": "サイトとドメイン設定を管理",
       "manage_mailu": "Mailu 連携と認証情報を管理",
-      "manage_api_key": "API Key を管理"
+      "manage_api_key": "API Key を管理",
+      "view_message_content": "メール本文の閲覧",
+      "download_attachment": "添付ファイルのダウンロード",
+      "delete_message": "個別メールの削除"
     },
     "quotas": {
       "sectionHelp": "この 3 項目はメールボックス作成と受信メール 1 通のサイズを制御するもので、日単位の送受信数ではありません。ロール値が所属ユーザーの既定値になります。",
@@ -468,5 +471,107 @@
       "saving": "保存中",
       "confirm": "理解して続行"
     }
+  },
+  "management": {
+    "users": "ユーザー",
+    "mailboxes": "メールボックス",
+    "searchMailboxes": "メールボックス名・アドレスを検索",
+    "searchMessages": "件名・送信者・宛先を検索",
+    "status": "状態",
+    "all": "すべて",
+    "active": "有効",
+    "disabled": "停止中",
+    "expired": "期限切れ",
+    "empty": "該当する記録はありません",
+    "owner": "所有者：{owner}",
+    "unassigned": "未割り当て",
+    "counts": "受信 {received} · 送信 {sent}",
+    "expires": "期限 {date}",
+    "open": "管理",
+    "pagination": "{total} 件 · {page}/{pages}",
+    "previous": "前へ",
+    "next": "次へ",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "back": "戻る",
+    "received": "受信箱",
+    "sent": "送信済み",
+    "settings": "管理",
+    "controlsHelp": "停止中は受信・送信・閲覧・共有が無効になり、保存済みメールは保持されます。各スイッチにはユーザー権限とドメインの規則も適用されます。",
+    "controls": {
+      "disabled": "メールボックスを停止",
+      "receiveEnabled": "受信を許可",
+      "sendEnabled": "送信を許可",
+      "shareEnabled": "共有を許可"
+    },
+    "expiry": "有効期限（現地時間）",
+    "deleteMailbox": "メールボックスを削除",
+    "deleteMailboxHelp": "{address} とすべてのメール・添付ファイル・共有を完全に削除します。元に戻せず、使用済み割り当てもリセットされません。",
+    "deleteMessage": "メールを削除",
+    "deleteMessageHelp": "このメールと添付ファイル・共有を完全に削除します。元に戻せず、使用済み割り当てもリセットされません。",
+    "save": "保存",
+    "saved": "保存しました",
+    "privacy": "本文表示には外部リソースのプライバシー設定が適用されます。",
+    "message": {
+      "messageContent": "メール本文",
+      "selectMessage": "メールを選択",
+      "loading": "読み込み中",
+      "from": "送信者",
+      "to": "宛先",
+      "subject": "件名",
+      "time": "日時",
+      "htmlFormat": "HTML",
+      "textFormat": "テキスト",
+      "noSubject": "件名なし"
+    },
+    "policyTabs": {
+      "permissions": "権限",
+      "quotas": "上限",
+      "domains": "ドメイン"
+    },
+    "overrideHelp": "このユーザーのロール設定を上書きするか、継承して今後の変更を反映します。送受信の割り当ては「権限と割り当て」でユーザーやメールボックスごとに設定できます。",
+    "roleHelp": "既存のロールを設定します。本文の閲覧・添付ファイルの取得・個別削除を別々に制御できます。メールボックスの閲覧権限も必要です。",
+    "filterSettings": "設定を絞り込む",
+    "roleValue": "ロール：{value}",
+    "userTabs": {
+      "overview": "概要",
+      "mailboxes": "メール",
+      "access": "権限",
+      "resources": "資源",
+      "audit": "履歴"
+    },
+    "totalMessages": "メール総数",
+    "countsHelp": "期限切れや停止中を含む、現在保存されているメールの件数です。削除すると減少し、過去の割り当て使用量とは別に計算されます。",
+    "role": "ロール",
+    "username": "ユーザー名",
+    "loginEmail": "ログインメール",
+    "providers": "ログイン方法",
+    "password": "パスワード",
+    "resourceCounts": "API キー {keys} · Webhook {hooks} · 共有 {shares}",
+    "actions": {
+      "sessions": "全端末からログアウト",
+      "apiKeys": "全 API キーを停止",
+      "webhooks": "Webhook を停止",
+      "shares": "全共有を解除"
+    },
+    "actionHelp": {
+      "sessions": "現在のログインセッションをすべて無効にします。再ログインは可能で、API キーには影響しません。",
+      "apiKeys": "既存の API キーをすべて停止します。権限があるユーザーは再有効化や新規作成が可能です。継続して禁止するには API キー管理権限も無効にしてください。",
+      "webhooks": "既存の Webhook を停止します。継続して禁止するには Webhook 管理権限も無効にしてください。",
+      "shares": "すべてのメールボックスとメールの共有リンクを解除します。新規共有も禁止するには共有権限を無効にしてください。"
+    },
+    "auditHelp": "今回の更新以降のメールボックス管理、本文・添付ファイルへのアクセス、資源の取り消しを記録します。本文や添付ファイルの内容、秘密情報は記録しません。",
+    "auditActions": {
+      "mailbox_update": "メールボックスを変更",
+      "mailbox_delete": "メールボックスを削除",
+      "message_read": "メールを閲覧",
+      "attachment_read": "添付ファイルにアクセス",
+      "message_delete": "メールを削除",
+      "user_sessions": "セッションを無効化",
+      "user_apiKeys": "API キーを停止",
+      "user_webhooks": "Webhook を停止",
+      "user_shares": "共有を解除"
+    },
+    "permanent": "無期限"
   }
 }

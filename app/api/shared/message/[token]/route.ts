@@ -1,3 +1,4 @@
+import { isMailboxShareAvailable } from "@/lib/mailbox-access"
 import { attachmentResponse, messageExtras } from "@/lib/message-attachments"
 import { createDb } from "@/lib/db"
 import { messageShares, messages, emails } from "@/lib/schema"
@@ -43,10 +44,10 @@ export async function GET(
 
     const email = await db.query.emails.findFirst({
       where: eq(emails.id, message.emailId),
-      columns: { expiresAt: true },
+      columns: { userId: true, expiresAt: true, disabledAt: true, shareEnabled: true },
     })
     if (!email) return apiError("MAILBOX_NOT_FOUND", 404)
-    if (email.expiresAt.getTime() <= Date.now()) {
+    if (!await isMailboxShareAvailable(email)) {
       return apiError("MAILBOX_EXPIRED", 410)
     }
 

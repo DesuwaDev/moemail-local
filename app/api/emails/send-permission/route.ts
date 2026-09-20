@@ -25,10 +25,11 @@ export async function GET(request: Request) {
       const email = await findOwnedActiveMailbox(userId, emailId)
       if (!email) {
         const state = await ownedMailboxState(userId, emailId)
-        const code = state === "expired" ? "MAILBOX_EXPIRED" : state === "forbidden" ? "MAILBOX_FORBIDDEN" : "MAILBOX_NOT_FOUND"
-        const status = state === "expired" ? 410 : state === "forbidden" ? 403 : 404
+        const code = state === "disabled" ? "MAILBOX_DISABLED" : state === "expired" ? "MAILBOX_EXPIRED" : state === "forbidden" ? "MAILBOX_FORBIDDEN" : "MAILBOX_NOT_FOUND"
+        const status = state === "disabled" ? 403 : state === "expired" ? 410 : state === "forbidden" ? 403 : 404
         return NextResponse.json({ canSend: false, ...apiErrorBody(code) }, { status })
       }
+      if (!email.sendEnabled) return NextResponse.json({ canSend: false, ...apiErrorBody("MAILBOX_SEND_DISABLED") }, { status: 403 })
       senderAddress = email.address
       const separator = email.address.lastIndexOf("@")
       senderDomain = separator > 0 ? normalizeMailboxDomain(email.address.slice(separator + 1)) : null
