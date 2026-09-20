@@ -1,6 +1,6 @@
 {
   "mailPrivacy": {"title":"郵件隱私","alwaysAllow":"一律允許載入外部資源","enabledHelp":"已開啟自動載入，寄件者可能得知你的 IP 與閱讀情況。","disabledHelp":"預設封鎖追蹤資源；需要時可在個別郵件允許載入。","confirmTitle":"一律允許外部資源？","confirmHelp":"外部圖片、字型與媒體將由瀏覽器自動請求，可能向寄件者透露你的出口 IP 與閱讀時間。此設定跟隨你的帳號，影響已登入的裝置；可隨時關閉。","enable":"了解風險並開啟","failed":"儲存或同步設定失敗，請重新整理確認後重試。"},
-  "security": {"title":"登入安全","description":"懷疑帳號在其他裝置登入時，可以讓所有裝置重新登入。API Key 不受影響，可在金鑰管理中個別停用。","revoke":"登出所有裝置","confirm":"包含目前裝置在內的所有登入工作階段都會失效。繼續使用需要重新登入，信箱和郵件不會被刪除。","failed":"登出所有裝置失敗，請重試。"},
+  "security": {"title":"登入安全","description":"讓所有裝置重新登入，API Key 須在金鑰管理中個別停用。","revoke":"登出所有裝置","confirm":"包含目前裝置在內的所有登入工作階段都會失效。繼續使用需要重新登入，信箱和郵件不會被刪除。","failed":"登出所有裝置失敗，請重試。"},
   "title": "個人中心",
   "card": {
     "title": "使用者資訊",
@@ -14,6 +14,11 @@
     }
   },
   "myQuotas": {
+    "helpTitle": "額度說明",
+    "usageCompact": "已用 {used} / {limit}",
+    "noRulesCompact": "無額度限制，仍受帳戶權限約束",
+    "window": "每 {value} {unit}",
+    "sharedHint": "用量包含處理中預留；共用額度由對應使用者共同消耗。",
     "title": "我的額度",
     "description": "此處顯示目前帳戶生效的資源限制、全站共用池，以及單一使用者或角色額度。",
     "loading": "正在讀取額度…",

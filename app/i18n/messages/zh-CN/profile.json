@@ -1,6 +1,6 @@
 {
   "mailPrivacy": {"title":"邮件隐私","alwaysAllow":"始终允许加载外部资源","enabledHelp":"已开启自动加载，发件人可能得知你的 IP 和阅读情况。","disabledHelp":"默认拦截追踪资源；需要时可在单封邮件中允许加载。","confirmTitle":"始终允许外部资源？","confirmHelp":"外部图片、字体和媒体会由浏览器自动请求，可能向发件人暴露你的出口 IP 和阅读时间。此设置跟随你的账号，影响已登录的设备；可随时关闭。","enable":"了解风险并开启","failed":"保存或同步设置失败，请刷新确认后重试。"},
-  "security": {"title":"登录安全","description":"怀疑账号在其他设备登录时，可以让所有设备重新登录。API Key 不受影响，可在密钥管理中单独停用。","revoke":"退出所有设备","confirm":"包含当前设备在内的所有登录会话都会失效。继续使用需要重新登录，邮箱和邮件不会被删除。","failed":"退出所有设备失败，请重试。"},
+  "security": {"title":"登录安全","description":"让所有设备重新登录，API Key 需在密钥管理中单独停用。","revoke":"退出所有设备","confirm":"包含当前设备在内的所有登录会话都会失效。继续使用需要重新登录，邮箱和邮件不会被删除。","failed":"退出所有设备失败，请重试。"},
   "title": "个人中心",
   "card": {
     "title": "用户信息",
@@ -14,6 +14,11 @@
     }
   },
   "myQuotas": {
+    "helpTitle": "额度说明",
+    "usageCompact": "已用 {used} / {limit}",
+    "noRulesCompact": "无额度限制，仍受账户权限约束",
+    "window": "每 {value} {unit}",
+    "sharedHint": "用量包含处理中预留；共享额度由对应用户共同消耗。",
     "title": "我的额度",
     "description": "这里显示当前账户实际生效的资源限制、全站共享池，以及单用户或权限组额度。",
     "loading": "正在读取额度…",

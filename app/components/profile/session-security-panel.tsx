@@ -33,9 +33,8 @@ export function SessionSecurityPanel() {
 
   return <section className="rounded-lg border-2 border-primary/20 bg-background p-3 sm:p-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="min-w-0 flex-1 basis-52 space-y-1">
+      <div className="min-w-0 flex-1">
         <h2 className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="h-4 w-4 shrink-0 text-primary" />{t("title")}</h2>
-        <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">{t("description")}</p>
       </div>
       <AlertDialog open={open} onOpenChange={value => { if (!busy) setOpen(value) }}>
         <AlertDialogTrigger asChild><Button variant="outline" className="shrink-0">{t("revoke")}</Button></AlertDialogTrigger>
@@ -50,5 +49,6 @@ export function SessionSecurityPanel() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t("description")}</p>
   </section>
 }
