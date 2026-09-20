@@ -53,6 +53,34 @@
     "monitor": "모니터링 및 알림",
     "offsite": "오프사이트 백업"
   },
+  "clientIp": {
+    "title": "접속 IP / CDN",
+    "summary": "관리되는 진입점의 방문자 IP를 세션 기록과 로그인 요청 제한에 사용합니다.",
+    "header": "접속 IP 헤더",
+    "auto": "호환 모드 (고정 순서)",
+    "custom": "사용자 지정 헤더",
+    "hops": "오른쪽에서 IP 선택 순서",
+    "hopsHelp": "쉼표로 구분된 프록시 체인에만 적용됩니다. 1은 맨 오른쪽입니다. 진입점이 기록하는 실제 체인에 맞게 1–16을 설정하세요.",
+    "invalid": "유효한 IP 헤더 이름과 1–16 사이 정수를 입력하세요. 인증, Cookie, 비밀 정보 헤더는 사용할 수 없습니다.",
+    "detect": "현재 요청 확인",
+    "detecting": "확인 중",
+    "draftHint": "확인은 저장하지 않습니다. 아래 저장 및 적용 버튼으로 변경하세요.",
+    "active": "현재 적용 결과",
+    "preview": "초안 미리보기",
+    "received": "수신한 IP 헤더 보기",
+    "failed": "확인에 실패했습니다. 로그인과 네트워크를 확인하고 다시 시도하세요.",
+    "helpTitle": "설정 안내와 신뢰 경계",
+    "helpTrust": "활성화 전 진입 프록시가 선택한 헤더를 덮어쓰도록 하고, 원본 서버는 신뢰하는 프록시만 허용하며 Node 포트를 비공개로 유지하세요. CDN 헤더에도 클라이언트 값이 남을 수 있으므로 에지에서 명시적으로 덮어쓰세요.",
+    "helpSelection": "진입점에서 X-MoeMail-Client-IP로 통일하는 것을 권장합니다. 호환 모드는 이 헤더, CF-Connecting-IP, X-Real-IP, X-Forwarded-For 순서로 확인합니다. 하나를 명시적으로 선택하는 것이 좋습니다. 선택한 헤더가 없거나 잘못되면 다른 헤더를 사용하지 않고 알 수 없음으로 표시합니다.",
+    "helpLimit": "확인은 현재 요청의 유효한 IP만 표시합니다. TCP 상대방이나 헤더의 신뢰성을 검증할 수 없습니다. 위치는 CDN에 연결하는 출구를 나타내며 VPN 뒤의 주소를 알아낼 수 없습니다. 신뢰를 끄면 접속 IP 헤더를 사용하지 않습니다.",
+    "reasons": {
+      "ok": "인식됨",
+      "disabled": "헤더 신뢰가 꺼져 있습니다",
+      "missing": "선택한 헤더가 없습니다",
+      "invalid": "잘못된 헤더 형식",
+      "chainTooShort": "프록시 체인이 너무 짧습니다"
+    }
+  },
   "fields": {
     "version": { "label": "Schema 버전", "description": "현재 버전 1만 지원합니다." },
     "setup": {
@@ -61,6 +89,8 @@
     },
     "server": {
       "baseUrl": { "label": "사이트 기준 URL", "description": "메타데이터 및 절대 링크에 사용합니다. 예: https://mail.example.com." },
+      "clientIpHeader": {"label":"접속 IP 헤더","description":"진입점에서 X-MoeMail-Client-IP로 통일하는 것을 권장합니다. 호환 모드는 이 헤더, CF-Connecting-IP, X-Real-IP, X-Forwarded-For 순서로 확인합니다. 하나를 명시적으로 선택하는 것이 좋습니다. 선택한 헤더가 없거나 잘못되면 다른 헤더를 사용하지 않고 알 수 없음으로 표시합니다."},
+      "clientIpTrustedHops": {"label":"오른쪽에서 IP 선택 순서","description":"쉼표로 구분된 프록시 체인에만 적용됩니다. 1은 맨 오른쪽입니다. 진입점이 기록하는 실제 체인에 맞게 1–16을 설정하세요."},
       "trustProxyHeaders": { "label": "역방향 프록시 헤더 신뢰", "description": "관리되는 Caddy 또는 역방향 프록시 뒤에서만 활성화하세요." },
       "autoRestartOnDriverChange": { "label": "드라이버 변경 시 자동 종료", "description": "프로덕션에서는 Docker 또는 systemd가 새 프로세스를 시작합니다." },
       "emailPollIntervalMs": { "label": "메일함 폴링 간격(밀리초)", "description": "브라우저가 메일 목록을 새로 고치는 간격입니다." }

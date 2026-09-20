@@ -31,6 +31,7 @@ try {
       deletedEmailShares: 0,
       deletedMessages: 0,
       deletedEmails: 0,
+      deletedSessions: 0,
     }
     type DeletedCounter = keyof typeof deletedRows
     let batches = 0
@@ -214,6 +215,14 @@ try {
         return result.rowCount ?? 0
       })
     }
+
+    await drainPhase("deletedSessions", async limit => {
+      const result = await client.query(
+        'DELETE FROM login_session WHERE id IN (SELECT id FROM login_session WHERE expires_at < $1 ORDER BY expires_at, id LIMIT $2)',
+        [new Date(now.getTime() - 86400000), limit],
+      )
+      return result.rowCount ?? 0
+    })
 
     const deleted = totalDeleted()
     console.log(JSON.stringify({

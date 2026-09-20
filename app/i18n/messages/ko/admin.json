@@ -538,7 +538,8 @@
       "mailboxes": "메일함",
       "access": "권한",
       "resources": "리소스",
-      "audit": "기록"
+      "audit": "기록",
+      "sessions": "세션"
     },
     "totalMessages": "전체 메일",
     "countsHelp": "만료되거나 중지된 메일함을 포함하여 현재 저장된 메일 수입니다. 삭제 시 감소하며 과거 할당량 사용량과 별도로 계산됩니다.",
@@ -570,7 +571,8 @@
       "user_sessions": "세션 취소",
       "user_apiKeys": "API 키 중지",
       "user_webhooks": "Webhook 중지",
-      "user_shares": "공유 취소"
+      "user_shares": "공유 취소",
+      "session_revoke": "세션 로그아웃"
     },
     "permanent": "무기한"
   }

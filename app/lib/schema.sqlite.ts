@@ -17,6 +17,26 @@ export const users = sqliteTable("user", {
   index("user_banned_at_idx").on(table.bannedAt),
 ])
 
+export const loginSessions = sqliteTable("login_session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionVersion: integer("session_version").notNull(),
+  provider: text("provider").notNull(),
+  userAgent: text("user_agent").notNull(),
+  firstIp: text("first_ip"),
+  lastIp: text("last_ip"),
+  loginAt: integer("login_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
+  lastActiveAt: integer("last_active_at", { mode: "timestamp_ms" }),
+  activeSeconds: integer("active_seconds").notNull().default(0),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+}, table => [
+  index("login_session_user_seen_idx").on(table.userId, table.lastSeenAt),
+  index("login_session_expires_idx").on(table.expiresAt),
+])
+
 export const accounts = sqliteTable(
   "account",
   {

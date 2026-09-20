@@ -1,5 +1,6 @@
 "use client"
 
+import { SessionHeartbeat } from "./session-heartbeat"
 import { useCallback, useEffect, useRef } from "react"
 import { signOut, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
@@ -72,5 +73,5 @@ export function SessionStatusGuard() {
     }
   }, [])
 
-  return null
+  return <SessionHeartbeat />
 }

@@ -14,6 +14,7 @@ export interface RequestPrincipal {
   roles: Role[]
   kind: "session" | "apiKey"
   access: EffectiveAccessPolicy
+  sessionId?: string
   mailboxId?: string | null
   apiKeyAccessLevel?: string
 }
@@ -108,6 +109,7 @@ export async function authorizeRequest(
 
     unresolvedPrincipal = {
       userId: session.user.id,
+      sessionId: session.sessionId,
       roles: normalizeRoles(session.user.roles?.map(role => role.name) ?? []),
       kind: "session",
     }

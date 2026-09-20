@@ -53,6 +53,34 @@
     "monitor": "监控告警",
     "offsite": "异地备份"
   },
+  "clientIp": {
+    "title": "来源 IP / CDN",
+    "summary": "信任受控入口提供的访客 IP，用于会话记录与登录限流。",
+    "header": "来源请求头",
+    "auto": "兼容模式（按固定顺序）",
+    "custom": "自定义请求头",
+    "hops": "从右侧取第几个 IP",
+    "hopsHelp": "仅用于逗号分隔的代理链；1 表示最右侧。按入口实际写入的链设置，范围 1–16。",
+    "invalid": "请输入有效的 IP 请求头名称和 1–16 的整数；不接受认证、Cookie 或密钥头。",
+    "detect": "检测当前请求",
+    "detecting": "检测中",
+    "draftHint": "检测不保存；更改随下方“保存并应用”生效。",
+    "active": "当前生效结果",
+    "preview": "草稿预览结果",
+    "received": "查看收到的 IP 请求头",
+    "failed": "检测失败，请检查登录和网络后重试。",
+    "helpTitle": "配置说明与信任边界",
+    "helpTrust": "启用前，入口代理必须覆盖所选请求头，源站应限制只允许可信代理访问，Node 端口不对公网开放。CDN 自带请求头也可能接受客户端原值，需在边缘明确覆盖。",
+    "helpSelection": "优先在入口统一写入 X-MoeMail-Client-IP。兼容模式依次检查该头、CF-Connecting-IP、X-Real-IP、X-Forwarded-For；建议明确选择一个头。指定头缺失或无效时显示未知，不改用其他头。",
+    "helpLimit": "检测只展示本次请求中合法的 IP，不验证 TCP 对端或证明请求头可信。位置表示访客连接 CDN 的出口，无法还原 VPN 背后的地址。关闭开关后不采用任何来源头。",
+    "reasons": {
+      "ok": "已识别",
+      "disabled": "未启用请求头信任",
+      "missing": "未收到所选请求头",
+      "invalid": "请求头格式无效",
+      "chainTooShort": "代理链长度不足"
+    }
+  },
   "fields": {
     "version": { "label": "Schema 版本", "description": "当前只支持版本 1。" },
     "setup": {
@@ -61,6 +89,8 @@
     },
     "server": {
       "baseUrl": { "label": "站点基准 URL", "description": "用于元数据与绝对链接，例如 https://mail.example.com。" },
+      "clientIpHeader": {"label":"来源请求头","description":"优先在入口统一写入 X-MoeMail-Client-IP。兼容模式依次检查该头、CF-Connecting-IP、X-Real-IP、X-Forwarded-For；建议明确选择一个头。指定头缺失或无效时显示未知，不改用其他头。"},
+      "clientIpTrustedHops": {"label":"从右侧取第几个 IP","description":"仅用于逗号分隔的代理链；1 表示最右侧。按入口实际写入的链设置，范围 1–16。"},
       "trustProxyHeaders": { "label": "信任反向代理请求头", "description": "仅在受控的 Caddy 或反向代理后开启。" },
       "autoRestartOnDriverChange": { "label": "切换驱动时自动退出", "description": "生产环境由 Docker 或 systemd 守护进程拉起新进程。" },
       "emailPollIntervalMs": { "label": "邮箱轮询间隔（毫秒）", "description": "浏览器刷新邮件列表的间隔。" }

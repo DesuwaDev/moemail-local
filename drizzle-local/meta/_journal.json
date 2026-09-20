@@ -64,6 +64,13 @@
       "when": 1790035200000,
       "tag": "0008_mailbox_management",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790121600000,
+      "tag": "0009_login_sessions",
+      "breakpoints": true
     }
   ]
 }

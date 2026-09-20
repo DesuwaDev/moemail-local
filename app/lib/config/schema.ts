@@ -1,3 +1,4 @@
+import { isClientIpHeader } from "../client-ip-policy"
 import { z } from "zod"
 import { parsePostgresConnectionUrl } from "../postgres-connection"
 
@@ -128,6 +129,8 @@ const baseConfigSchema = z.object({
     .object({
       baseUrl: httpUrl("http://localhost:3000"),
       trustProxyHeaders: boolean(false),
+      clientIpHeader: z.string().trim().toLowerCase().refine(isClientIpHeader, "INVALID_REQUEST").default("auto"),
+      clientIpTrustedHops: integer(1, 1, 16),
       autoRestartOnDriverChange: boolean(true),
       emailPollIntervalMs: integer(25_000, 5_000, 600_000),
     })

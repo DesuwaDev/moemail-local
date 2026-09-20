@@ -538,7 +538,8 @@
       "mailboxes": "信箱",
       "access": "權限",
       "resources": "資源",
-      "audit": "紀錄"
+      "audit": "紀錄",
+      "sessions": "工作階段"
     },
     "totalMessages": "郵件總數",
     "countsHelp": "統計目前仍保存在資料庫的郵件（含過期及停用信箱）；刪除後減少，與歷史收發配額用量分開計算。",
@@ -570,7 +571,8 @@
       "user_sessions": "撤銷登入工作階段",
       "user_apiKeys": "停用 API Key",
       "user_webhooks": "停用 Webhook",
-      "user_shares": "撤銷分享"
+      "user_shares": "撤銷分享",
+      "session_revoke": "登出工作階段"
     },
     "permanent": "永久有效"
   }

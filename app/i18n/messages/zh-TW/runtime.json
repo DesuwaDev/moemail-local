@@ -53,6 +53,34 @@
     "monitor": "監控與警示",
     "offsite": "異地備份"
   },
+  "clientIp": {
+    "title": "來源 IP / CDN",
+    "summary": "信任受控入口提供的訪客 IP，用於工作階段紀錄與登入限流。",
+    "header": "來源請求標頭",
+    "auto": "相容模式（固定順序）",
+    "custom": "自訂請求標頭",
+    "hops": "從右側取第幾個 IP",
+    "hopsHelp": "僅用於逗號分隔的代理鏈；1 表示最右側。依入口實際寫入的鏈設定，範圍 1–16。",
+    "invalid": "請輸入有效的 IP 標頭名稱及 1–16 的整數；不接受認證、Cookie 或金鑰標頭。",
+    "detect": "偵測目前請求",
+    "detecting": "偵測中",
+    "draftHint": "偵測不儲存；變更隨下方「儲存並套用」生效。",
+    "active": "目前生效結果",
+    "preview": "草稿預覽結果",
+    "received": "查看收到的 IP 標頭",
+    "failed": "偵測失敗，請檢查登入與網路後重試。",
+    "helpTitle": "設定說明與信任邊界",
+    "helpTrust": "啟用前，入口代理必須覆寫所選標頭，來源站應限制只允許可信代理存取，Node 連接埠不對外開放。CDN 標頭也可能接受用戶端原值，需在邊緣明確覆寫。",
+    "helpSelection": "優先在入口統一寫入 X-MoeMail-Client-IP。相容模式依序檢查該標頭、CF-Connecting-IP、X-Real-IP、X-Forwarded-For；建議明確選取一個標頭。指定標頭缺失或無效時顯示未知，不改用其他標頭。",
+    "helpLimit": "偵測只顯示本次請求中合法的 IP，不驗證 TCP 對端或證明標頭可信。位置表示訪客連線 CDN 的出口，無法還原 VPN 背後的位址。關閉開關後不採用任何來源標頭。",
+    "reasons": {
+      "ok": "已識別",
+      "disabled": "未啟用標頭信任",
+      "missing": "未收到所選標頭",
+      "invalid": "標頭格式無效",
+      "chainTooShort": "代理鏈長度不足"
+    }
+  },
   "fields": {
     "version": { "label": "Schema 版本", "description": "目前僅支援版本 1。" },
     "setup": {
@@ -61,6 +89,8 @@
     },
     "server": {
       "baseUrl": { "label": "站台基準 URL", "description": "用於中繼資料與絕對連結，例如 https://mail.example.com。" },
+      "clientIpHeader": {"label":"來源請求標頭","description":"優先在入口統一寫入 X-MoeMail-Client-IP。相容模式依序檢查該標頭、CF-Connecting-IP、X-Real-IP、X-Forwarded-For；建議明確選取一個標頭。指定標頭缺失或無效時顯示未知，不改用其他標頭。"},
+      "clientIpTrustedHops": {"label":"從右側取第幾個 IP","description":"僅用於逗號分隔的代理鏈；1 表示最右側。依入口實際寫入的鏈設定，範圍 1–16。"},
       "trustProxyHeaders": { "label": "信任反向代理標頭", "description": "僅在受控的 Caddy 或反向代理後方啟用。" },
       "autoRestartOnDriverChange": { "label": "驅動程式變更時自動結束", "description": "正式環境由 Docker 或 systemd 監督程序啟動替代行程。" },
       "emailPollIntervalMs": { "label": "信箱輪詢間隔（毫秒）", "description": "瀏覽器重新整理郵件清單的間隔。" }

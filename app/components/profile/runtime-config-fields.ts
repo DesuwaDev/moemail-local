@@ -19,6 +19,8 @@ export const runtimeConfigFields: Record<string, RuntimeFieldMetadata> = {
   "setup.completedAt": {},
   "server.baseUrl": {},
   "server.trustProxyHeaders": { kind: "boolean" },
+  "server.clientIpHeader": {},
+  "server.clientIpTrustedHops": { kind: "number" },
   "server.autoRestartOnDriverChange": { kind: "boolean" },
   "server.emailPollIntervalMs": { kind: "number" },
   "database.driver": { kind: "select", options: [{ value: "sqlite", label: "SQLite" }, { value: "postgres", label: "PostgreSQL" }] },

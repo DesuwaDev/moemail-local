@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Crown, Gem, Github, KeyRound, Mail, Settings, SlidersHorizontal, Sword, Type, User2, Users } from "lucide-react"
+import { Crown, Gem, Github, KeyRound, Loader2, Mail, Settings, SlidersHorizontal, Sword, Type, User2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PERMISSIONS, ROLES } from "@/lib/permissions"
@@ -23,7 +23,6 @@ import { WebhookConfig } from "./webhook-config"
 import { SessionSecurityPanel } from "./session-security-panel"
 import { MailPrivacyPanel } from "./mail-privacy-panel"
 
-interface ProfileCardProps { user: User }
 
 const profileTabs = ["account", "domains", "access", "users", "site", "appearance", "runtime", "webhook", "keys"] as const
 type ProfileTab = typeof profileTabs[number]
@@ -48,7 +47,23 @@ function TabLabel({ icon: Icon, children }: { icon: React.ComponentType<{ classN
   return <span className="flex items-center gap-1.5"><Icon className="h-4 w-4" />{children}</span>
 }
 
-export function ProfileCard({ user }: ProfileCardProps) {
+export function ProfileCard() {
+  const { user, ready, loading } = useRolePermission()
+  const t = useTranslations("profile.sessionState")
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    if (!loading) return
+    const timer = window.setTimeout(() => setSlow(true), 10_000)
+    return () => window.clearTimeout(timer)
+  }, [loading])
+  if (!ready || !user) return <section className="mx-auto flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 text-sm" role="status" aria-live="polite">
+    <p className="flex min-w-0 items-center gap-2">{loading && !slow && <Loader2 className="size-4 shrink-0 animate-spin" />}{t(loading && !slow ? "loading" : "unavailable")}</p>
+    {(!loading || slow) && <Button variant="outline" size="sm" onClick={() => window.location.reload()}>{t("retry")}</Button>}
+  </section>
+  return <VerifiedProfileCard key={user.id} user={user} />
+}
+
+function VerifiedProfileCard({ user }: { user: User }) {
   const t = useTranslations("profile.card")
   const tAuth = useTranslations("auth.signButton")
   const tWebhook = useTranslations("profile.webhook")
@@ -92,27 +107,6 @@ export function ProfileCard({ user }: ProfileCardProps) {
     })
   }, [requestedActiveTab])
 
-  useEffect(() => {
-    const preload = () => {
-      setVisitedTabs(previous => {
-        if (previous.size === allowedTabs.size && [...allowedTabs].every(tab => previous.has(tab))) {
-          return previous
-        }
-        return new Set([...previous, ...allowedTabs])
-      })
-    }
-    const idleWindow = window as typeof window & {
-      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
-      cancelIdleCallback?: (handle: number) => void
-    }
-    if (idleWindow.requestIdleCallback) {
-      const handle = idleWindow.requestIdleCallback(preload, { timeout: 300 })
-      return () => idleWindow.cancelIdleCallback?.(handle)
-    }
-    const handle = window.setTimeout(preload, 120)
-    return () => window.clearTimeout(handle)
-  }, [allowedTabs])
-
   const changeTab = (value: string) => {
     const tab = value as ProfileTab
     if (!allowedTabs.has(tab) || tab === activeTab) return
@@ -129,11 +123,12 @@ export function ProfileCard({ user }: ProfileCardProps) {
     )
   }
 
+  const visibleTab = allowedTabs.has(activeTab) ? activeTab : "account"
   const persistentTabClass = "data-[state=inactive]:hidden data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-150"
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <Tabs value={activeTab} onValueChange={changeTab} className="w-full">
+      <Tabs value={visibleTab} onValueChange={changeTab} className="w-full">
         <div className="overflow-x-auto pb-1">
           <TabsList className="h-auto min-w-max justify-start">
             <TabsTrigger value="account"><TabLabel icon={User2}>{tAdminNav("account")}</TabLabel></TabsTrigger>
@@ -148,7 +143,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
           </TabsList>
         </div>
 
-        {visitedTabs.has("account") && <TabsContent value="account" forceMount className={persistentTabClass}>
+        {(visitedTabs.has("account") || visibleTab === "account") && <TabsContent value="account" forceMount className={persistentTabClass}>
           <div className="space-y-3">
           <div className="rounded-lg border-2 border-primary/20 bg-background p-3 sm:p-4">
             <div className="flex flex-wrap items-center gap-3">

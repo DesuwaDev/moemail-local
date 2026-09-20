@@ -67,6 +67,7 @@ function roleForUser(user: UserItem | null): Role {
 export function AccessPolicyPanel() {
   const formatList = useFormatter()
   const t = useTranslations("admin.access")
+  const tSession = useTranslations("profile.sessionState")
   const tRoles = useTranslations("profile.card.roles")
   const tFormat = useTranslations("common.format")
   const tApi = useTranslations("api")
@@ -291,7 +292,12 @@ export function AccessPolicyPanel() {
   }
 
 
-  if (loading || !policies) return <div className="flex min-h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+  if (loading) return <div className="flex min-h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+
+  if (!policies) return <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-sm">
+    <p role="alert" className="text-destructive">{error || t("errors.loadPolicies")}</p>
+    <Button variant="outline" size="sm" onClick={() => void loadPolicies()}>{tSession("retry")}</Button>
+  </div>
 
   const blockAddress = (block: Pick<MailboxBlock, "localPart" | "domain">) => (
     block.domain === ALL_MAILBOX_BLOCK_DOMAINS

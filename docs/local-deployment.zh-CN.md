@@ -346,6 +346,10 @@ OAuth 回调地址：
 
 代理必须覆盖而不是追加 `X-MoeMail-Client-IP`、`CF-Connecting-IP`、`X-Real-IP`、`X-Forwarded-For`，并正确传递 Host/Proto。仓库示例已这样处理。普通请求体限制为 1 MB，只有 `/api/internal/email` 放宽到 27 MB；应用和 Worker 的硬限制为 25 MiB。
 
+如果网站将接入 Cloudflare 橙云，不要原样沿用直连示例；改用 `deploy/local/Caddyfile.cloudflare.example`，或给 Nginx 加载 `deploy/local/cloudflare-real-ip.nginx.conf`。详细信任边界、IPv6 和 Tunnel 差异见 [登录会话管理](login-sessions.zh-CN.md#ip-地区与-cloudflare)。
+
+其他 CDN 或多级反代可在「账户 → 运行配置 → 服务 → 来源 IP / CDN」选择预设或自定义来源头、代理链位置，并检测当前请求。先在入口覆盖头并限制源站直连，再启用信任；操作步骤与 YAML 见 [通用 CDN 接入说明](login-sessions.zh-CN.md#其他-cdn--多级反代的来源-ip)。
+
 Compose 不再内置代理服务；宿主机上的 Caddy/Nginx 应直接反代 `127.0.0.1:3000`。仓库只保留裸机代理示例，不再提供 Docker 内置 Caddy profile。
 
 用户名密码注册/登录即使关闭 Turnstile，也会受 `auth.rateLimit` 限制。多实例仍需在可信入口增加共享限流；应用内计数只覆盖单进程。

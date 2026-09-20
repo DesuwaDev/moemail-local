@@ -53,6 +53,34 @@
     "monitor": "Monitoring and alerts",
     "offsite": "Offsite backup"
   },
+  "clientIp": {
+    "title": "Client IP / CDN",
+    "summary": "Trust visitor IPs supplied by a controlled ingress for sessions and login rate limits.",
+    "header": "Source header",
+    "auto": "Compatibility mode (fixed order)",
+    "custom": "Custom header",
+    "hops": "IP position from the right",
+    "hopsHelp": "For comma-separated proxy chains only. 1 selects the rightmost IP. Match the chain written by your ingress; range 1–16.",
+    "invalid": "Enter a valid IP header name and an integer from 1–16. Authentication, cookie and secret headers are not accepted.",
+    "detect": "Inspect this request",
+    "detecting": "Inspecting",
+    "draftHint": "Inspection does not save. Use Save and apply below to activate changes.",
+    "active": "Active result",
+    "preview": "Draft preview",
+    "received": "View received IP headers",
+    "failed": "Inspection failed. Check your login and network, then retry.",
+    "helpTitle": "Configuration and trust boundary",
+    "helpTrust": "Before enabling, ensure your ingress overwrites the selected header, restrict origin access to trusted proxies and keep the Node port private. CDN headers can preserve client-supplied values; explicitly overwrite them at the edge.",
+    "helpSelection": "Prefer normalizing to X-MoeMail-Client-IP at ingress. Compatibility mode checks that header, CF-Connecting-IP, X-Real-IP, then X-Forwarded-For. Selecting one explicit header is recommended. A missing or invalid selected header yields unknown without falling back to another header.",
+    "helpLimit": "Inspection shows valid IPs in this request only. It cannot verify the TCP peer or prove headers trustworthy. Locations describe the visitor’s exit connecting to the CDN, not an address behind a VPN. Turning trust off ignores all source headers.",
+    "reasons": {
+      "ok": "Recognized",
+      "disabled": "Header trust is disabled",
+      "missing": "Selected header not received",
+      "invalid": "Invalid header format",
+      "chainTooShort": "Proxy chain is too short"
+    }
+  },
   "fields": {
     "version": { "label": "Schema version", "description": "Only version 1 is currently supported." },
     "setup": {
@@ -61,6 +89,8 @@
     },
     "server": {
       "baseUrl": { "label": "Site base URL", "description": "Used for metadata and absolute links, for example https://mail.example.com." },
+      "clientIpHeader": {"label":"Source header","description":"Prefer normalizing to X-MoeMail-Client-IP at ingress. Compatibility mode checks that header, CF-Connecting-IP, X-Real-IP, then X-Forwarded-For. Selecting one explicit header is recommended. A missing or invalid selected header yields unknown without falling back to another header."},
+      "clientIpTrustedHops": {"label":"IP position from the right","description":"For comma-separated proxy chains only. 1 selects the rightmost IP. Match the chain written by your ingress; range 1–16."},
       "trustProxyHeaders": { "label": "Trust reverse-proxy headers", "description": "Enable only behind a controlled Caddy or reverse proxy." },
       "autoRestartOnDriverChange": { "label": "Exit automatically on driver change", "description": "In production, Docker or systemd starts the replacement process." },
       "emailPollIntervalMs": { "label": "Mailbox polling interval (ms)", "description": "How often browsers refresh message lists." }

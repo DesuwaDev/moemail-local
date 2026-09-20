@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { spawn, type ChildProcess } from "node:child_process"
+import { spawn, spawnSync, type ChildProcess } from "node:child_process"
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, unwatchFile, writeFileSync } from "node:fs"
 import { createServer } from "node:net"
 import { join, resolve } from "node:path"
@@ -56,7 +56,7 @@ try {
   const [mailbox] = await db.insert(schema.emails).values({ userId: owner.id, address: "first@security.test", expiresAt: new Date(Date.now() + 86400000) }).returning()
   const [other] = await db.insert(schema.emails).values({ userId: owner.id, address: "second@security.test", expiresAt: new Date(Date.now() + 86400000) }).returning()
   const { validateSessionToken } = await load("app/lib/session-security.ts")
-  assert.ok(await validateSessionToken({ id: owner.id }), "pre-upgrade JWT survives migration")
+  assert.ok(await validateSessionToken({ id: owner.id, jti: "pre-upgrade-owner" }), "pre-upgrade JWT survives migration")
 
   for (const directory of [".next", "node_modules", "public"]) symlinkSync(resolve(root, directory), join(temporaryRoot, directory), "junction")
   for (const file of ["package.json", "next.config.ts", "next-intl.config.ts", "tsconfig.json"]) cpSync(resolve(root, file), join(temporaryRoot, file))
@@ -74,10 +74,11 @@ try {
     if (attempt > 100) throw new Error("Server startup timed out")
     await new Promise(done => setTimeout(done, 200))
   }
-  const makeClient = () => {
-    const cookies = new Map<string, string>()
+  const makeClient = (userAgent = "SessionFixture/1.0", cookies = new Map<string, string>()) => {
     return async (path: string, init: RequestInit = {}) => {
       const headers = new Headers(init.headers)
+      if (!headers.has("User-Agent")) headers.set("User-Agent", userAgent)
+      if (!headers.has("X-Forwarded-For")) headers.set("X-Forwarded-For", "192.0.2.44")
       headers.set("Cookie", [...cookies].map(([k, v]) => `${k}=${v}`).join("; "))
       if (!headers.has("Origin")) headers.set("Origin", base)
       const response = await fetch(base + path, { ...init, headers, redirect: "manual" })
@@ -89,13 +90,97 @@ try {
     }
   }
   const first = makeClient(), second = makeClient()
-  const login = async (request: typeof first) => {
+  const login = async (request: typeof first, username = "security-owner", expectedId = owner.id) => {
     const { csrfToken } = await (await request("/api/auth/csrf")).json()
-    await request("/api/auth/callback/credentials", { method: "POST", body: new URLSearchParams({ csrfToken, username: "security-owner", password: "security-test-password-123", callbackUrl: base }) })
-    assert.equal((await (await request("/api/auth/session")).json()).user?.id, owner.id)
+    await request("/api/auth/callback/credentials", { method: "POST", body: new URLSearchParams({ csrfToken, username, password: "security-test-password-123", callbackUrl: base }) })
+    assert.equal((await (await request("/api/auth/session")).json()).user?.id, expectedId)
   }
   await login(first)
   await login(second)
+  const sessionList = async (client = first, suffix = "") => {
+    const response = await client("/api/account/sessions" + suffix)
+    assert.equal(response.status, 200, await response.clone().text())
+    return await response.json() as { total: number; items: Array<{ id: string; current: boolean; userAgent: string; firstIp: string | null; loginAt: string | null; activeSeconds: number }> }
+  }
+  const firstList = await sessionList(), secondList = await sessionList(second)
+  const firstId = firstList.items.find(item => item.current)!.id, secondId = secondList.items.find(item => item.current)!.id
+  assert.notEqual(firstId, secondId)
+  assert.equal((await sessionList()).items.find(item => item.current)!.id, firstId, "cookie renewal preserves the session identity")
+  assert.equal(firstList.items.find(item => item.current)!.userAgent, "SessionFixture/1.0")
+  assert.equal(firstList.items.find(item => item.current)!.firstIp, null, "untrusted IP headers are not treated as an observed IP")
+  assert.ok(firstList.items.find(item => item.current)!.loginAt)
+  const legacyOriginal = { id: owner.id, jti: "pre-session-tracking", iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 }
+  const legacyToken = await validateSessionToken({ ...legacyOriginal })
+  assert.ok(legacyToken?.loginSessionId)
+  assert.equal((await validateSessionToken({ ...legacyOriginal }))?.loginSessionId, legacyToken.loginSessionId)
+  assert.equal((await first(`/api/account/sessions/${legacyToken.loginSessionId}`, { method: "DELETE" })).status, 200)
+  assert.equal(await validateSessionToken({ ...legacyOriginal }), null, "revoked legacy cookie cannot recreate its session")
+  assert.equal((await first(`/api/account/sessions/${secondId}`, { method: "DELETE", headers: { Origin: "https://other.test" } })).status, 403)
+  assert.equal((await first(`/api/account/sessions/${secondId}`, { method: "DELETE" })).status, 200)
+  assert.equal((await second("/api/account/sessions")).status, 401)
+  assert.equal((await first("/api/account/sessions")).status, 200, "single revocation preserves the caller")
+  await login(second)
+
+  // Account-bound selection and Emperor-only cross-account management.
+  const { hashPassword } = await load("app/lib/password.ts")
+  const [managedUser] = await db.insert(schema.users).values({ username: "session-member", password: await hashPassword("security-test-password-123") }).returning()
+  const member = makeClient(), memberOther = makeClient()
+  await login(member, managedUser.username!, managedUser.id); await login(memberOther, managedUser.username!, managedUser.id)
+  assert.equal((await fetch(base + "/api/runtime-config/client-ip")).status, 401)
+  assert.equal((await member("/api/runtime-config/client-ip")).status, 403)
+  const diagnosticResponse = await first("/api/runtime-config/client-ip?header=x-forwarded-for&hops=2&enabled=true", { headers: { "X-Forwarded-For": "1.1.1.1, 8.8.8.8, 9.9.9.9" } })
+  assert.equal(diagnosticResponse.status, 200)
+  assert.ok(diagnosticResponse.headers.get("cache-control")?.includes("no-store"))
+  const diagnostic = await diagnosticResponse.json()
+  assert.equal(diagnostic.active.reason, "disabled", "preview does not enable trust")
+  assert.equal(diagnostic.preview.address, "8.8.8.8")
+  assert.equal((await first("/api/runtime-config/client-ip?header=cookie")).status, 400)
+  const memberList = await sessionList(member), memberId = memberList.items.find(item => item.current)!.id
+  const memberOtherId = (await sessionList(memberOther)).items.find(item => item.current)!.id
+  assert.equal((await member(`/api/account/sessions/${firstId}`, { method: "DELETE" })).status, 404)
+  assert.equal((await member(`/api/admin/users/${owner.id}/sessions`)).status, 403)
+  assert.equal((await first(`/api/admin/users/${owner.id}/sessions/${memberId}`, { method: "DELETE" })).status, 404)
+  assert.equal((await member(`/api/admin/users/${owner.id}/sessions?locations=1`)).status, 403)
+  assert.equal((await fetch(base + "/api/account/sessions?locations=1")).status, 401)
+  await db.update(schema.loginSessions).set({ firstIp: "192.0.2.1", lastIp: "198.51.100.1" }).where(eq(schema.loginSessions.id, memberId))
+  const locationsResponse = await member("/api/account/sessions?locations=1&ip=8.8.8.8&userId=" + owner.id)
+  assert.equal(locationsResponse.status, 200)
+  assert.ok(locationsResponse.headers.get("cache-control")?.includes("no-store"))
+  const locations = await locationsResponse.json()
+  assert.deepEqual(locations, { locations: { "192.0.2.1": { status: "private" }, "198.51.100.1": { status: "private" } } })
+  assert.deepEqual(await (await first(`/api/admin/users/${managedUser.id}/sessions?locations=1`)).json(), locations)
+  const managed = await first(`/api/admin/users/${managedUser.id}/sessions`)
+  assert.equal(managed.status, 200); assert.equal((await managed.json()).total, 2)
+  assert.equal((await first(`/api/admin/users/${managedUser.id}/sessions/${memberOtherId}`, { method: "DELETE" })).status, 200)
+  assert.equal((await memberOther("/api/account/sessions")).status, 401)
+  assert.equal((await member("/api/account/sessions")).status, 200)
+
+  const heartbeat = (active: boolean): RequestInit => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active }) })
+  await db.update(schema.loginSessions).set({ lastActiveAt: new Date(Date.now() - 30_000), activeSeconds: 0 }).where(eq(schema.loginSessions.id, firstId))
+  for (const response of await Promise.all([first("/api/account/sessions", heartbeat(true)), first("/api/account/sessions", heartbeat(true))])) assert.equal(response.status, 200)
+  const [activeRecord] = await db.select().from(schema.loginSessions).where(eq(schema.loginSessions.id, firstId))
+  assert.ok(activeRecord.activeSeconds >= 30 && activeRecord.activeSeconds < 35, "concurrent tabs count wall time only once")
+  await db.update(schema.loginSessions).set({ lastActiveAt: new Date(Date.now() - 600_000) }).where(eq(schema.loginSessions.id, firstId))
+  await first("/api/account/sessions", heartbeat(false))
+  await first("/api/account/sessions", heartbeat(true))
+  const [resumedRecord] = await db.select().from(schema.loginSessions).where(eq(schema.loginSessions.id, firstId))
+  assert.equal(resumedRecord.activeSeconds, activeRecord.activeSeconds, "idle gaps are not counted")
+
+  const logoutCookies = new Map<string, string>(), loggingOut = makeClient("SessionFixture/1.0", logoutCookies)
+  await login(loggingOut)
+  const replay = makeClient("SessionFixture/1.0", new Map(logoutCookies))
+  const { csrfToken: logoutCsrf } = await (await loggingOut("/api/auth/csrf")).json()
+  await loggingOut("/api/auth/signout", { method: "POST", body: new URLSearchParams({ csrfToken: logoutCsrf, callbackUrl: base }) })
+  assert.equal((await replay("/api/account/sessions")).status, 401, "normal sign-out also revokes a copied cookie")
+  for (let index = 0; index < 6; index++) await validateSessionToken({ id: owner.id }, true, { headers: new Headers({ "user-agent": "PaginationFixture/" + index }), provider: "credentials" })
+  assert.equal((await sessionList()).items.length, 5)
+  assert.ok((await sessionList(first, "?page=2")).items.length > 0)
+  assert.equal((await first("/api/account/sessions?mode=others", { method: "DELETE" })).status, 200)
+  assert.equal((await sessionList()).total, 1)
+  assert.equal((await second("/api/account/sessions")).status, 401)
+  await login(second)
+  console.log("Sessions: stable identity, legacy revocation, owner isolation, Emperor control, concurrent active time, normal logout replay and pagination passed")
+
   for (const token of ["bad%00token", "a".repeat(129)]) {
     for (const path of [`/api/shared/${token}`, `/api/shared/${token}/messages`, `/api/shared/${token}/messages/missing`, `/api/shared/message/${token}`]) {
       const response = await fetch(base + path)
@@ -116,7 +201,7 @@ try {
   assert.equal((await first("/api/account/preferences", preferences({ allowRemoteResources: true }))).status, 200)
   assert.equal((await db.select().from(schema.users).where(eq(schema.users.id, untouched.id)))[0].allowRemoteResources, false)
   assert.equal(await currentPreference(second), true, "preference persists across sessions")
-  assert.equal((await validateSessionToken({ id: untouched.id, allowRemoteResources: true }))?.allowRemoteResources, false, "client data cannot override stored preference")
+  assert.equal((await validateSessionToken({ id: untouched.id, jti: "pre-upgrade-preference", allowRemoteResources: true }))?.allowRemoteResources, false, "client data cannot override stored preference")
   assert.equal((await first("/api/account/preferences", preferences({ allowRemoteResources: false }))).status, 200)
   assert.equal(await currentPreference(second), false)
   const issue = async (body: unknown) => {
@@ -183,9 +268,11 @@ try {
   assert.equal((await (await keyRequest(readKey, "/api/emails")).json()).total, 0)
   assert.equal((await keyRequest(readKey, `/api/emails/${other.id}`)).status, 403)
   assert.equal((await first("/api/account/sessions", { method: "DELETE", headers: { Origin: "https://other.test" } })).status, 403)
+  assert.equal((await keyRequest(oldKey, "/api/runtime-config/client-ip")).status, 403)
+  assert.equal((await keyRequest(oldKey, "/api/account/sessions?locations=1")).status, 403)
   assert.equal((await keyRequest(oldKey, "/api/account/sessions", "DELETE")).status, 403)
   assert.equal((await first("/api/account/sessions", { method: "DELETE" })).status, 200)
-  assert.equal(await validateSessionToken({ id: owner.id }), null, "revocation invalidates pre-upgrade JWT")
+  assert.equal(await validateSessionToken({ id: owner.id, jti: "pre-upgrade-owner" }), null, "revocation invalidates pre-upgrade JWT")
   for (const request of [first, second]) {
     assert.equal((await request("/api/emails")).status, 401)
     assert.equal((await (await request("/api/auth/session")).json())?.user, undefined)
@@ -209,6 +296,7 @@ try {
   const publicOrigin = "https://mail.example.test"
   const proxyConfig = parse(originalRuntime.yaml)
   proxyConfig.server.baseUrl = publicOrigin
+  proxyConfig.server.trustProxyHeaders = true
   proxyConfig.auth.github = { clientId: "origin-fixture", clientSecret: "origin-fixture-secret" }
   const saveOrigin = await first("/api/runtime-config", json({ yaml: stringify(proxyConfig), fingerprint: originalRuntime.fingerprint }))
   assert.equal(saveOrigin.status, 200, await saveOrigin.clone().text())
@@ -228,6 +316,8 @@ try {
   assert.ok(secureLogin.headers.getSetCookie().some(cookie => cookie.startsWith("__Secure-authjs.session-token=") && /; Secure/i.test(cookie)))
   assert.equal((await (await secure("/api/auth/session")).json()).user?.id, owner.id)
   assert.equal((await secure("/api/api-keys")).status, 200, "server auth() reads the same secure cookie over an HTTP backend")
+  const trustedSessions = await (await secure("/api/account/sessions")).json()
+  assert.equal(trustedSessions.items.find((item: { current: boolean }) => item.current).firstIp, "192.0.2.44")
   const oauth = await secure("/api/auth/signin/github", {
     method: "POST", headers: forwardedHeaders,
     body: new URLSearchParams({ csrfToken: proxyCsrf, callbackUrl: "/" }),
@@ -240,6 +330,14 @@ try {
   const restoreOrigin = await secure("/api/runtime-config", json({ yaml: originalRuntime.yaml, fingerprint: secureRuntime.fingerprint }))
   assert.equal(restoreOrigin.status, 200)
   assert.equal((await first("/api/auth/providers")).status, 200)
+  const expiredSessionId = crypto.randomUUID(), tombstoneId = crypto.randomUUID()
+  for (const [id, expiry] of [[expiredSessionId, -2 * 86400000], [tombstoneId, 86400000]] as const) {
+    await db.insert(schema.loginSessions).values({ id, userId: owner.id, sessionVersion: 0, provider: "legacy", userAgent: "cleanup-fixture", createdAt: new Date(0), lastSeenAt: new Date(0), expiresAt: new Date(Date.now() + expiry), revokedAt: new Date() })
+  }
+  const cleanup = spawnSync(process.execPath, ["--import", "tsx", resolve(root, "scripts/cleanup.ts")], { cwd: temporaryRoot, encoding: "utf8", windowsHide: true, timeout: 30000 })
+  assert.equal(cleanup.status, 0, cleanup.stderr)
+  assert.equal((await db.select().from(schema.loginSessions).where(eq(schema.loginSessions.id, expiredSessionId))).length, 0)
+  assert.equal((await db.select().from(schema.loginSessions).where(eq(schema.loginSessions.id, tombstoneId))).length, 1, "revocation tombstones outlive valid cookies")
   console.log("Auth origin: canonical redirects, hostile forwarded headers, HTTPS cookies, server sessions and GitHub redirect URI passed")
   console.log(JSON.stringify({ ok: true, driver: postgresUrl ? "postgres" : "sqlite", checks: ["mail-privacy-default-and-persistence", "mail-privacy-session-isolation-and-csrf", "emperor-permanent-key", "permanent-key-role-check", "permanent-key-scope-and-revocation", "upgrade-preserves-legacy-key-and-jwt", "read-and-mail-scopes", "mailbox-isolation", "config-redaction", "expiry-disable", "deleted-mailbox", "csrf", "two-session-revocation", "relogin", "security-headers"] }))
   if (process.argv.includes("--keep-server")) {

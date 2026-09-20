@@ -174,5 +174,7 @@
   "MAILBOX_DISABLED": "此信箱已被管理員停用",
   "MAILBOX_SEND_DISABLED": "此信箱已暫停寄信",
   "MAILBOX_SHARE_DISABLED": "此信箱已暫停分享",
-  "ADMIN_OPERATION_FAILED": "管理操作失敗，請重新整理後重試。"
+  "ADMIN_OPERATION_FAILED": "管理操作失敗，請重新整理後重試。",
+  "SESSION_NOT_FOUND": "工作階段不存在或已登出",
+  "SESSIONS_READ_FAILED": "無法讀取工作階段，請重試"
 }

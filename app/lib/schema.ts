@@ -30,3 +30,5 @@ export const sendQuotaEventsRelations = activeSchema.sendQuotaEventsRelations
 export const mailboxNameBlocksRelations = activeSchema.mailboxNameBlocksRelations
 
 export const adminAuditLogs = activeSchema.adminAuditLogs
+
+export const loginSessions = activeSchema.loginSessions

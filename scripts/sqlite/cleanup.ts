@@ -66,6 +66,7 @@ try {
     deletedEmailShares: 0,
     deletedMessages: 0,
     deletedEmails: 0,
+    deletedSessions: 0,
   }
   type DeletedCounter = keyof typeof deletedRows
   let batches = 0
@@ -222,6 +223,10 @@ try {
     drainPhase("deletedMessageShares", deletePermanentMessageShares)
     drainPhase("deletedMessages", deletePermanentMessages)
   }
+
+  drainPhase("deletedSessions", limit => sqlite.prepare(
+    'DELETE FROM login_session WHERE id IN (SELECT id FROM login_session WHERE expires_at < ? ORDER BY expires_at, id LIMIT ?)'
+  ).run(now - 86400000, limit).changes)
 
   const deleted = totalDeleted()
 

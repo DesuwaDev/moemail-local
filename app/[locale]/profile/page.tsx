@@ -19,7 +19,7 @@ export default async function ProfilePage() {
       <div className="container mx-auto px-4 lg:px-8 max-w-[1600px]">
         <Header />
         <main className="pt-20 pb-5">
-          <ProfileCard user={session.user} />
+          <ProfileCard />
         </main>
       </div>
     </div>

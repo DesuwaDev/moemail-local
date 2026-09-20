@@ -1,4 +1,5 @@
-import { isIP } from "node:net"
+import { resolveClientIp } from "./client-ip"
+import type { ClientIpPolicy } from "./client-ip-policy"
 import { getConfig } from "./config/runtime"
 import type { AppConfig } from "./config/schema"
 
@@ -12,6 +13,8 @@ export type AuthRateLimitOptions = {
   registerGlobalLimit: number
   maxClientEntries: number
   trustProxyHeaders: boolean
+  clientIpHeader?: string
+  clientIpTrustedHops?: number
 }
 
 export type AuthRateLimitDecision = {
@@ -33,6 +36,8 @@ export function authRateLimitOptionsFrom(config: AppConfig): AuthRateLimitOption
     registerGlobalLimit: rateLimit.registerGlobal,
     maxClientEntries: rateLimit.maxClients,
     trustProxyHeaders: config.server.trustProxyHeaders,
+    clientIpHeader: config.server.clientIpHeader,
+    clientIpTrustedHops: config.server.clientIpTrustedHops,
   }
 }
 
@@ -41,24 +46,9 @@ export function getAuthRateLimitOptions() {
   return authRateLimitOptionsFrom(getConfig())
 }
 
-function proxyClientAddress(headers: Headers) {
-  const candidates = [
-    headers.get("x-moemail-client-ip"),
-    headers.get("cf-connecting-ip"),
-    headers.get("x-real-ip"),
-    headers.get("x-forwarded-for")?.split(",", 1)[0],
-  ]
-
-  for (const candidate of candidates) {
-    const address = candidate?.trim()
-    if (address && isIP(address)) return address.toLowerCase()
-  }
-  return "unknown-client"
-}
-
-export function getAuthClientAddress(headers: Headers, trustProxyHeaders: boolean) {
-  if (!trustProxyHeaders) return "untrusted-proxy-headers"
-  return proxyClientAddress(headers)
+export function getAuthClientAddress(headers: Headers, trustProxyHeaders: boolean, policy: Omit<ClientIpPolicy, "trustProxyHeaders"> = {}) {
+  const result = resolveClientIp(headers, { ...policy, trustProxyHeaders })
+  return result.address ?? (result.reason === "disabled" ? "untrusted-proxy-headers" : "unknown-client")
 }
 
 export class AuthRateLimiter {
@@ -105,7 +95,7 @@ export class AuthRateLimiter {
       }
     }
 
-    const clientAddress = getAuthClientAddress(headers, options.trustProxyHeaders)
+    const clientAddress = getAuthClientAddress(headers, options.trustProxyHeaders, options)
     const clientKey = `${action}:${clientAddress}`
     const clientCount = this.clientCounts.get(clientKey) ?? 0
     if (clientCount >= clientLimit) {

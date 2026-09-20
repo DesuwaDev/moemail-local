@@ -174,5 +174,7 @@
   "MAILBOX_DISABLED": "このメールボックスは管理者により停止されています",
   "MAILBOX_SEND_DISABLED": "このメールボックスからの送信は停止されています",
   "MAILBOX_SHARE_DISABLED": "このメールボックスの共有は停止されています",
-  "ADMIN_OPERATION_FAILED": "管理操作に失敗しました。更新して再試行してください。"
+  "ADMIN_OPERATION_FAILED": "管理操作に失敗しました。更新して再試行してください。",
+  "SESSION_NOT_FOUND": "セッションが見つからないか、ログアウト済みです",
+  "SESSIONS_READ_FAILED": "セッションを取得できません。もう一度お試しください"
 }

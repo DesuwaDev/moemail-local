@@ -174,5 +174,7 @@
   "MAILBOX_DISABLED": "This mailbox has been disabled by an administrator",
   "MAILBOX_SEND_DISABLED": "Sending is paused for this mailbox",
   "MAILBOX_SHARE_DISABLED": "Sharing is paused for this mailbox",
-  "ADMIN_OPERATION_FAILED": "Management operation failed. Refresh and try again."
+  "ADMIN_OPERATION_FAILED": "Management operation failed. Refresh and try again.",
+  "SESSION_NOT_FOUND": "Session not found or already signed out",
+  "SESSIONS_READ_FAILED": "Could not load sessions. Please try again."
 }

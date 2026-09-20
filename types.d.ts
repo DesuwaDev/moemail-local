@@ -67,6 +67,7 @@ declare module "next-auth" {
   }
 
   interface Session {
+    sessionId?: string
     user: User
   }
 }

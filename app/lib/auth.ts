@@ -22,7 +22,8 @@ import { CONFIG_KEYS, getConfigValue } from "./config-store"
 import { AuthWorkloadOverloadedError } from "./auth-abuse-guard"
 import { getConfig } from "./config/runtime"
 import { verifyRegistrationLoginTicket } from "./registration-login-ticket"
-import { validateSessionToken } from "./session-security"
+import { headers } from "next/headers"
+import { validateSessionToken, endSessionToken, SESSION_MAX_AGE } from "./session-security"
 
 class AuthenticationTemporarilyUnavailableError extends CredentialsSignin {
   code = "temporarily_unavailable"
@@ -177,7 +178,7 @@ export const {
   auth,
   signIn,
   signOut
-} = NextAuth(() => ({
+} = NextAuth(request => ({
   secret: getConfig().auth.secret ?? undefined,
   // Auth routes normalize the origin from server.baseUrl. Keep cookie naming
   // consistent when auth() reads a session behind an HTTP reverse proxy.
@@ -310,6 +311,9 @@ export const {
     }),
   ],
   events: {
+    async signOut(event) {
+      if ("token" in event) await endSessionToken(event.token)
+    },
     async signIn({ user }) {
       if (!user.id) return
 
@@ -345,17 +349,18 @@ export const {
         return false
       }
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
         token.name = user.name || user.username
         token.username = user.username
         token.image = user.image || generateAvatarUrl(token.name as string)
       }
-      return validateSessionToken(token, Boolean(user))
+      return validateSessionToken(token, Boolean(user), { headers: request?.headers ?? new Headers(await headers()), provider: account?.provider })
     },
     async session({ session, token }) {
       if (token && session.user) {
+        session.sessionId = token.loginSessionId as string
         session.user.id = token.id as string
         session.user.name = token.name as string
         session.user.username = token.username as string
@@ -406,6 +411,7 @@ export const {
   },
   session: {
     strategy: "jwt",
+    maxAge: SESSION_MAX_AGE,
   },
 }))
 

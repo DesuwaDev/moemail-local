@@ -74,7 +74,7 @@ assert.match(profileSource, /searchParams\.get\("tab"\)/u)
 assert.match(profileSource, /window\.history\.replaceState/u)
 assert.match(profileSource, /visitedTabs/u)
 assert.match(profileSource, /forceMount/u)
-assert.match(profileSource, /requestIdleCallback/u)
+assert.doesNotMatch(profileSource, /requestIdleCallback/u)
 assert.match(profileSource, /data-\[state=inactive\]:hidden/u)
 
 const setupPageSource = readFileSync(join(process.cwd(), "app/[locale]/setup/page.tsx"), "utf8")

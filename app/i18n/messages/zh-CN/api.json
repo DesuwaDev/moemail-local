@@ -174,5 +174,7 @@
   "MAILBOX_DISABLED": "该邮箱已被管理员停用",
   "MAILBOX_SEND_DISABLED": "该邮箱已暂停发信",
   "MAILBOX_SHARE_DISABLED": "该邮箱已暂停分享",
-  "ADMIN_OPERATION_FAILED": "管理操作失败，请刷新后重试。"
+  "ADMIN_OPERATION_FAILED": "管理操作失败，请刷新后重试。",
+  "SESSION_NOT_FOUND": "会话不存在或已退出",
+  "SESSIONS_READ_FAILED": "无法读取会话信息，请重试"
 }

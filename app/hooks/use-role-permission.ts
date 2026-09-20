@@ -1,28 +1,24 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { Permission, Role, hasPermission } from "@/lib/permissions"
+import { Permission, Role } from "@/lib/permissions"
 
 export function useRolePermission() {
-  const { data: session } = useSession()
-  const roles = session?.user?.roles
-  const effectivePermissions = session?.user?.permissions
-
-  const checkPermission = (permission: Permission) => {
-    if (effectivePermissions) return effectivePermissions.includes(permission)
-    if (!roles) return false
-    return hasPermission(roles.map(r => r.name) as Role[], permission)
-  }
-
-  const hasRole = (role: Role) => {
-    if (!roles) return false
-    return roles.some(r => r.name === role)
-  }
+  const { data: session, status } = useSession()
+  const user = session?.user
+  // Missing policy data is unknown, never a request to restore role defaults.
+  const ready = status === "authenticated" && Boolean(user?.id) && !user?.bannedAt
+    && Array.isArray(user?.roles) && Array.isArray(user?.permissions)
+  const roles = ready ? user?.roles : undefined
+  const permissions = ready ? user?.permissions : undefined
 
   return {
-    checkPermission,
-    hasRole,
+    checkPermission: (permission: Permission) => permissions?.includes(permission) ?? false,
+    hasRole: (role: Role) => roles?.some(item => item.name === role) ?? false,
     roles,
-    permissions: effectivePermissions,
+    permissions,
+    user: ready ? user : undefined,
+    ready,
+    loading: status === "loading",
   }
 }

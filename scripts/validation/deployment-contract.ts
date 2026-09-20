@@ -361,6 +361,15 @@ try {
     "deploy/docker/config-reader.mjs", "--file", validPath, "validate-complete",
   ], { encoding: "utf8" }), "ok")
 
+  const legacyConfig = structuredClone(completeConfig)
+  Reflect.deleteProperty(legacyConfig.server, "clientIpHeader")
+  Reflect.deleteProperty(legacyConfig.server, "clientIpTrustedHops")
+  const legacyPath = join(configReaderFixtureRoot, "legacy.yaml")
+  writeFileSync(legacyPath, stringify(legacyConfig, { lineWidth: 0 }), "utf8")
+  assert.equal(execFileSync(process.execPath, [
+    "deploy/docker/config-reader.mjs", "--file", legacyPath, "validate-complete",
+  ], { encoding: "utf8" }), "ok", "existing backup/config pairs remain valid")
+
   const invalidPath = join(configReaderFixtureRoot, "invalid-email.yaml")
   writeFileSync(invalidPath, stringify({
     ...completeConfig,

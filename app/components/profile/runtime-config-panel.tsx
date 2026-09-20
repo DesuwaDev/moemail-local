@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { ClientIpSettings } from "./client-ip-settings"
 import { LocalizedUiError, localizedUiErrorMessage } from "@/lib/localized-ui-error"
 import {
   runtimeConfigFields,
@@ -88,9 +89,9 @@ function RuntimeField({
   const description = t(`fields.${path}.description` as never)
 
   return (
-    <div className="rounded-md border bg-background/60 p-3">
+    <div className="min-w-0 rounded-md border bg-background/60 p-3">
       <div className="mb-2 flex items-start justify-between gap-2">
-        <div><Label className="text-sm">{label}{metadata.required && <span className="ml-0.5 text-destructive">*</span>}</Label><p className="mt-0.5 text-xs leading-4 text-muted-foreground">{description}</p></div>
+        <div className="min-w-0"><Label className="text-sm">{label}{metadata.required && <span className="ml-0.5 text-destructive">*</span>}</Label><p className="mt-0.5 text-xs leading-4 text-muted-foreground">{description}</p></div>
         {canGenerateSecret ? (
           <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={disabled} onClick={() => onChange(nanoid(43))} title={t("actions.generate")} aria-label={t("actions.generateFor", { label })}><Dices className="h-3.5 w-3.5" /></Button>
         ) : canRestoreDefault ? (
@@ -98,7 +99,7 @@ function RuntimeField({
         ) : null}
       </div>
       {kind === "boolean" ? (
-        <div className="flex h-9 items-center justify-between rounded border px-3"><code className="text-xs">{path}</code><Switch checked={Boolean(value)} onCheckedChange={onChange} disabled={disabled} /></div>
+        <div className="flex h-9 items-center justify-between gap-2 rounded border px-3"><code className="min-w-0 truncate text-xs" title={path}>{path}</code><Switch checked={Boolean(value)} onCheckedChange={onChange} disabled={disabled} /></div>
       ) : kind === "select" ? (
         <Select value={String(value)} onValueChange={onChange} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{metadata.options?.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select>
       ) : kind === "textarea" ? (
@@ -286,8 +287,9 @@ export function RuntimeConfigPanel() {
           {config && defaults && groupedFields.map(({ group, fields }) => (
             <details key={group} className="rounded-md border bg-muted/20">
               <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold">{t(`groups.${group}` as never)} <span className="ml-1 text-xs font-normal text-muted-foreground">({fields.length})</span></summary>
-              <div className="grid gap-3 border-t p-3 md:grid-cols-2 xl:grid-cols-3">
-                {fields.map(([fieldPath, metadata]) => <RuntimeField key={fieldPath} path={fieldPath} metadata={metadata} value={getPath(config, fieldPath)} defaultValue={getPath(defaults, fieldPath)} disabled={disabled} onChange={value => setConfig(current => current ? setPath(current, fieldPath, value) : current)} />)}
+              <div className="grid min-w-0 grid-cols-1 gap-3 border-t p-3 md:grid-cols-2 xl:grid-cols-3">
+                {group === "server" && <ClientIpSettings value={{ trustProxyHeaders: Boolean(getPath(config, "server.trustProxyHeaders")), clientIpHeader: String(getPath(config, "server.clientIpHeader") ?? "auto"), clientIpTrustedHops: Number(getPath(config, "server.clientIpTrustedHops") ?? 1) }} disabled={disabled} revision={revision} onChange={value => setConfig(current => current ? Object.entries(value).reduce((next, [key, item]) => setPath(next, "server." + key, item), current) : current)} />}
+                {fields.filter(([fieldPath]) => !["server.trustProxyHeaders", "server.clientIpHeader", "server.clientIpTrustedHops"].includes(fieldPath)).map(([fieldPath, metadata]) => <RuntimeField key={fieldPath} path={fieldPath} metadata={metadata} value={getPath(config, fieldPath)} defaultValue={getPath(defaults, fieldPath)} disabled={disabled} onChange={value => setConfig(current => current ? setPath(current, fieldPath, value) : current)} />)}
               </div>
             </details>
           ))}

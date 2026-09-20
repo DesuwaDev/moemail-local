@@ -538,7 +538,8 @@
       "mailboxes": "メール",
       "access": "権限",
       "resources": "資源",
-      "audit": "履歴"
+      "audit": "履歴",
+      "sessions": "セッション"
     },
     "totalMessages": "メール総数",
     "countsHelp": "期限切れや停止中を含む、現在保存されているメールの件数です。削除すると減少し、過去の割り当て使用量とは別に計算されます。",
@@ -570,7 +571,8 @@
       "user_sessions": "セッションを無効化",
       "user_apiKeys": "API キーを停止",
       "user_webhooks": "Webhook を停止",
-      "user_shares": "共有を解除"
+      "user_shares": "共有を解除",
+      "session_revoke": "セッションのログアウト"
     },
     "permanent": "無期限"
   }

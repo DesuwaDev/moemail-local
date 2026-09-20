@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ROLES, type Role } from "@/lib/permissions"
+import { SessionManager } from "./session-manager"
 import { ManagedMailboxes } from "./managed-mailboxes"
 import { AccessEditor } from "./access-editor"
 import { AdminConfirm, AdminError, AdminPager, adminRequest, adminFailureCode, useAdminData } from "./admin-controls"
@@ -36,10 +37,10 @@ function UserDetails({ user, canAdmin, onChange }: { user: ManagedUser; canAdmin
   // Keep the active drill-down mounted while refreshing its summary.
   const [previous, setPrevious] = useState<Details | null>(null)
   if (result.data && result.data !== previous) setPrevious(result.data)
-  const details = result.data || previous
+  const details = result.error ? null : result.data || previous
   const changed = () => { setRevision(value => value + 1); onChange?.() }
   return <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-    <TabsList className="mx-3 my-2 grid h-9 shrink-0 grid-cols-5">{["overview", "mailboxes", "access", "resources", "audit"].map(value => <TabsTrigger key={value} value={value} className="min-w-0 px-1 text-xs sm:text-sm" disabled={!canAdmin && ["mailboxes", "audit"].includes(value)}>{m(`userTabs.${value}` as never)}</TabsTrigger>)}</TabsList>
+    <TabsList className="mx-3 my-2 grid h-9 shrink-0 grid-cols-6">{["overview", "mailboxes", "access", "sessions", "resources", "audit"].map(value => <TabsTrigger key={value} value={value} className="min-w-0 px-1 text-xs sm:text-sm" disabled={!canAdmin && ["mailboxes", "sessions", "audit"].includes(value)} title={m(`userTabs.${value}` as never)}><span className="truncate">{m(`userTabs.${value}` as never)}</span></TabsTrigger>)}</TabsList>
     <div key={tab} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pt-1 sm:p-4 sm:pt-1">
       <AdminError code={result.error} />{!details && result.loading && <Loader2 className="mx-auto my-6 h-5 w-5 animate-spin" />}
       {details && <>
@@ -56,6 +57,7 @@ function UserDetails({ user, canAdmin, onChange }: { user: ManagedUser; canAdmin
         </TabsContent>
         <TabsContent value="mailboxes" className="m-0">{canAdmin && <ManagedMailboxes userId={user.id} onChange={changed} />}</TabsContent>
         <TabsContent value="access" className="m-0">{canAdmin ? <AccessEditor userId={user.id} role={(details.user.roles[0] || ROLES.CIVILIAN) as Role} onSaved={changed} /> : <div className="grid gap-2 sm:grid-cols-2">{Object.entries(details.access.permissions).map(([permission, enabled]) => <p key={permission} className="text-sm">{t(`permissions.${permission}` as never)} · {enabled ? "✓" : "—"}</p>)}</div>}</TabsContent>
+        <TabsContent value="sessions" className="m-0">{canAdmin && <SessionManager userId={user.id} />}</TabsContent>
         <TabsContent value="resources" className="m-0"><UserResources details={details} canManage={canAdmin && !details.user.roles.includes(ROLES.EMPEROR)} onChange={changed} /></TabsContent>
         <TabsContent value="audit" className="m-0">{canAdmin && <UserAudit userId={user.id} />}</TabsContent>
       </>}
@@ -69,7 +71,7 @@ function UserResources({ details, canManage, onChange }: { details: Details; can
   const pages = Math.max(1, Math.ceil(items.length / 8)), current = Math.min(page, pages)
   const act = async (action: string) => { setBusy(true); setError(""); try { await adminRequest(`/api/admin/users/${encodeURIComponent(details.user.id)}/actions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) }); toast({ title: t("saved") }); onChange() } catch (caught) { setError(adminFailureCode(caught)) } finally { setBusy(false) } }
   return <div className="space-y-3"><AdminError code={error} />
-    {canManage && <div className="flex flex-wrap gap-2">{["sessions", "apiKeys", "webhooks", "shares"].map(action => <AdminConfirm key={action} disabled={busy} label={t(`actions.${action}` as never)} description={t(`actionHelp.${action}` as never)} onConfirm={() => void act(action)} />)}</div>}
+    {canManage && <div className="flex flex-wrap gap-2">{["apiKeys", "webhooks", "shares"].map(action => <AdminConfirm key={action} disabled={busy} label={t(`actions.${action}` as never)} description={t(`actionHelp.${action}` as never)} onConfirm={() => void act(action)} />)}</div>}
     <Select value={kind} onValueChange={value => { setKind(value); setPage(1) }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["apiKeys", "webhooks", "blocks"].map(value => <SelectItem key={value} value={value}>{r(value as never)}</SelectItem>)}</SelectContent></Select>
     <div className="divide-y rounded-md border">{items.length === 0 ? <p className="p-5 text-center text-sm text-muted-foreground">{t("empty")}</p> : items.slice((current - 1) * 8, current * 8).map(item => <div key={item.id} className="min-w-0 p-2.5"><p className="truncate text-sm">{"name" in item ? item.name : "url" in item ? item.url : `${item.localPart}@${item.domain}`}</p>{"enabled" in item && <p className="mt-1 text-xs text-muted-foreground">{r(item.enabled ? "enabled" : "disabled")}{"expiresAt" in item ? ` · ${item.expiresAt ? format.dateTime(new Date(item.expiresAt)) : r("neverExpires")}` : ""}</p>}</div>)}</div>
     <AdminPager page={current} pages={pages} total={items.length} onChange={setPage} />{kind === "blocks" && details.resources.mailboxNameBlocksTruncated && <p className="text-xs text-muted-foreground">{r("truncated", { shown: items.length, total: details.resources.mailboxNameBlockCount })}</p>}

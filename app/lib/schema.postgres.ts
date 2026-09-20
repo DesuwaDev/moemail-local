@@ -33,6 +33,26 @@ export const users = pgTable("user", {
   index("user_banned_at_idx").on(table.bannedAt),
 ])
 
+export const loginSessions = pgTable("login_session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionVersion: integer("session_version").notNull(),
+  provider: text("provider").notNull(),
+  userAgent: text("user_agent").notNull(),
+  firstIp: text("first_ip"),
+  lastIp: text("last_ip"),
+  loginAt: dateColumn("login_at"),
+  createdAt: dateColumn("created_at").notNull(),
+  lastSeenAt: dateColumn("last_seen_at").notNull(),
+  lastActiveAt: dateColumn("last_active_at"),
+  activeSeconds: integer("active_seconds").notNull().default(0),
+  expiresAt: dateColumn("expires_at").notNull(),
+  revokedAt: dateColumn("revoked_at"),
+}, table => [
+  index("login_session_user_seen_idx").on(table.userId, table.lastSeenAt),
+  index("login_session_expires_idx").on(table.expiresAt),
+])
+
 export const accounts = pgTable(
   "account",
   {

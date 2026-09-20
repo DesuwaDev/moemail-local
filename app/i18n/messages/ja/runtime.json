@@ -53,6 +53,34 @@
     "monitor": "監視とアラート",
     "offsite": "オフサイトバックアップ"
   },
+  "clientIp": {
+    "title": "接続元 IP / CDN",
+    "summary": "管理された入口が提供する訪問者 IP をセッション記録とログイン制限に使用します。",
+    "header": "接続元ヘッダー",
+    "auto": "互換モード（固定順序）",
+    "custom": "カスタムヘッダー",
+    "hops": "右から何番目の IP",
+    "hopsHelp": "カンマ区切りのプロキシチェーンに使用します。1 は一番右です。入口が書き込む実際のチェーンに合わせて 1〜16 を設定します。",
+    "invalid": "有効な IP ヘッダー名と 1〜16 の整数を入力してください。認証、Cookie、秘密情報のヘッダーは使用できません。",
+    "detect": "現在のリクエストを確認",
+    "detecting": "確認中",
+    "draftHint": "確認では保存しません。下の保存ボタンで変更を適用します。",
+    "active": "現在の適用結果",
+    "preview": "下書きのプレビュー",
+    "received": "受信した IP ヘッダーを表示",
+    "failed": "確認に失敗しました。ログインと接続を確認して再試行してください。",
+    "helpTitle": "設定と信頼の境界",
+    "helpTrust": "有効にする前に、入口プロキシが選択したヘッダーを上書きし、オリジンへのアクセスを信頼するプロキシに限定し、Node ポートを非公開にしてください。CDN ヘッダーにもクライアントの値が残る場合があるため、エッジで明示的に上書きします。",
+    "helpSelection": "入口で X-MoeMail-Client-IP に統一することを推奨します。互換モードはこのヘッダー、CF-Connecting-IP、X-Real-IP、X-Forwarded-For の順に確認します。明示的に一つを選択してください。指定ヘッダーがない、または無効な場合は不明となり、別のヘッダーは使いません。",
+    "helpLimit": "確認ではこのリクエストの有効な IP のみを表示します。TCP 接続元やヘッダーの信頼性は検証できません。位置は CDN に接続する出口を示し、VPN の背後の住所は特定できません。信頼を無効にすると接続元ヘッダーは使いません。",
+    "reasons": {
+      "ok": "認識済み",
+      "disabled": "ヘッダーの信頼は無効です",
+      "missing": "指定ヘッダーを受信していません",
+      "invalid": "ヘッダー形式が無効です",
+      "chainTooShort": "プロキシチェーンが短すぎます"
+    }
+  },
   "fields": {
     "version": { "label": "Schema バージョン", "description": "現在サポートされているのはバージョン 1 だけです。" },
     "setup": {
@@ -61,6 +89,8 @@
     },
     "server": {
       "baseUrl": { "label": "サイトのベース URL", "description": "メタデータと絶対リンクに使用します。例：https://mail.example.com。" },
+      "clientIpHeader": {"label":"接続元ヘッダー","description":"入口で X-MoeMail-Client-IP に統一することを推奨します。互換モードはこのヘッダー、CF-Connecting-IP、X-Real-IP、X-Forwarded-For の順に確認します。明示的に一つを選択してください。指定ヘッダーがない、または無効な場合は不明となり、別のヘッダーは使いません。"},
+      "clientIpTrustedHops": {"label":"右から何番目の IP","description":"カンマ区切りのプロキシチェーンに使用します。1 は一番右です。入口が書き込む実際のチェーンに合わせて 1〜16 を設定します。"},
       "trustProxyHeaders": { "label": "リバースプロキシヘッダーを信頼", "description": "管理下の Caddy またはリバースプロキシの背後でのみ有効にしてください。" },
       "autoRestartOnDriverChange": { "label": "ドライバー変更時に自動終了", "description": "本番環境では Docker または systemd が新しいプロセスを起動します。" },
       "emailPollIntervalMs": { "label": "メールボックスのポーリング間隔（ミリ秒）", "description": "ブラウザーがメール一覧を更新する間隔です。" }

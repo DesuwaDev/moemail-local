@@ -174,5 +174,7 @@
   "MAILBOX_DISABLED": "관리자가 이 메일함을 비활성화했습니다",
   "MAILBOX_SEND_DISABLED": "이 메일함의 발신이 중지되었습니다",
   "MAILBOX_SHARE_DISABLED": "이 메일함의 공유가 중지되었습니다",
-  "ADMIN_OPERATION_FAILED": "관리 작업에 실패했습니다. 새로 고침 후 다시 시도하세요。"
+  "ADMIN_OPERATION_FAILED": "관리 작업에 실패했습니다. 새로 고침 후 다시 시도하세요。",
+  "SESSION_NOT_FOUND": "세션이 없거나 이미 로그아웃되었습니다",
+  "SESSIONS_READ_FAILED": "세션을 불러오지 못했습니다. 다시 시도하세요"
 }

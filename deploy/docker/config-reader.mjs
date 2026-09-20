@@ -188,11 +188,15 @@ function validateCompleteConfig(value) {
   if (setup.completed !== true) throw new Error("setup")
   requireString(setup.completedAt, true)
 
-  const server = requireExactObject(config.server, [
-    "baseUrl", "trustProxyHeaders", "autoRestartOnDriverChange", "emailPollIntervalMs",
+  // Additive IP settings must not invalidate existing backup/config pairs.
+  const server = requireExactObject({ clientIpHeader: "auto", clientIpTrustedHops: 1, ...config.server }, [
+    "baseUrl", "trustProxyHeaders", "clientIpHeader", "clientIpTrustedHops", "autoRestartOnDriverChange", "emailPollIntervalMs",
   ])
   requireHttpUrl(server.baseUrl)
   requireBoolean(server.trustProxyHeaders)
+  requireString(server.clientIpHeader)
+  if (server.clientIpHeader !== "auto" && (!/^[a-z][a-z0-9-]{0,63}$/.test(server.clientIpHeader) || /(?:authorization|cookie|token|secret|key)/.test(server.clientIpHeader))) throw new Error("client-ip-header")
+  requireInteger(server.clientIpTrustedHops, 1, 16)
   requireBoolean(server.autoRestartOnDriverChange)
   requireInteger(server.emailPollIntervalMs, 5_000, 600_000)
 

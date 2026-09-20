@@ -19,6 +19,7 @@ mail.example.com {
     reverse_proxy 127.0.0.1:3000 {
       header_up X-MoeMail-Client-IP {remote_host}
       header_up -CF-Connecting-IP
+      header_up -CF-Connecting-IPv6
       header_up X-Real-IP {remote_host}
       header_up X-Forwarded-For {remote_host}
     }
@@ -31,6 +32,7 @@ mail.example.com {
     reverse_proxy 127.0.0.1:3000 {
       header_up X-MoeMail-Client-IP {remote_host}
       header_up -CF-Connecting-IP
+      header_up -CF-Connecting-IPv6
       header_up X-Real-IP {remote_host}
       header_up X-Forwarded-For {remote_host}
     }
