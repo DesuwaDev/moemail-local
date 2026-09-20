@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
+import { getSession, useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import { Eye, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import { LocalizedUiError } from "@/lib/localized-ui-error"
 export function MailPrivacyPanel() {
   const t = useTranslations("profile.mailPrivacy")
   const actions = useTranslations("common.actions")
-  const { data: session, status, update } = useSession()
+  const { data: session, status } = useSession()
   const [saving, setSaving] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [saved, setSaved] = useState<{ userId: string; enabled: boolean } | null>(null)
@@ -33,8 +33,10 @@ export function MailPrivacyPanel() {
       if (!response.ok) throw new LocalizedUiError(t("failed"))
       setSaved({ userId: session.user.id, enabled: allowRemoteResources })
       setConfirming(false)
-      // Re-read server-owned preferences; never trust client JWT update data.
-      const refreshed = await update() // Also broadcasts; the server re-reads the database.
+      // Refresh through the public broadcast path without update() switching the
+      // global session to loading and unmounting protected panels and their drafts.
+      // Each tab re-reads server-owned preferences; no client JWT data is trusted.
+      const refreshed = await getSession({ broadcast: true })
       if (!refreshed) throw new LocalizedUiError(t("failed"))
     } catch {
       toast({ title: t("failed"), variant: "destructive" })
