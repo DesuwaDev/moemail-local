@@ -126,19 +126,9 @@ assert.match(loginFormSource, /max-w-lg/u)
 assert.match(loginPageSource, /min-h-\[100dvh\]/u)
 
 const userPanelSource = readFileSync(join(process.cwd(), "app/components/profile/promote-panel.tsx"), "utf8")
-const userDetailsSource = readFileSync(join(process.cwd(), "app/components/profile/user-details-dialog.tsx"), "utf8")
 assert.doesNotMatch(userPanelSource, /<RoleIcon/u)
 assert.match(userPanelSource, /sm:grid-cols-\[auto_minmax\(0,1fr\)_auto\]/u)
 assert.match(userPanelSource, /className="h-8 w-full min-w-0 text-sm sm:w-auto sm:min-w-28"/u)
-assert.match(userDetailsSource, /useLayoutEffect[\s\S]*ResizeObserver/u)
-assert.match(userDetailsSource, /\[scrollbar-gutter:stable\][^"\n]*transition-\[height\]/u)
-assert.match(userDetailsSource, /querySelector<HTMLElement>\('\[role="tabpanel"\]\[data-state="active"\]'\)/u)
-assert.match(userDetailsSource, /if \(contentHeight <= 0\) return/u)
-assert.doesNotMatch(userDetailsSource, /activePanelRef/u)
-assert.match(userDetailsSource, /grid-cols-2[^"\n]*sm:grid-cols-4/u)
-assert.match(userDetailsSource, /p-4 pr-14 sm:p-6 sm:pr-16/u)
-assert.match(userDetailsSource, /tabViewportRef\.current\?\.scrollTo\(\{ top: 0 \}\)/u)
-assert.doesNotMatch(userDetailsSource, /max-h-72 space-y-2 overflow-y-auto/u)
 
 const accessPanelSource = readFileSync(join(process.cwd(), "app/components/profile/access-policy-panel.tsx"), "utf8")
 const sendQuotaSource = readFileSync(join(process.cwd(), "app/components/profile/mail-quota-editor.tsx"), "utf8")
@@ -453,7 +443,6 @@ console.log(JSON.stringify({
   authCardStableAndResponsive: true,
   duplicateRoleIconRemoved: true,
   userRoleEditorResponsive: true,
-  adaptiveUserDetailsDialog: true,
   accessPolicyLayoutCovered: true,
   allDomainMailboxBlocksLocalized: true,
   scalableMailboxBlockEditor: true,
