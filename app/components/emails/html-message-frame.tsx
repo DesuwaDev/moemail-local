@@ -6,6 +6,8 @@ import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
 import { ShieldCheck, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { inspectRemoteResources, type RemoteResourceReport } from "@/lib/remote-resource-report"
+import { RemoteResourceDetails } from "./remote-resource-details"
 import { useSession } from "next-auth/react"
 
 interface HtmlMessageFrameProps {
@@ -70,17 +72,17 @@ function sanitizeMessageHtml(html: string) {
     }
   })
 
-  return template.innerHTML
+  return { body: template.innerHTML, report: inspectRemoteResources(content) }
 }
 
 function frameDocument(html: string, dark: boolean, allowRemote: boolean) {
-  const body = sanitizeMessageHtml(html)
+  const { body, report } = sanitizeMessageHtml(html)
   const resourceSources = allowRemote ? "data: https: http:" : "data:"
   const foreground = dark ? "#ffffff" : "#000000"
   const background = dark ? "#1a1a1a" : "#ffffff"
   const thumb = dark ? "rgba(130,109,217,.3)" : "rgba(130,109,217,.2)"
   const thumbHover = dark ? "rgba(130,109,217,.5)" : "rgba(130,109,217,.4)"
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${resourceSources}; media-src ${resourceSources}; font-src ${resourceSources}; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'"><style>html,body{margin:0;padding:0;min-height:100%;font-family:system-ui,-apple-system,sans-serif;color:${foreground};background:${background};color-scheme:${dark ? "dark" : "light"}}body{padding:20px;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}a{color:#2563eb}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:${thumb};border-radius:9999px}::-webkit-scrollbar-thumb:hover{background:${thumbHover}}*{scrollbar-width:thin;scrollbar-color:${thumb} transparent}</style></head><body>${body}</body></html>`
+  return { report, source: `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${resourceSources}; media-src ${resourceSources}; font-src ${resourceSources}; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'"><style>html,body{margin:0;padding:0;min-height:100%;font-family:system-ui,-apple-system,sans-serif;color:${foreground};background:${background};color-scheme:${dark ? "dark" : "light"}}body{padding:20px;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}a{color:#2563eb}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:${thumb};border-radius:9999px}::-webkit-scrollbar-thumb:hover{background:${thumbHover}}*{scrollbar-width:thin;scrollbar-color:${thumb} transparent}</style></head><body>${body}</body></html>` }
 }
 
 export function HtmlMessageFrame({ html, title, inlineImages }: HtmlMessageFrameProps) {
@@ -97,6 +99,7 @@ export function HtmlMessageFrame({ html, title, inlineImages }: HtmlMessageFrame
     dark: boolean
     images: InlineMessageImage[] | undefined
     source: string
+    report: RemoteResourceReport
     allowRemote: boolean
   } | null>(null)
 
@@ -116,7 +119,7 @@ export function HtmlMessageFrame({ html, title, inlineImages }: HtmlMessageFrame
       remaining -= source.length
       return source
     })
-    setFrame({ html, dark, images: inlineImages, allowRemote, source: frameDocument(resolved, dark, allowRemote) })
+    setFrame({ html, dark, images: inlineImages, allowRemote, ...frameDocument(resolved, dark, allowRemote) })
   }, [dark, html, inlineImages, allowRemote])
 
   // Mount the sandbox only after srcDoc is ready. Creating an empty frame and
@@ -136,6 +139,7 @@ export function HtmlMessageFrame({ html, title, inlineImages }: HtmlMessageFrame
             {t(allowRemote ? alwaysAllow && override?.value !== true ? "remoteAlwaysAllowed" : "remoteAllowed" : "remoteBlocked")}
           </p>
         </div>
+        {frameReady && <RemoteResourceDetails report={frame.report} allowed={allowRemote} />}
         <Button type="button" variant="ghost" size="sm" className="ml-auto h-auto min-h-8 shrink-0 whitespace-normal px-2 py-1 text-xs" onClick={() => setOverride({ userId, value: !allowRemote })}>
           {t(allowRemote ? "blockRemote" : "loadRemote")}
         </Button>
