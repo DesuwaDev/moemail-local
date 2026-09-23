@@ -65,6 +65,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
   const format = useFormatter()
   const t = useTranslations("emails.messages")
   const tList = useTranslations("emails.list")
+  const tShare = useTranslations("emails.shareMessage")
   const tCommon = useTranslations("common.actions")
   const tFormat = useTranslations("common.format")
   const tApi = useTranslations("api")
@@ -340,7 +341,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
                       </span>
                     </div>
                   </div>
-                  {(canShare || canDelete) && <div className="flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100" onClick={(e) => e.stopPropagation()}>
+                  {(canShare || canDelete) && <div className="flex shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
                     {canShare && <ShareMessageDialog
                       emailId={email.id}
                       messageId={message.id}
@@ -350,6 +351,8 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
+                          aria-label={tShare("shareButton")}
+                          title={tShare("shareButton")}
                         >
                           <Share2 className="h-4 w-4" />
                         </Button>
@@ -359,6 +362,8 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label={tCommon("delete")}
+                      title={tCommon("delete")}
                       onClick={(e) => {
                         e.stopPropagation()
                         setMessageToDelete(message)

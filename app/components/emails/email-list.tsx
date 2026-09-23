@@ -223,12 +223,14 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                       )}
                     </div>
                   </div>
-                  {(canShare || canDelete) && <div className="flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100" onClick={(e) => e.stopPropagation()}>
+                  {(canShare || canDelete) && <div className="flex shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
                     {canShare && !email.disabledAt && email.shareEnabled !== false && <ShareDialog emailId={email.id} emailAddress={email.address} />}
                     {canDelete && <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label={tCommon("delete")}
+                      title={tCommon("delete")}
                       onClick={(e) => {
                         e.stopPropagation()
                         setEmailToDelete(email)

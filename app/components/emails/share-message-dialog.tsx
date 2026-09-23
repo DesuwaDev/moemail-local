@@ -170,7 +170,7 @@ export function ShareMessageDialog({ emailId, messageId, messageSubject, trigger
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           {trigger || (
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={t("shareButton")} title={t("shareButton")}>
               <Share2 className="h-4 w-4" />
             </Button>
           )}
