@@ -7,6 +7,8 @@ RUN ./node_modules/.bin/esbuild config-reader.mjs --bundle --platform=node --tar
 FROM postgres:18-bookworm
 
 USER root
+# CI passes the current month so cached system packages still refresh monthly.
+ARG APT_SNAPSHOT=unset
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends ca-certificates libstdc++6 libatomic1 util-linux \
   && rm -rf /var/lib/apt/lists/* \

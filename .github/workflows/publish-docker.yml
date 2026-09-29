@@ -206,12 +206,17 @@ jobs:
             expected_uname: aarch64
     steps:
       - uses: actions/checkout@v4
+        with:
+          # PostgreSQL images date themselves from their inputs' last commit.
+          fetch-depth: 0
 
       - name: Resolve image metadata
         id: meta
         shell: bash
         env:
           IMAGE_KIND: ${{ matrix.image_kind }}
+          EXPECTED_UNAME: ${{ matrix.expected_uname }}
+          PUBLISH_TAG: ${{ needs.prepare.outputs.publish_tag }}
           APP_IMAGE: ${{ needs.prepare.outputs.app_image }}
           POSTGRES_IMAGE: ${{ needs.prepare.outputs.postgres_image }}
           POSTGRES_TOOLS_IMAGE: ${{ needs.prepare.outputs.postgres_tools_image }}
@@ -228,7 +233,43 @@ jobs:
               ;;
           esac
 
-          echo "image_name=$image_name" >> "$GITHUB_OUTPUT"
+          # A registry layer cache keeps unchanged layers (Node, system packages,
+          # dependencies) byte-identical across releases, so updates download only
+          # what changed. Maintenance prefers the app cache to share its runtime base.
+          cache_ref="$image_name:buildcache-$IMAGE_KIND-$EXPECTED_UNAME"
+          cache_from="type=registry,ref=$cache_ref"
+          if [[ "$IMAGE_KIND" == "maintenance" ]]; then
+            cache_from="type=registry,ref=$image_name:buildcache-app-$EXPECTED_UNAME"$'\n'"$cache_from"
+          fi
+
+          # PostgreSQL images carry no release-specific metadata and date themselves
+          # from their own inputs: while those are unchanged the image ID stays the
+          # same, so an application update does not recreate the database container.
+          labels="org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY"
+          build_args="APT_SNAPSHOT=$(date -u +%Y-%m)"
+          provenance=""
+          case "$IMAGE_KIND" in
+            postgres) inputs=(deploy/docker/postgres.Dockerfile deploy/docker/postgres-entrypoint.sh) ;;
+            postgres-tools) inputs=(deploy/docker/postgres-tools.Dockerfile deploy/docker/config-reader.mjs deploy/docker/postgres-verify.sql deploy/docker/postgres-backup.sh deploy/docker/postgres-restore.sh deploy/docker/postgres-backup-scheduler.sh) ;;
+            *) inputs=() ;;
+          esac
+          if (( ${#inputs[@]} )); then
+            build_args+=$'\n'"SOURCE_DATE_EPOCH=$(git log -1 --format=%ct -- "${inputs[@]}")"
+            # Provenance records the build time and commit, which would change the
+            # manifest list (the image ID under the containerd image store) every release.
+            provenance="false"
+          else
+            labels+=$'\n'"org.opencontainers.image.revision=$GITHUB_SHA"$'\n'"org.opencontainers.image.version=$PUBLISH_TAG"
+          fi
+
+          {
+            echo "image_name=$image_name"
+            echo "cache_ref=$cache_ref"
+            printf 'cache_from<<CACHE_FROM\n%s\nCACHE_FROM\n' "$cache_from"
+            printf 'labels<<LABELS\n%s\nLABELS\n' "$labels"
+            printf 'build_args<<BUILD_ARGS\n%s\nBUILD_ARGS\n' "$build_args"
+            echo "provenance=$provenance"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Assert native runner architecture
         shell: bash
@@ -262,10 +303,11 @@ jobs:
           file: ${{ matrix.dockerfile }}
           target: ${{ matrix.target }}
           platforms: ${{ matrix.platform }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ needs.prepare.outputs.publish_tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ steps.meta.outputs.build_args }}
+          cache-from: ${{ steps.meta.outputs.cache_from }}
+          cache-to: type=registry,ref=${{ steps.meta.outputs.cache_ref }},mode=min,image-manifest=true,oci-mediatypes=true
+          provenance: ${{ steps.meta.outputs.provenance }}
           outputs: type=image,name=${{ steps.meta.outputs.image_name }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Smoke-test native image

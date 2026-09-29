@@ -27,8 +27,11 @@ FROM dependencies AS builder
 ENV NODE_ENV=production
 
 COPY . .
+# Dependencies change far less often than application code; moving them out of
+# the standalone tree lets the runtime image keep them in a separate, reusable layer.
 RUN pnpm build \
-  && pnpm build:maintenance
+  && pnpm build:maintenance \
+  && mv .next/standalone/node_modules .next/standalone-node-modules
 
 FROM debian:bookworm-slim AS runtime-base
 
@@ -42,6 +45,9 @@ ENV PORT=3000
 
 WORKDIR /app
 
+# CI passes the current month: cached system packages are refreshed at least
+# monthly for security updates while the Node layer above stays reusable.
+ARG APT_SNAPSHOT=unset
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends ca-certificates libstdc++6 libatomic1 tini \
   && rm -rf /var/lib/apt/lists/* \
@@ -52,6 +58,8 @@ RUN apt-get update \
 
 FROM runtime-base AS runtime
 
+# Separate layers: routine releases usually change only the application layer.
+COPY --from=builder --chown=moemail:moemail /app/.next/standalone-node-modules ./node_modules
 COPY --from=builder --chown=moemail:moemail /app/.next/standalone ./
 COPY --from=builder --chown=moemail:moemail /app/.next/static ./.next/static
 COPY --from=builder --chown=moemail:moemail /app/public ./public
