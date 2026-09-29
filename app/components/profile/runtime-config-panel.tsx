@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { nanoid } from "nanoid"
 import { useFormatter, useTranslations } from "next-intl"
 import { parse, stringify } from "yaml"
-import { AlertTriangle, CheckCircle2, Dices, Eye, EyeOff, FileCog, RefreshCw, RotateCcw, Save } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Dices, Eye, EyeOff, FileCog, RefreshCw, RotateCcw, Save, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 import { ClientIpSettings } from "./client-ip-settings"
 import { LocalizedUiError, localizedUiErrorMessage } from "@/lib/localized-ui-error"
 import {
@@ -28,6 +29,8 @@ interface ConfigStatus {
   restartRequired: { at: string; reason: string } | null
 }
 type ConfigObject = Record<string, unknown>
+type RuntimeGroup = typeof runtimeGroupOrder[number]
+type FieldEntry = [string, RuntimeFieldMetadata]
 interface RuntimeConfigResponse {
   yaml: string
   config: ConfigObject
@@ -40,6 +43,19 @@ interface RuntimeConfigResponse {
   restartReason?: string | null
   error?: string
   issues?: ConfigIssue[]
+}
+
+// Nested objects become headed sections instead of collapsible panels.
+const groupSections: Partial<Record<RuntimeGroup, readonly string[]>> = {
+  database: ["sqlite", "postgres"],
+  auth: ["github", "google", "passkeys", "rateLimit"],
+}
+// Edited together by the client IP composite control (with live detection).
+const clientIpPaths = ["server.trustProxyHeaders", "server.clientIpHeader", "server.clientIpTrustedHops"]
+const clientIpControlIds: Record<string, string> = {
+  "server.trustProxyHeaders": "client-ip-enabled",
+  "server.clientIpHeader": "client-ip-header",
+  "server.clientIpTrustedHops": "client-ip-hops",
 }
 
 function getPath(root: ConfigObject, path: string) {
@@ -59,9 +75,12 @@ function setPath(root: ConfigObject, path: string, value: unknown) {
   return clone
 }
 
-function groupForPath(path: string) {
-  return path.includes(".") ? path.split(".")[0] : "root"
+function groupForPath(path: string): RuntimeGroup {
+  const group = path.includes(".") ? path.split(".")[0] : "root"
+  return (runtimeGroupOrder as readonly string[]).includes(group) ? group as RuntimeGroup : "root"
 }
+
+const controlId = (path: string) => clientIpControlIds[path] ?? "runtime-field-" + path.replaceAll(".", "-")
 
 function RuntimeField({
   path,
@@ -87,26 +106,30 @@ function RuntimeField({
   const canGenerateSecret = kind === "secret" && metadata.secretAction === "generate"
   const label = t(`fields.${path}.label` as never)
   const description = t(`fields.${path}.description` as never)
+  const id = controlId(path)
 
   return (
-    <div className="min-w-0 rounded-md border bg-background/60 p-3">
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <div className="min-w-0"><Label className="text-sm">{label}{metadata.required && <span className="ml-0.5 text-destructive">*</span>}</Label><p className="mt-0.5 text-xs leading-4 text-muted-foreground">{description}</p></div>
+    <div className={cn("min-w-0 space-y-2", kind === "textarea" && "md:col-span-2")}>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <Label htmlFor={id} className="text-sm font-medium leading-5">{label}{metadata.required && <span className="ml-0.5 text-destructive">*</span>}</Label>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+        </div>
+        {kind === "boolean" && <Switch id={id} className="mt-0.5 shrink-0" checked={Boolean(value)} onCheckedChange={onChange} disabled={disabled} />}
         {canGenerateSecret ? (
           <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={disabled} onClick={() => onChange(nanoid(43))} title={t("actions.generate")} aria-label={t("actions.generateFor", { label })}><Dices className="h-3.5 w-3.5" /></Button>
         ) : canRestoreDefault ? (
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={disabled || !changed} onClick={() => onChange(defaultValue)} title={t("actions.restoreDefault")}><RotateCcw className="h-3.5 w-3.5" /></Button>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={disabled || !changed} onClick={() => onChange(defaultValue)} title={t("actions.restoreDefault")} aria-label={t("actions.restoreDefault")}><RotateCcw className="h-3.5 w-3.5" /></Button>
         ) : null}
       </div>
-      {kind === "boolean" ? (
-        <div className="flex h-9 items-center justify-between gap-2 rounded border px-3"><code className="min-w-0 truncate text-xs" title={path}>{path}</code><Switch checked={Boolean(value)} onCheckedChange={onChange} disabled={disabled} /></div>
-      ) : kind === "select" ? (
-        <Select value={String(value)} onValueChange={onChange} disabled={disabled}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{metadata.options?.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select>
+      {kind === "boolean" ? null : kind === "select" ? (
+        <Select value={String(value)} onValueChange={onChange} disabled={disabled}><SelectTrigger id={id}><SelectValue /></SelectTrigger><SelectContent>{metadata.options?.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select>
       ) : kind === "textarea" ? (
-        <Textarea value={value == null ? "" : String(value)} onChange={event => onChange(event.target.value || null)} disabled={disabled} spellCheck={false} className="min-h-28 font-mono text-xs" />
+        <Textarea id={id} value={value == null ? "" : String(value)} onChange={event => onChange(event.target.value || null)} disabled={disabled} spellCheck={false} className="min-h-28 font-mono text-xs" />
       ) : kind === "secret" ? (
         <div className="relative">
           <Input
+            id={id}
             type={secretVisible ? "text" : "password"}
             value={value == null ? "" : String(value)}
             onChange={event => onChange(event.target.value || (defaultValue === null ? null : ""))}
@@ -131,6 +154,7 @@ function RuntimeField({
         </div>
       ) : (
         <Input
+          id={id}
           type={kind === "number" ? "number" : "text"}
           value={value == null ? "" : String(value)}
           onChange={event => onChange(kind === "number" ? Number(event.target.value) : event.target.value || (defaultValue === null ? null : ""))}
@@ -138,8 +162,8 @@ function RuntimeField({
           spellCheck={false}
         />
       )}
-      {requiredMissing && <p className="mt-1.5 text-xs text-destructive">{t("required")}</p>}
-      <code className="mt-1.5 block truncate text-[10px] text-muted-foreground" title={path}>{path}</code>
+      {requiredMissing && <p className="text-xs text-destructive">{t("required")}</p>}
+      <code className="block truncate text-[10px] text-muted-foreground/80" title={path}>{path}</code>
     </div>
   )
 }
@@ -148,14 +172,19 @@ export function RuntimeConfigPanel() {
   const format = useFormatter()
   const t = useTranslations("runtime")
   const tApi = useTranslations("api")
+  const tClientIp = useTranslations("runtime.clientIp")
   const [yaml, setYaml] = useState("")
+  const [savedYaml, setSavedYaml] = useState("")
   const [config, setConfig] = useState<ConfigObject | null>(null)
+  const [savedConfig, setSavedConfig] = useState<ConfigObject | null>(null)
   const [defaults, setDefaults] = useState<ConfigObject | null>(null)
   const [revision, setRevision] = useState<number | null>(null)
   const [fingerprint, setFingerprint] = useState<string | null>(null)
   const [path, setFilePath] = useState("")
   const [status, setStatus] = useState<ConfigStatus | null>(null)
   const [mode, setMode] = useState("visual")
+  const [activeGroup, setActiveGroup] = useState<RuntimeGroup>(runtimeGroupOrder[0])
+  const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
@@ -165,7 +194,9 @@ export function RuntimeConfigPanel() {
 
   const applyResponse = (body: RuntimeConfigResponse) => {
     setYaml(body.yaml)
+    setSavedYaml(body.yaml)
     setConfig(body.config)
+    setSavedConfig(body.config)
     setDefaults(body.defaults)
     setRevision(body.revision)
     setFingerprint(body.fingerprint)
@@ -192,10 +223,10 @@ export function RuntimeConfigPanel() {
 
   useEffect(() => { void loadConfig() }, [loadConfig])
 
-  const groupedFields = useMemo(() => runtimeGroupOrder.map(group => ({
+  const groupedFields = useMemo(() => new Map(runtimeGroupOrder.map(group => [
     group,
-    fields: Object.entries(runtimeConfigFields).filter(([fieldPath]) => groupForPath(fieldPath) === group),
-  })), [])
+    Object.entries(runtimeConfigFields).filter(([fieldPath]) => groupForPath(fieldPath) === group) as FieldEntry[],
+  ])), [])
 
   const missingRequiredFields = useMemo(() => config
     ? Object.entries(runtimeConfigFields).filter(([fieldPath, metadata]) => {
@@ -208,6 +239,13 @@ export function RuntimeConfigPanel() {
     missingRequiredFields.map(([fieldPath]) => t(`fields.${fieldPath}.label` as never)),
     { type: "unit" },
   )
+
+  const dirtyPaths = useMemo(() => config && savedConfig
+    ? Object.keys(runtimeConfigFields).filter(fieldPath => JSON.stringify(getPath(config, fieldPath)) !== JSON.stringify(getPath(savedConfig, fieldPath)))
+    : [], [config, savedConfig])
+  const dirtyGroups = new Set(dirtyPaths.map(groupForPath))
+  const issueGroups = new Set([...issues, ...(status?.lastError?.issues ?? [])].map(issue => groupForPath(issue.path)))
+  for (const [fieldPath] of missingRequiredFields) issueGroups.add(groupForPath(fieldPath))
 
   const saveConfig = async () => {
     if (revision === null || !fingerprint || !config) return
@@ -264,40 +302,168 @@ export function RuntimeConfigPanel() {
     }
   }
 
+  const selectGroup = (group: RuntimeGroup) => { setActiveGroup(group); setQuery("") }
+
+  // Jump from an issue to its control, switching group and mode as needed.
+  const revealField = (fieldPath: string) => {
+    if (mode !== "visual") changeMode("visual")
+    selectGroup(groupForPath(fieldPath))
+    window.setTimeout(() => {
+      const control = document.getElementById(controlId(fieldPath))
+      control?.scrollIntoView({ block: "center" })
+      control?.focus()
+    }, 50)
+  }
+
+  const normalizedQuery = query.trim().toLowerCase()
+  const fieldMatches = ([fieldPath]: FieldEntry) => !normalizedQuery || [
+    fieldPath,
+    t(`fields.${fieldPath}.label` as never),
+    t(`fields.${fieldPath}.description` as never),
+  ].some(text => text.toLowerCase().includes(normalizedQuery))
+  const clientIpMatches = !normalizedQuery
+    || [tClientIp("title"), tClientIp("summary"), ...clientIpPaths].some(text => text.toLowerCase().includes(normalizedQuery))
+    || clientIpPaths.some(fieldPath => fieldMatches([fieldPath, runtimeConfigFields[fieldPath]]))
+
+  const renderField = ([fieldPath, metadata]: FieldEntry) => config && defaults && (
+    <RuntimeField key={fieldPath} path={fieldPath} metadata={metadata} value={getPath(config, fieldPath)} defaultValue={getPath(defaults, fieldPath)} disabled={disabled} onChange={value => setConfig(current => current ? setPath(current, fieldPath, value) : current)} />
+  )
+  const fieldGrid = (fields: FieldEntry[]) => (
+    <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2">{fields.map(renderField)}</div>
+  )
+  const clientIp = config && (
+    <ClientIpSettings value={{ trustProxyHeaders: Boolean(getPath(config, "server.trustProxyHeaders")), clientIpHeader: String(getPath(config, "server.clientIpHeader") ?? "auto"), clientIpTrustedHops: Number(getPath(config, "server.clientIpTrustedHops") ?? 1) }} disabled={disabled} revision={revision} onChange={value => setConfig(current => current ? Object.entries(value).reduce((next, [key, item]) => setPath(next, "server." + key, item), current) : current)} />
+  )
+
+  const groupContent = (group: RuntimeGroup) => {
+    const fields = (groupedFields.get(group) ?? []).filter(([fieldPath]) => !clientIpPaths.includes(fieldPath))
+    const subsections = groupSections[group] ?? []
+    const inSection = (fieldPath: string, section: string) => fieldPath.startsWith(`${group}.${section}.`)
+    const general = fields.filter(([fieldPath]) => !subsections.some(section => inSection(fieldPath, section)))
+    const driver = config ? getPath(config, "database.driver") : undefined
+    return <div className="divide-y">
+      {general.length > 0 && <div className="pb-5">{fieldGrid(general)}</div>}
+      {group === "server" && <div className="py-5">{clientIp}</div>}
+      {subsections.map(section => (
+        <section key={section} className="py-5 last:pb-0">
+          <h4 className="mb-4 flex flex-wrap items-center gap-2 text-sm font-semibold">
+            {t(`sections.${group}.${section}` as never)}
+            {group === "database" && driver !== section && <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">{t("layout.inactive")}</span>}
+          </h4>
+          {fieldGrid(fields.filter(([fieldPath]) => inSection(fieldPath, section)))}
+        </section>
+      ))}
+    </div>
+  }
+
+  const searchResults = runtimeGroupOrder.map(group => ({
+    group,
+    fields: (groupedFields.get(group) ?? []).filter(entry => !clientIpPaths.includes(entry[0]) && fieldMatches(entry)),
+    clientIp: group === "server" && clientIpMatches,
+  })).filter(result => result.fields.length > 0 || result.clientIp)
+  const resultCount = searchResults.reduce((total, result) => total + result.fields.length + (result.clientIp ? 1 : 0), 0)
+
+  const statusDots = (group: RuntimeGroup) => <>
+    {issueGroups.has(group) && <span className="size-2 shrink-0 rounded-full bg-destructive" role="img" aria-label={t("layout.issueGroup")} title={t("layout.issueGroup")} />}
+    {dirtyGroups.has(group) && <span className="size-2 shrink-0 rounded-full bg-primary" role="img" aria-label={t("layout.dirtyGroup")} title={t("layout.dirtyGroup")} />}
+  </>
+  const issueList = (list: ConfigIssue[]) => (
+    <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">{list.map((issue, index) => (
+      <li key={`${issue.path}-${index}`}><button type="button" className="font-mono underline-offset-2 hover:underline" onClick={() => revealField(issue.path)}>{issue.path}</button></li>
+    ))}</ul>
+  )
+  const yamlDirty = mode === "yaml" && yaml !== savedYaml
+
   return (
     <div className="rounded-lg border-2 border-primary/20 bg-background p-4 sm:p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2"><FileCog className="h-5 w-5 text-primary" /><div><h2 className="font-semibold">{t("title")}</h2><p className="text-xs text-muted-foreground">{t("description")}</p></div></div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-2"><FileCog className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><div className="min-w-0"><h2 className="font-semibold">{t("title")}</h2><p className="text-xs leading-relaxed text-muted-foreground">{t("description")}</p></div></div>
         <Button type="button" variant="outline" size="sm" onClick={() => void loadConfig()} disabled={loading || saving}><RefreshCw className={`mr-1 h-4 w-4 ${loading ? "animate-spin" : ""}`} />{t("reload")}</Button>
       </div>
 
-      <div className="mb-4 rounded-md border border-destructive/70 bg-destructive/10 p-3 text-sm"><div className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /><div><p className="font-medium text-destructive">{t("secretWarningTitle")}</p><p className="text-xs text-muted-foreground">{t("secretWarningDescription")}</p></div></div></div>
-      <div className="mb-3 grid gap-1 text-xs text-muted-foreground sm:grid-cols-[auto_1fr] sm:gap-x-3"><span>{t("file")}</span><code className="break-all text-foreground">{path || t("loading")}</code><span>{t("revision")}</span><code className="text-foreground">{revision ?? "-"}</code><span>{t("status")}</span><span className="text-foreground">{status?.loadedFromFile ? t("statusLoaded") : status?.fileExists ? t("statusPending") : t("statusMissing")}</span></div>
-      {status?.restartRequired && <div className="mb-3 rounded border border-amber-500/60 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">{t("success.driverRestart")}</div>}
-      {status?.lastError && <div className="mb-3 rounded border border-amber-500/60 bg-amber-500/10 p-3 text-sm"><p className="font-medium text-amber-700 dark:text-amber-300">{t("lastError")}</p><ul className="mt-1 space-y-1 text-xs">{status.lastError.issues.map((issue, index) => <li key={`${issue.path}-${index}`}><code>{issue.path}</code></li>)}</ul></div>}
-      {conflict && <div className="mb-3 rounded border border-destructive bg-destructive/10 p-3 text-sm text-destructive">{t("conflict")}</div>}
-      {error && <div className="mb-3 rounded border border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-      {issues.length > 0 && <div className="mb-3 rounded border border-destructive/70 p-3 text-sm"><p className="font-medium text-destructive">{t("validationIssues")}</p><ul className="mt-1 space-y-1 text-xs">{issues.map((issue, index) => <li key={`${issue.path}-${index}`}><code>{issue.path}</code></li>)}</ul></div>}
-      {mode === "visual" && missingRequiredFields.length > 0 && <div className="mb-3 rounded border border-destructive/70 bg-destructive/10 p-3 text-sm text-destructive">{t("requiredSecrets", { fields: formattedRequiredFields })}</div>}
-      {message && <div className="mb-3 flex items-center gap-2 rounded border border-green-600/50 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><CheckCircle2 className="h-4 w-4" />{message}</div>}
+      <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+        <div className="flex min-w-0 gap-1.5"><dt className="shrink-0">{t("file")}</dt><dd className="min-w-0 break-all font-mono text-foreground">{path || t("loading")}</dd></div>
+        <div className="flex gap-1.5"><dt>{t("revision")}</dt><dd className="font-mono text-foreground">{revision ?? "-"}</dd></div>
+        <div className="flex gap-1.5"><dt>{t("status")}</dt><dd className="text-foreground">{status?.loadedFromFile ? t("statusLoaded") : status?.fileExists ? t("statusPending") : t("statusMissing")}</dd></div>
+      </dl>
+      <p className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs leading-relaxed">
+        <AlertTriangle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+        <span><span className="font-medium text-destructive">{t("secretWarningTitle")}</span>{" "}<span className="text-muted-foreground">{t("secretWarningDescription")}</span></span>
+      </p>
 
-      <Tabs value={mode} onValueChange={changeMode}>
+      <div className="mt-3 space-y-2 empty:hidden">
+        {status?.restartRequired && <div className="rounded border border-amber-500/60 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">{t("success.driverRestart")}</div>}
+        {status?.lastError && <div className="rounded border border-amber-500/60 bg-amber-500/10 p-3 text-sm"><p className="font-medium text-amber-700 dark:text-amber-300">{t("lastError")}</p>{issueList(status.lastError.issues)}</div>}
+        {conflict && <div className="rounded border border-destructive bg-destructive/10 p-3 text-sm text-destructive">{t("conflict")}</div>}
+        {error && <div role="alert" className="rounded border border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {issues.length > 0 && <div className="rounded border border-destructive/70 p-3 text-sm"><p className="font-medium text-destructive">{t("validationIssues")}</p>{issueList(issues)}</div>}
+        {mode === "visual" && missingRequiredFields.length > 0 && <div className="rounded border border-destructive/70 bg-destructive/10 p-3 text-sm text-destructive">{t("requiredSecrets", { fields: formattedRequiredFields })}</div>}
+        {message && <div role="status" className="flex items-center gap-2 rounded border border-green-600/50 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><CheckCircle2 className="h-4 w-4 shrink-0" />{message}</div>}
+      </div>
+
+      <Tabs value={mode} onValueChange={changeMode} className="mt-4">
         <TabsList><TabsTrigger value="visual">{t("visual")}</TabsTrigger><TabsTrigger value="yaml">{t("yaml")}</TabsTrigger></TabsList>
-        <TabsContent value="visual" className="space-y-3 pt-1">
-          {config && defaults && groupedFields.map(({ group, fields }) => (
-            <details key={group} className="rounded-md border bg-muted/20">
-              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold">{t(`groups.${group}` as never)} <span className="ml-1 text-xs font-normal text-muted-foreground">({fields.length})</span></summary>
-              <div className="grid min-w-0 grid-cols-1 gap-3 border-t p-3 md:grid-cols-2 xl:grid-cols-3">
-                {group === "server" && <ClientIpSettings value={{ trustProxyHeaders: Boolean(getPath(config, "server.trustProxyHeaders")), clientIpHeader: String(getPath(config, "server.clientIpHeader") ?? "auto"), clientIpTrustedHops: Number(getPath(config, "server.clientIpTrustedHops") ?? 1) }} disabled={disabled} revision={revision} onChange={value => setConfig(current => current ? Object.entries(value).reduce((next, [key, item]) => setPath(next, "server." + key, item), current) : current)} />}
-                {fields.filter(([fieldPath]) => !["server.trustProxyHeaders", "server.clientIpHeader", "server.clientIpTrustedHops"].includes(fieldPath)).map(([fieldPath, metadata]) => <RuntimeField key={fieldPath} path={fieldPath} metadata={metadata} value={getPath(config, fieldPath)} defaultValue={getPath(defaults, fieldPath)} disabled={disabled} onChange={value => setConfig(current => current ? setPath(current, fieldPath, value) : current)} />)}
+        <TabsContent value="visual" className="mt-3">
+          {config && defaults && <div className="grid min-w-0 gap-4 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-6">
+            <aside className="min-w-0 space-y-2 lg:sticky lg:top-20 lg:self-start">
+              <div className="relative">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={t("layout.search")} aria-label={t("layout.search")} className="h-9 pl-8 pr-8" />
+                {query && <Button type="button" variant="ghost" size="icon" className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2" onClick={() => setQuery("")} aria-label={t("layout.clearSearch")} title={t("layout.clearSearch")}><X className="h-3.5 w-3.5" /></Button>}
               </div>
-            </details>
-          ))}
+              <div className="lg:hidden">
+                <Select value={activeGroup} onValueChange={value => selectGroup(value as RuntimeGroup)}>
+                  <SelectTrigger aria-label={t("layout.groupLabel")}><SelectValue /></SelectTrigger>
+                  <SelectContent>{runtimeGroupOrder.map(group => <SelectItem key={group} value={group}>
+                    <span className="flex items-center gap-2">{t(`groups.${group}` as never)}{statusDots(group)}</span>
+                  </SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <nav aria-label={t("layout.groupLabel")} className="hidden lg:block">
+                <ul className="space-y-0.5">{runtimeGroupOrder.map(group => {
+                  const active = !normalizedQuery && group === activeGroup
+                  return <li key={group}>
+                    <button type="button" aria-current={active ? "true" : undefined} onClick={() => selectGroup(group)} className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      active ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}>
+                      <span className="min-w-0 flex-1 truncate">{t(`groups.${group}` as never)}</span>
+                      {statusDots(group)}
+                      <span className="text-xs tabular-nums opacity-70">{groupedFields.get(group)?.length ?? 0}</span>
+                    </button>
+                  </li>
+                })}</ul>
+              </nav>
+            </aside>
+
+            <section className="min-w-0" aria-live="polite">
+              {normalizedQuery ? <>
+                <p className="mb-4 border-b pb-2 text-sm text-muted-foreground">{resultCount ? t("layout.searchResults", { count: resultCount }) : t("layout.noResults")}</p>
+                <div className="space-y-6">{searchResults.map(result => <div key={result.group}>
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">{t(`groups.${result.group}` as never)}{statusDots(result.group)}</h3>
+                  <div className="space-y-5">{result.clientIp && clientIp}{result.fields.length > 0 && fieldGrid(result.fields)}</div>
+                </div>)}</div>
+              </> : <>
+                <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b pb-2">
+                  <h3 className="flex items-center gap-2 text-base font-semibold">{t(`groups.${activeGroup}` as never)}{statusDots(activeGroup)}</h3>
+                  <span className="text-xs text-muted-foreground">{t("layout.fieldCount", { count: groupedFields.get(activeGroup)?.length ?? 0 })}</span>
+                </div>
+                {groupContent(activeGroup)}
+              </>}
+            </section>
+          </div>}
         </TabsContent>
         <TabsContent value="yaml"><Textarea value={yaml} onChange={event => setYaml(event.target.value)} disabled={disabled} aria-label={t("yamlAria")} spellCheck={false} className="min-h-[34rem] resize-y whitespace-pre font-mono text-xs leading-5" /></TabsContent>
       </Tabs>
 
-      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-muted-foreground">{t("externalEditHint")}</p><Button onClick={() => void saveConfig()} disabled={disabled || (mode === "visual" && missingRequiredFields.length > 0)}><Save className="mr-1 h-4 w-4" />{saving ? t("saving") : t("save")}</Button></div>
+      {/* Right padding keeps the save button clear of the site's floating menu button. */}
+      <div className="sticky bottom-0 z-10 -mx-4 -mb-4 mt-5 flex items-center justify-between gap-3 rounded-b-lg border-t bg-background/95 py-3 pl-4 pr-[4.5rem] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-5 sm:-mb-5 sm:pl-5 xl:pr-5">
+        <div className="min-w-0 text-xs leading-relaxed">
+          <p className={dirtyPaths.length > 0 || yamlDirty ? "font-medium text-primary" : "text-muted-foreground"}>{mode === "yaml" ? (yamlDirty ? t("layout.unsavedYaml") : t("layout.saved")) : dirtyPaths.length > 0 ? t("layout.unsaved", { count: dirtyPaths.length }) : t("layout.saved")}</p>
+          <p className="hidden text-muted-foreground md:block">{t("externalEditHint")}</p>
+        </div>
+        <Button className="shrink-0" onClick={() => void saveConfig()} disabled={disabled || (mode === "visual" && missingRequiredFields.length > 0)}><Save className="mr-1 h-4 w-4" />{saving ? t("saving") : t("save")}</Button>
+      </div>
     </div>
   )
 }

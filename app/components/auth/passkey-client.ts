@@ -5,16 +5,17 @@ import { browserSupportsWebAuthn, sendSignal } from "@simplewebauthn/browser"
 import { useRuntimeConfig } from "@/providers"
 
 /**
- * `ready` means this browser can use passkeys on this page. WebAuthn needs a
- * secure context on a domain name, and the server only accepts ceremonies from
- * the configured public origin.
+ * `ready` means this browser can use passkeys on this page. `disabled` means an
+ * administrator paused them. Otherwise WebAuthn needs a secure context on a
+ * domain name, and the server only accepts ceremonies from the public origin.
  */
-export type PasskeySupport = "checking" | "ready" | "browser" | "insecure" | "origin"
+export type PasskeySupport = "checking" | "ready" | "disabled" | "browser" | "insecure" | "origin"
 
 const isIpLiteral = (host: string) => host.startsWith("[") || /^\d{1,3}(?:\.\d{1,3}){3}$/u.test(host)
 
 /** Server-renderable guess from the site address, so the UI does not jump after hydration. */
-function initialSupport(siteOrigin: string): PasskeySupport {
+function initialSupport(siteOrigin: string, enabled: boolean): PasskeySupport {
+  if (!enabled) return "disabled"
   try {
     const { hostname, protocol } = new URL(siteOrigin)
     const local = hostname === "localhost" || hostname.endsWith(".localhost")
@@ -25,17 +26,18 @@ function initialSupport(siteOrigin: string): PasskeySupport {
 }
 
 export function usePasskeySupport() {
-  const { baseUrl } = useRuntimeConfig()
+  const { baseUrl, passkeys: enabled } = useRuntimeConfig()
   let siteOrigin = ""
   try { siteOrigin = new URL(baseUrl).origin } catch { siteOrigin = "" }
-  const [support, setSupport] = useState<PasskeySupport>(() => initialSupport(siteOrigin))
+  const [support, setSupport] = useState<PasskeySupport>(() => initialSupport(siteOrigin, enabled))
 
   useEffect(() => {
-    if (!browserSupportsWebAuthn()) setSupport("browser")
+    if (!enabled) setSupport("disabled")
+    else if (!browserSupportsWebAuthn()) setSupport("browser")
     else if (!window.isSecureContext || isIpLiteral(window.location.hostname)) setSupport("insecure")
     else if (siteOrigin !== window.location.origin) setSupport("origin")
     else setSupport("ready")
-  }, [siteOrigin])
+  }, [enabled, siteOrigin])
 
   return { support, siteOrigin }
 }

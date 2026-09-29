@@ -16,6 +16,7 @@
       "title": "Passkeys",
       "summaryNone": "Sign in with your fingerprint, face or device PIN. No password needed, and phishing-resistant.",
       "summaryCount": "{count, plural, one {# passkey} other {# passkeys}} added for password-free sign-in.",
+      "summaryPaused": "Passkeys are paused on this site. Your {count, plural, one {# passkey is} other {# passkeys are}} kept for when they return.",
       "manage": "Manage",
       "add": "Add",
       "dialogDescription": "Use your fingerprint, face or device PIN instead of a password. A passkey only works on this site, so phishing pages can't trick you into handing it over.",
@@ -47,6 +48,7 @@
       "added": "Passkey added",
       "renamed": "Name saved",
       "unavailable": {
+        "disabled": "The site administrator has paused passkeys. For now you can't add passkeys or sign in with them; the ones you added are kept, and you can still rename or remove them.",
         "browser": "This browser doesn't support passkeys. Update it or use another device.",
         "insecure": "Passkeys require this site to be opened over HTTPS on a domain name.",
         "origin": "Open this site at {origin} to use passkeys.",

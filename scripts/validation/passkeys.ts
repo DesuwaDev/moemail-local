@@ -268,6 +268,24 @@ try {
   const removedLogin = await passkeys.createAuthenticationOptions()
   await rejects(() => passkeys.verifyPasskeyAssertion(removedLogin.challengeId, laptop.assert(removedLogin.options)), "PASSKEY_NOT_RECOGNIZED", "removed passkeys stop working")
 
+  // Administrators can pause passkeys: every ceremony stops, including challenges
+  // issued before the switch, while stored passkeys remain listable and removable.
+  const runtime = await load("app/lib/config/runtime.ts")
+  assert.equal(runtime.getPublicRuntimeConfig().passkeys, true, "passkeys default to enabled")
+  const issuedBeforePause = await passkeys.createAuthenticationOptions()
+  assert.equal((await runtime.saveConfigPatch({ auth: { passkeys: { enabled: false } } })).ok, true)
+  assert.equal(runtime.getPublicRuntimeConfig().passkeys, false, "the browser learns passkeys are paused")
+  await rejects(() => passkeys.verifyPasskeyAssertion(issuedBeforePause.challengeId, phone.assert(issuedBeforePause.options)), "PASSKEY_DISABLED", "pending sign-ins stop when paused")
+  await rejects(() => passkeys.createAuthenticationOptions(), "PASSKEY_DISABLED", "sign-in is paused")
+  await rejects(() => passkeys.createRegistrationOptions(owner.id, sessionA), "PASSKEY_DISABLED", "registration is paused")
+  await rejects(() => passkeys.createVerificationOptions(owner.id, sessionA), "PASSKEY_DISABLED", "passkey step-up is paused")
+  assert.equal((await passkeys.reauthenticationState(owner.id, sessionA)).passkey, false, "paused passkeys are not offered for step-up")
+  assert.equal((await passkeys.listPasskeys(owner.id)).length, 1, "stored passkeys are kept")
+  assert.equal(await passkeys.renamePasskey(owner.id, row.id, "Phone"), "Phone", "paused passkeys can still be renamed")
+  assert.equal((await runtime.saveConfigPatch({ auth: { passkeys: { enabled: true } } })).ok, true)
+  const resumed = await passkeys.createAuthenticationOptions()
+  assert.equal((await passkeys.verifyPasskeyAssertion(resumed.challengeId, phone.assert(resumed.options))).userId, owner.id, "re-enabling restores stored passkeys")
+
   // The per-account limit applies to new registrations.
   for (let index = (await passkeys.countPasskeys(owner.id)); index < passkeys.PASSKEY_LIMIT; index++) {
     const extra = new SoftAuthenticator()

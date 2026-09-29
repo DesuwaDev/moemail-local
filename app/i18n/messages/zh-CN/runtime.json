@@ -41,6 +41,33 @@
     "restart": "配置已保存；{reason}",
     "driverRestart": "数据库驱动变化需要重启"
   },
+  "layout": {
+    "groupLabel": "设置分组",
+    "search": "搜索设置项",
+    "clearSearch": "清除搜索",
+    "searchResults": "找到 {count} 项",
+    "noResults": "没有匹配的设置项",
+    "fieldCount": "{count} 项",
+    "general": "常规",
+    "inactive": "当前驱动未使用",
+    "dirtyGroup": "有未保存的修改",
+    "issueGroup": "有需要处理的问题",
+    "unsaved": "{count} 项修改尚未保存",
+    "unsavedYaml": "YAML 有未保存的修改",
+    "saved": "没有未保存的修改"
+  },
+  "sections": {
+    "database": {
+      "sqlite": "SQLite 数据库",
+      "postgres": "PostgreSQL 数据库"
+    },
+    "auth": {
+      "github": "GitHub 登录",
+      "google": "Google 登录",
+      "passkeys": "通行密钥",
+      "rateLimit": "登录与注册限流"
+    }
+  },
   "groups": {
     "root": "格式版本",
     "setup": "初始化状态",
@@ -125,6 +152,9 @@
       "google": {
         "clientId": { "label": "Google 客户端 ID", "description": "需要与客户端密钥同时配置。" },
         "clientSecret": { "label": "Google 客户端密钥", "description": "OAuth 客户端凭据。" }
+      },
+      "passkeys": {
+        "enabled": { "label": "启用通行密钥", "description": "允许用户添加通行密钥并用它登录。关闭后登录页不再显示通行密钥入口，也不能新增；已添加的通行密钥保留，用户仍可重命名或删除，已登录的会话不受影响。需要站点地址为 HTTPS 域名。" }
       },
       "rateLimit": {
         "windowSeconds": { "label": "限流窗口（秒）", "description": "登录与注册尝试的计数窗口。" },

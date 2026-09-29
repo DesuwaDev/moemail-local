@@ -41,6 +41,33 @@
     "restart": "設定を保存しました；{reason}",
     "driverRestart": "データベースドライバーの変更には再起動が必要です"
   },
+  "layout": {
+    "groupLabel": "設定グループ",
+    "search": "設定を検索",
+    "clearSearch": "検索をクリア",
+    "searchResults": "{count} 件一致",
+    "noResults": "一致する設定はありません",
+    "fieldCount": "{count} 項目",
+    "general": "一般",
+    "inactive": "現在のドライバーでは未使用",
+    "dirtyGroup": "未保存の変更あり",
+    "issueGroup": "要対応の問題あり",
+    "unsaved": "未保存の変更 {count} 件",
+    "unsavedYaml": "YAML に未保存の変更があります",
+    "saved": "未保存の変更はありません"
+  },
+  "sections": {
+    "database": {
+      "sqlite": "SQLite データベース",
+      "postgres": "PostgreSQL データベース"
+    },
+    "auth": {
+      "github": "GitHub ログイン",
+      "google": "Google ログイン",
+      "passkeys": "パスキー",
+      "rateLimit": "ログイン・登録の回数制限"
+    }
+  },
   "groups": {
     "root": "形式バージョン",
     "setup": "セットアップ状態",
@@ -125,6 +152,9 @@
       "google": {
         "clientId": { "label": "Google クライアント ID", "description": "クライアントシークレットと同時に設定してください。" },
         "clientSecret": { "label": "Google クライアントシークレット", "description": "OAuth クライアント認証情報です。" }
+      },
+      "passkeys": {
+        "enabled": { "label": "パスキーを有効にする", "description": "ユーザーがパスキーを追加してログインに使えるようにします。無効にするとログイン画面にパスキーが表示されず、新規追加もできません。追加済みのパスキーは保持され、名前の変更や削除は引き続き可能で、ログイン中のセッションにも影響しません。サイトのアドレスが HTTPS のドメイン名である必要があります。" }
       },
       "rateLimit": {
         "windowSeconds": { "label": "レート制限ウィンドウ（秒）", "description": "ログインと登録試行を数える時間枠です。" },

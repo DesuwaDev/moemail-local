@@ -173,6 +173,12 @@ const baseConfigSchema = z.object({
       emperorBootstrapSecret: nullableSecret,
       github: oauthProvider,
       google: oauthProvider,
+      passkeys: z
+        .object({
+          enabled: boolean(true),
+        })
+        .strict()
+        .default({}),
       rateLimit: z
         .object({
           windowSeconds: integer(300, 10, 3_600),

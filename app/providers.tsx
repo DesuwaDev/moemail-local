@@ -49,6 +49,7 @@ export function Providers({
               && previous.emailPollIntervalMs === body.config?.emailPollIntervalMs
               && previous.oauth.github === body.config?.oauth.github
               && previous.oauth.google === body.config?.oauth.google
+              && previous.passkeys === body.config?.passkeys
                 ? previous
                 : body.config as PublicRuntimeConfig
             ))

@@ -266,14 +266,16 @@ function validateCompleteConfig(value) {
     postgresTarget(config)
   }
 
-  const auth = requireExactObject(config.auth, [
-    "secret", "passwordPepper", "emperorBootstrapSecret", "github", "google", "rateLimit",
+  // The additive passkey switch must not invalidate existing backup/config pairs.
+  const auth = requireExactObject({ passkeys: { enabled: true }, ...config.auth }, [
+    "secret", "passwordPepper", "emperorBootstrapSecret", "github", "google", "passkeys", "rateLimit",
   ])
   requireSecret(auth.secret)
   requireSecret(auth.passwordPepper)
   requireSecret(auth.emperorBootstrapSecret, true)
   requireOauth(auth.github)
   requireOauth(auth.google)
+  requireBoolean(requireExactObject(auth.passkeys, ["enabled"]).enabled)
   const rateLimit = requireExactObject(auth.rateLimit, [
     "windowSeconds", "loginPerClient", "loginGlobal", "registerPerClient",
     "registerGlobal", "maxClients", "scryptMaxConcurrency",

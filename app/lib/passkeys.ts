@@ -53,7 +53,12 @@ export function relyingPartyForBaseUrl(baseUrl: string) {
 
 export const passkeyRelyingParty = () => relyingPartyForBaseUrl(getConfig().server.baseUrl)
 
+/** Administrators can pause passkeys; stored credentials are kept for re-enabling. */
+export const passkeysEnabled = () => getConfig().auth.passkeys.enabled
+
+/** Every ceremony (sign-in, registration, step-up) passes through here. */
 function requireRelyingParty() {
+  if (!passkeysEnabled()) throw new PasskeyError("PASSKEY_DISABLED", 403)
   const rp = passkeyRelyingParty()
   if (!rp) throw new PasskeyError("PASSKEY_UNAVAILABLE", 409)
   return rp
@@ -321,7 +326,7 @@ export async function reauthenticationState(userId: string, sessionId: string | 
     fresh: until > Date.now(),
     until: until > Date.now() ? new Date(until) : null,
     password: Boolean(user?.password),
-    passkey: total > 0,
+    passkey: passkeysEnabled() && total > 0,
   }
 }
 

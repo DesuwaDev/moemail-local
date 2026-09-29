@@ -636,6 +636,7 @@ export function getPublicRuntimeConfig(): PublicRuntimeConfig {
       github: Boolean(config.auth.github.clientId && config.auth.github.clientSecret),
       google: Boolean(config.auth.google.clientId && config.auth.google.clientSecret),
     },
+    passkeys: config.auth.passkeys.enabled,
   }
 }
 

@@ -364,6 +364,7 @@ try {
   const legacyConfig = structuredClone(completeConfig)
   Reflect.deleteProperty(legacyConfig.server, "clientIpHeader")
   Reflect.deleteProperty(legacyConfig.server, "clientIpTrustedHops")
+  Reflect.deleteProperty(legacyConfig.auth, "passkeys")
   const legacyPath = join(configReaderFixtureRoot, "legacy.yaml")
   writeFileSync(legacyPath, stringify(legacyConfig, { lineWidth: 0 }), "utf8")
   assert.equal(execFileSync(process.execPath, [
@@ -381,6 +382,15 @@ try {
   assert.throws(() => execFileSync(process.execPath, [
     "deploy/docker/config-reader.mjs", "--file", invalidPath, "validate-complete",
   ], { stdio: "pipe" }))
+
+  const invalidPasskeysPath = join(configReaderFixtureRoot, "invalid-passkeys.yaml")
+  writeFileSync(invalidPasskeysPath, stringify({
+    ...completeConfig,
+    auth: { ...completeConfig.auth, passkeys: { enabled: "yes" } },
+  }, { lineWidth: 0 }), "utf8")
+  assert.throws(() => execFileSync(process.execPath, [
+    "deploy/docker/config-reader.mjs", "--file", invalidPasskeysPath, "validate-complete",
+  ], { stdio: "pipe" }), "the passkey switch must be a boolean")
 } finally {
   rmSync(configReaderFixtureRoot, { recursive: true, force: true })
 }

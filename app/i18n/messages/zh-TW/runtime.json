@@ -41,6 +41,33 @@
     "restart": "設定已儲存；{reason}",
     "driverRestart": "資料庫驅動程式變更需要重新啟動"
   },
+  "layout": {
+    "groupLabel": "設定分組",
+    "search": "搜尋設定項目",
+    "clearSearch": "清除搜尋",
+    "searchResults": "找到 {count} 項",
+    "noResults": "沒有符合的設定項目",
+    "fieldCount": "{count} 項",
+    "general": "一般",
+    "inactive": "目前驅動未使用",
+    "dirtyGroup": "有未儲存的修改",
+    "issueGroup": "有需要處理的問題",
+    "unsaved": "{count} 項修改尚未儲存",
+    "unsavedYaml": "YAML 有未儲存的修改",
+    "saved": "沒有未儲存的修改"
+  },
+  "sections": {
+    "database": {
+      "sqlite": "SQLite 資料庫",
+      "postgres": "PostgreSQL 資料庫"
+    },
+    "auth": {
+      "github": "GitHub 登入",
+      "google": "Google 登入",
+      "passkeys": "通行金鑰",
+      "rateLimit": "登入與註冊限流"
+    }
+  },
   "groups": {
     "root": "格式版本",
     "setup": "初始化狀態",
@@ -125,6 +152,9 @@
       "google": {
         "clientId": { "label": "Google 用戶端 ID", "description": "必須與用戶端密鑰同時設定。" },
         "clientSecret": { "label": "Google 用戶端密鑰", "description": "OAuth 用戶端憑據。" }
+      },
+      "passkeys": {
+        "enabled": { "label": "啟用通行金鑰", "description": "允許使用者新增通行金鑰並用它登入。關閉後登入頁不再顯示通行金鑰入口，也無法新增；已新增的通行金鑰保留，使用者仍可重新命名或刪除，已登入的工作階段不受影響。需要網站位址為 HTTPS 網域。" }
       },
       "rateLimit": {
         "windowSeconds": { "label": "限流視窗（秒）", "description": "登入與註冊嘗試的計數視窗。" },

@@ -41,6 +41,33 @@
     "restart": "Configuration saved; {reason}",
     "driverRestart": "a database driver change requires a restart"
   },
+  "layout": {
+    "groupLabel": "Settings group",
+    "search": "Search settings",
+    "clearSearch": "Clear search",
+    "searchResults": "{count, plural, one {# matching setting} other {# matching settings}}",
+    "noResults": "No settings match",
+    "fieldCount": "{count, plural, one {# setting} other {# settings}}",
+    "general": "General",
+    "inactive": "Not used by the current driver",
+    "dirtyGroup": "Has unsaved changes",
+    "issueGroup": "Needs attention",
+    "unsaved": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
+    "unsavedYaml": "Unsaved YAML changes",
+    "saved": "No unsaved changes"
+  },
+  "sections": {
+    "database": {
+      "sqlite": "SQLite database",
+      "postgres": "PostgreSQL database"
+    },
+    "auth": {
+      "github": "GitHub sign-in",
+      "google": "Google sign-in",
+      "passkeys": "Passkeys",
+      "rateLimit": "Sign-in and registration limits"
+    }
+  },
   "groups": {
     "root": "Format version",
     "setup": "Setup state",
@@ -125,6 +152,9 @@
       "google": {
         "clientId": { "label": "Google Client ID", "description": "Configure together with the client secret." },
         "clientSecret": { "label": "Google Client Secret", "description": "OAuth client credential." }
+      },
+      "passkeys": {
+        "enabled": { "label": "Enable passkeys", "description": "Lets users add passkeys and sign in with them. When off, the sign-in page hides passkeys and new ones cannot be added; saved passkeys are kept, users can still rename or remove them, and existing sessions stay signed in. Requires an HTTPS domain site address." }
       },
       "rateLimit": {
         "windowSeconds": { "label": "Rate-limit window (seconds)", "description": "Counting window for sign-in and registration attempts." },

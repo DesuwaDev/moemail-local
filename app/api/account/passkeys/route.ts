@@ -6,6 +6,7 @@ import {
   listPasskeys,
   passkeyRelyingParty,
   passkeyUserHandle,
+  passkeysEnabled,
   reauthenticationState,
   verifyRegistration,
 } from "@/lib/passkeys"
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
   try {
     const [items, reauth] = await Promise.all([listPasskeys(auth.userId), reauthenticationState(auth.userId, auth.sessionId)])
     const rp = passkeyRelyingParty()
-    return adminJson({ items, limit: PASSKEY_LIMIT, rpId: rp?.rpId ?? null, userHandle: passkeyUserHandle(auth.userId), reauth })
+    return adminJson({ items, limit: PASSKEY_LIMIT, enabled: passkeysEnabled(), rpId: rp?.rpId ?? null, userHandle: passkeyUserHandle(auth.userId), reauth })
   } catch (error) {
     return passkeyFailure(error, "PASSKEYS_READ_FAILED")
   }

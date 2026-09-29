@@ -190,5 +190,6 @@
   "PASSKEY_DELETE_FAILED": "Could not remove the passkey. Please try again.",
   "REAUTH_REQUIRED": "For your security, confirm it's you before changing passkeys.",
   "REAUTH_FAILED": "Verification failed. Check your password and try again.",
-  "REAUTH_METHOD_UNAVAILABLE": "This verification method is not set up for your account."
+  "REAUTH_METHOD_UNAVAILABLE": "This verification method is not set up for your account.",
+  "PASSKEY_DISABLED": "Passkeys are turned off on this site. Sign in another way."
 }

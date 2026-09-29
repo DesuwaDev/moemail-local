@@ -46,6 +46,7 @@ export interface PasskeyItem {
 interface OwnPasskeys {
   items: PasskeyItem[]
   limit: number
+  enabled: boolean
   rpId: string | null
   userHandle: string
   reauth: { fresh: boolean; until: string | null; password: boolean; passkey: boolean }
@@ -108,7 +109,9 @@ export function PasskeyManager() {
   const [password, setPassword] = useState("")
 
   const items = data?.items ?? []
-  const ready = support === "ready" && Boolean(data?.rpId)
+  // The server's answer wins over the polled public config, which may lag briefly.
+  const disabled = support === "disabled" || data?.enabled === false
+  const ready = support === "ready" && !disabled && Boolean(data?.rpId)
   const limitReached = Boolean(data && items.length >= data.limit)
   const refresh = () => setRevision(value => value + 1)
   const clearMessages = () => { setFailure(""); setNotice(null) }
@@ -227,7 +230,8 @@ export function PasskeyManager() {
     }
   }
 
-  const unavailable = support === "browser" || support === "insecure" || support === "origin"
+  const unavailable = disabled ? t("unavailable.disabled")
+    : support === "browser" || support === "insecure" || support === "origin"
     ? t(`unavailable.${support}`, { origin: siteOrigin })
     : data && !data.rpId ? t("unavailable.server") : ""
   const canVerifyWithPasskey = Boolean(data?.reauth.passkey && ready)
@@ -239,16 +243,16 @@ export function PasskeyManager() {
     <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="text-sm font-medium">{data ? t("count", { count: items.length, limit: data.limit }) : " "}</p>
       <div className="flex items-center gap-1.5">
-        <Button size="sm" className="gap-1.5" disabled={!ready || !data || limitReached || busy !== null} onClick={add}>
+        {!disabled && <Button size="sm" className="gap-1.5" disabled={!ready || !data || limitReached || busy !== null} onClick={add}>
           {busy === "add" ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}{t("addButton")}
-        </Button>
+        </Button>}
         <Button size="icon" variant="ghost" className="size-8" aria-label={t("refresh")} disabled={loading || busy !== null} onClick={refresh}>
           <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
       </div>
     </div>
     {busy === "add" && <p role="status" className="text-xs text-muted-foreground">{t("adding")}</p>}
-    {limitReached && <p className="text-xs text-muted-foreground">{t("limitReached", { limit: data?.limit ?? 0 })}</p>}
+    {limitReached && !disabled && <p className="text-xs text-muted-foreground">{t("limitReached", { limit: data?.limit ?? 0 })}</p>}
 
     {pending && (pending.kind === "add" && pending.verified
       ? <section className="rounded-md border border-primary/30 bg-primary/5 p-3">
@@ -284,7 +288,7 @@ export function PasskeyManager() {
         ? <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
           <Fingerprint aria-hidden="true" className="size-8 text-primary/60" />
           <p className="text-sm font-medium">{t("emptyTitle")}</p>
-          <p className="max-w-md text-xs leading-relaxed text-muted-foreground">{t("emptyHelp")}</p>
+          {!disabled && <p className="max-w-md text-xs leading-relaxed text-muted-foreground">{t("emptyHelp")}</p>}
         </div>
         : <ul className="divide-y">{items.map(item => {
           const editingThis = editing?.id === item.id

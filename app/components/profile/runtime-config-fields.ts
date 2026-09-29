@@ -43,6 +43,7 @@ export const runtimeConfigFields: Record<string, RuntimeFieldMetadata> = {
   "auth.github.clientSecret": { kind: "secret" },
   "auth.google.clientId": {},
   "auth.google.clientSecret": { kind: "secret" },
+  "auth.passkeys.enabled": { kind: "boolean" },
   "auth.rateLimit.windowSeconds": { kind: "number" },
   "auth.rateLimit.loginPerClient": { kind: "number" },
   "auth.rateLimit.loginGlobal": { kind: "number" },

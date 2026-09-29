@@ -190,5 +190,6 @@
   "PASSKEY_DELETE_FAILED": "删除通行密钥失败，请重试。",
   "REAUTH_REQUIRED": "为保护账户安全，修改通行密钥前请先验证身份。",
   "REAUTH_FAILED": "身份验证失败，请检查密码后重试。",
-  "REAUTH_METHOD_UNAVAILABLE": "你的账户未设置此验证方式。"
+  "REAUTH_METHOD_UNAVAILABLE": "你的账户未设置此验证方式。",
+  "PASSKEY_DISABLED": "本站已关闭通行密钥，请改用其他方式。"
 }

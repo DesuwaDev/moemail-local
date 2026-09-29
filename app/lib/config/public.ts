@@ -9,10 +9,13 @@ export interface PublicRuntimeConfig {
     github: boolean
     google: boolean
   }
+  /** Passkey sign-in and registration are enabled by the site administrator. */
+  passkeys: boolean
 }
 
 export const DEFAULT_PUBLIC_RUNTIME_CONFIG: PublicRuntimeConfig = {
   baseUrl: "http://localhost:3000",
   emailPollIntervalMs: 25_000,
   oauth: { github: false, google: false },
+  passkeys: false,
 }
