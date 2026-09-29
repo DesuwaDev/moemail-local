@@ -124,6 +124,7 @@ jobs:
           pnpm validate:password
           pnpm validate:auth-abuse
           pnpm validate:registration-login
+          pnpm validate:passkeys
           pnpm validate:runtime-config
           pnpm validate:runtime-config:cold
           pnpm validate:setup

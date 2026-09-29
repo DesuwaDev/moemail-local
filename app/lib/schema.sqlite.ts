@@ -32,10 +32,35 @@ export const loginSessions = sqliteTable("login_session", {
   activeSeconds: integer("active_seconds").notNull().default(0),
   expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
   revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+  verifiedAt: integer("verified_at", { mode: "timestamp_ms" }),
 }, table => [
   index("login_session_user_seen_idx").on(table.userId, table.lastSeenAt),
   index("login_session_expires_idx").on(table.expiresAt),
 ])
+
+export const passkeys = sqliteTable("passkey", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  credentialId: text("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  counter: integer("counter").notNull().default(0),
+  transports: text("transports"),
+  deviceType: text("device_type").notNull(),
+  backedUp: integer("backed_up", { mode: "boolean" }).notNull().default(false),
+  aaguid: text("aaguid"),
+  name: text("name").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
+}, table => [index("passkey_user_idx").on(table.userId, table.createdAt)])
+
+export const passkeyChallenges = sqliteTable("passkey_challenge", {
+  id: text("id").primaryKey(),
+  purpose: text("purpose", { enum: ["authenticate", "register", "verify"] }).notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id"),
+  challenge: text("challenge").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+}, table => [index("passkey_challenge_expires_idx").on(table.expiresAt)])
 
 export const accounts = sqliteTable(
   "account",

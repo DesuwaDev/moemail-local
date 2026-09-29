@@ -44,6 +44,15 @@ class CaptchaFailedError extends CredentialsSignin {
   code = "CAPTCHA_FAILED"
 }
 
+// Passkey failures carry their registered API code, e.g. PASSKEY_NOT_RECOGNIZED,
+// so the browser can explain the problem and hide a passkey the site removed.
+class PasskeySigninError extends CredentialsSignin {
+  constructor(code: string) {
+    super()
+    this.code = code
+  }
+}
+
 const getDefaultRole = async (): Promise<Role> => {
   const defaultRole = await getConfigValue(CONFIG_KEYS.DEFAULT_ROLE)
 
@@ -298,6 +307,42 @@ export const {
             console.error("auth.password_hash_upgrade_failed", error)
           }
         }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          image: user.image,
+          username: user.username,
+        }
+      },
+    }),
+    CredentialsProvider({
+      id: "passkey",
+      name: "PASSKEY",
+      credentials: {
+        challengeId: { label: "CHALLENGE_ID", type: "hidden" },
+        response: { label: "RESPONSE", type: "hidden" },
+      },
+      // User verification by the authenticator replaces password and captcha:
+      // the assertion is origin-bound, single use and needs a local gesture.
+      async authorize(credentials) {
+        const { challengeId, response } = (credentials ?? {}) as Record<string, unknown>
+        const { PasskeyError, verifyPasskeyAssertion } = await import("./passkeys")
+        let verified
+        try {
+          verified = await verifyPasskeyAssertion(challengeId, response)
+        } catch (error) {
+          if (error instanceof PasskeyError) throw new PasskeySigninError(error.code)
+          throw error
+        }
+
+        const user = await createDb().query.users.findFirst({
+          where: eq(users.id, verified.userId),
+        })
+        if (!user) throw new PasskeySigninError("PASSKEY_NOT_RECOGNIZED")
+        if (user.bannedAt) throw new UserBannedCredentialsError()
 
         return {
           id: user.id,

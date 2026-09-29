@@ -176,5 +176,19 @@
   "MAILBOX_SHARE_DISABLED": "이 메일함의 공유가 중지되었습니다",
   "ADMIN_OPERATION_FAILED": "관리 작업에 실패했습니다. 새로 고침 후 다시 시도하세요。",
   "SESSION_NOT_FOUND": "세션이 없거나 이미 로그아웃되었습니다",
-  "SESSIONS_READ_FAILED": "세션을 불러오지 못했습니다. 다시 시도하세요"
+  "SESSIONS_READ_FAILED": "세션을 불러오지 못했습니다. 다시 시도하세요",
+  "PASSKEY_UNAVAILABLE": "패스키를 사용하려면 사이트가 HTTPS 도메인으로 제공되어야 합니다. 관리자에게 사이트 주소를 확인해 달라고 요청하세요.",
+  "PASSKEY_LIMIT_REACHED": "이 계정의 패스키가 최대 개수에 도달했습니다. 하나를 삭제한 후 추가하세요.",
+  "PASSKEY_CHALLENGE_EXPIRED": "패스키 요청이 만료되었거나 이미 사용되었습니다. 다시 시도하세요.",
+  "PASSKEY_VERIFICATION_FAILED": "패스키를 확인하지 못했습니다. 다시 시도하세요.",
+  "PASSKEY_NOT_RECOGNIZED": "이 사이트에 등록되지 않은 패스키입니다. 삭제되었을 수 있으니 다른 방법으로 로그인하세요.",
+  "PASSKEY_ALREADY_REGISTERED": "이 기기 또는 비밀번호 관리자에 이 계정의 패스키가 이미 저장되어 있습니다.",
+  "PASSKEY_NOT_FOUND": "패스키가 없거나 이미 삭제되었습니다",
+  "PASSKEY_NAME_INVALID": "1~64자의 이름을 입력하세요.",
+  "PASSKEYS_READ_FAILED": "패스키를 불러오지 못했습니다. 다시 시도하세요.",
+  "PASSKEY_SAVE_FAILED": "패스키를 저장하지 못했습니다. 다시 시도하세요.",
+  "PASSKEY_DELETE_FAILED": "패스키를 삭제하지 못했습니다. 다시 시도하세요.",
+  "REAUTH_REQUIRED": "보안을 위해 패스키를 변경하기 전에 본인 확인을 하세요.",
+  "REAUTH_FAILED": "본인 확인에 실패했습니다. 비밀번호를 확인하고 다시 시도하세요.",
+  "REAUTH_METHOD_UNAVAILABLE": "계정에 이 확인 방법이 설정되어 있지 않습니다."
 }

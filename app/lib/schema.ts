@@ -32,3 +32,5 @@ export const mailboxNameBlocksRelations = activeSchema.mailboxNameBlocksRelation
 export const adminAuditLogs = activeSchema.adminAuditLogs
 
 export const loginSessions = activeSchema.loginSessions
+export const passkeys = activeSchema.passkeys
+export const passkeyChallenges = activeSchema.passkeyChallenges

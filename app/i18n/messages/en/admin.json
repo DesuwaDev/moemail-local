@@ -556,7 +556,7 @@
       "access": "Access",
       "resources": "Resources",
       "audit": "History",
-      "sessions": "Sessions"
+      "sessions": "Sign-in"
     },
     "totalMessages": "Total messages",
     "countsHelp": "Counts reflect messages currently stored, including expired and disabled mailboxes. Deletions reduce these counts, independently of historical quota usage.",
@@ -589,7 +589,9 @@
       "user_apiKeys": "Disabled API keys",
       "user_webhooks": "Disabled webhooks",
       "user_shares": "Revoked shares",
-      "session_revoke": "Sign out sessions"
+      "session_revoke": "Sign out sessions",
+      "passkey_create": "Add passkey",
+      "passkey_delete": "Remove passkey"
     },
     "permanent": "Never expires"
   }

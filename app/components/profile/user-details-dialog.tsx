@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ROLES, type Role } from "@/lib/permissions"
 import { SessionManager } from "./session-manager"
+import { AdminPasskeys } from "./passkey-manager"
 import { ManagedMailboxes } from "./managed-mailboxes"
 import { AccessEditor } from "./access-editor"
 import { AdminConfirm, AdminError, AdminPager, adminRequest, adminFailureCode, useAdminData } from "./admin-controls"
@@ -57,7 +58,7 @@ function UserDetails({ user, canAdmin, onChange }: { user: ManagedUser; canAdmin
         </TabsContent>
         <TabsContent value="mailboxes" className="m-0">{canAdmin && <ManagedMailboxes userId={user.id} onChange={changed} />}</TabsContent>
         <TabsContent value="access" className="m-0">{canAdmin ? <AccessEditor userId={user.id} role={(details.user.roles[0] || ROLES.CIVILIAN) as Role} onSaved={changed} /> : <div className="grid gap-2 sm:grid-cols-2">{Object.entries(details.access.permissions).map(([permission, enabled]) => <p key={permission} className="text-sm">{t(`permissions.${permission}` as never)} · {enabled ? "✓" : "—"}</p>)}</div>}</TabsContent>
-        <TabsContent value="sessions" className="m-0">{canAdmin && <SessionManager userId={user.id} />}</TabsContent>
+        <TabsContent value="sessions" className="m-0">{canAdmin && <div className="space-y-4"><AdminPasskeys userId={user.id} /><SessionManager userId={user.id} /></div>}</TabsContent>
         <TabsContent value="resources" className="m-0"><UserResources details={details} canManage={canAdmin && !details.user.roles.includes(ROLES.EMPEROR)} onChange={changed} /></TabsContent>
         <TabsContent value="audit" className="m-0">{canAdmin && <UserAudit userId={user.id} />}</TabsContent>
       </>}

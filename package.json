@@ -1,6 +1,6 @@
 {
   "name": "moemail",
-  "version": "0.21.13",
+  "version": "0.22.0",
   "private": true,
   "packageManager": "pnpm@11.21.0",
   "scripts": {
@@ -71,7 +71,8 @@
     "validate:captcha": "tsx scripts/validation/captcha-cap.ts",
     "validate:message-content": "tsx scripts/validation/message-content.ts",
     "validate:credential-security": "tsx scripts/validation/credential-security.ts",
-    "validate:admin-management": "tsx scripts/validation/admin-management.ts"
+    "validate:admin-management": "tsx scripts/validation/admin-management.ts",
+    "validate:passkeys": "tsx scripts/validation/passkeys.ts"
   },
   "type": "module",
   "dependencies": {
@@ -88,6 +89,8 @@
     "@radix-ui/react-tabs": "^1.1.21",
     "@radix-ui/react-toast": "^1.2.23",
     "@radix-ui/react-tooltip": "^1.2.16",
+    "@simplewebauthn/browser": "14.0.0",
+    "@simplewebauthn/server": "14.0.3",
     "better-sqlite3": "12.11.1",
     "cap-widget": "0.1.57",
     "class-variance-authority": "^0.7.0",

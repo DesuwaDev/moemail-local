@@ -176,5 +176,19 @@
   "MAILBOX_SHARE_DISABLED": "このメールボックスの共有は停止されています",
   "ADMIN_OPERATION_FAILED": "管理操作に失敗しました。更新して再試行してください。",
   "SESSION_NOT_FOUND": "セッションが見つからないか、ログアウト済みです",
-  "SESSIONS_READ_FAILED": "セッションを取得できません。もう一度お試しください"
+  "SESSIONS_READ_FAILED": "セッションを取得できません。もう一度お試しください",
+  "PASSKEY_UNAVAILABLE": "パスキーを使うにはサイトを HTTPS のドメイン名で公開する必要があります。管理者にサイトのアドレスを確認してもらってください。",
+  "PASSKEY_LIMIT_REACHED": "このアカウントのパスキーは上限に達しています。追加する前にいずれかを削除してください。",
+  "PASSKEY_CHALLENGE_EXPIRED": "パスキーのリクエストが期限切れか、すでに使用されています。もう一度お試しください。",
+  "PASSKEY_VERIFICATION_FAILED": "パスキーを検証できませんでした。もう一度お試しください。",
+  "PASSKEY_NOT_RECOGNIZED": "このパスキーはこのサイトに登録されていません。削除された可能性があるため、別の方法でログインしてください。",
+  "PASSKEY_ALREADY_REGISTERED": "このデバイスまたはパスワードマネージャーには、このアカウントのパスキーがすでに保存されています。",
+  "PASSKEY_NOT_FOUND": "パスキーが見つからないか、すでに削除されています",
+  "PASSKEY_NAME_INVALID": "1〜64 文字の名前を入力してください。",
+  "PASSKEYS_READ_FAILED": "パスキーを読み込めませんでした。もう一度お試しください。",
+  "PASSKEY_SAVE_FAILED": "パスキーを保存できませんでした。もう一度お試しください。",
+  "PASSKEY_DELETE_FAILED": "パスキーを削除できませんでした。もう一度お試しください。",
+  "REAUTH_REQUIRED": "安全のため、パスキーを変更する前に本人確認を行ってください。",
+  "REAUTH_FAILED": "本人確認に失敗しました。パスワードを確認してもう一度お試しください。",
+  "REAUTH_METHOD_UNAVAILABLE": "この確認方法はアカウントに設定されていません。"
 }

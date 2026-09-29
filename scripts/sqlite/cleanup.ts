@@ -67,6 +67,7 @@ try {
     deletedMessages: 0,
     deletedEmails: 0,
     deletedSessions: 0,
+    deletedPasskeyChallenges: 0,
   }
   type DeletedCounter = keyof typeof deletedRows
   let batches = 0
@@ -227,6 +228,9 @@ try {
   drainPhase("deletedSessions", limit => sqlite.prepare(
     'DELETE FROM login_session WHERE id IN (SELECT id FROM login_session WHERE expires_at < ? ORDER BY expires_at, id LIMIT ?)'
   ).run(now - 86400000, limit).changes)
+  drainPhase("deletedPasskeyChallenges", limit => sqlite.prepare(
+    'DELETE FROM passkey_challenge WHERE id IN (SELECT id FROM passkey_challenge WHERE expires_at < ? ORDER BY expires_at, id LIMIT ?)'
+  ).run(now, limit).changes)
 
   const deleted = totalDeleted()
 

@@ -32,6 +32,7 @@ try {
       deletedMessages: 0,
       deletedEmails: 0,
       deletedSessions: 0,
+      deletedPasskeyChallenges: 0,
     }
     type DeletedCounter = keyof typeof deletedRows
     let batches = 0
@@ -220,6 +221,13 @@ try {
       const result = await client.query(
         'DELETE FROM login_session WHERE id IN (SELECT id FROM login_session WHERE expires_at < $1 ORDER BY expires_at, id LIMIT $2)',
         [new Date(now.getTime() - 86400000), limit],
+      )
+      return result.rowCount ?? 0
+    })
+    await drainPhase("deletedPasskeyChallenges", async limit => {
+      const result = await client.query(
+        'DELETE FROM passkey_challenge WHERE id IN (SELECT id FROM passkey_challenge WHERE expires_at < $1 ORDER BY expires_at, id LIMIT $2)',
+        [now, limit],
       )
       return result.rowCount ?? 0
     })

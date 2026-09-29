@@ -17,7 +17,7 @@ interface LoginSession {
 }
 interface SessionPage { items: LoginSession[]; page: number; pages: number; total: number }
 
-function deviceParts(ua: string) {
+export function deviceParts(ua: string) {
   const browser = /Edg\//.test(ua) ? "Edge" : /(?:Firefox|FxiOS)\//.test(ua) ? "Firefox" : /(?:Chrome|CriOS)\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : ""
   const system = /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iOS" : /Windows/.test(ua) ? "Windows" : /Macintosh/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : ""
   return [browser, system].filter(Boolean)
@@ -78,7 +78,7 @@ export function SessionManager({ userId }: { userId?: string }) {
             <AdminConfirm label={t("signOut")} description={item.current ? t("currentConfirm") : t("singleConfirm", { device: deviceName(item.userAgent) || t("unknownDevice"), ip: item.lastIp || t("unknownIp") })} disabled={busy} onConfirm={() => void revoke(`/${encodeURIComponent(item.id)}`)} />
           </div>
           {open && <dl id={`session-${item.id}`} className="col-span-full mt-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 border-t pt-3 text-xs">
-            {[[t("firstLogin"), item.loginAt ? date(item.loginAt) : t("legacyLogin")], [t("recorded"), date(item.createdAt)], [t("lastSeen"), date(item.lastSeenAt)], [t("activeTime"), duration(item.activeSeconds)], [t(item.loginAt ? "firstIp" : "firstObservedIp"), ipLabel(item.firstIp)], [t("lastIp"), ipLabel(item.lastIp)], [t("provider"), item.provider === "credentials" ? t("password") : item.provider === "legacy" ? t("legacy") : item.provider]].map(([label, value]) => <div key={label} className="contents"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0 break-words [overflow-wrap:anywhere]">{value}</dd></div>)}
+            {[[t("firstLogin"), item.loginAt ? date(item.loginAt) : t("legacyLogin")], [t("recorded"), date(item.createdAt)], [t("lastSeen"), date(item.lastSeenAt)], [t("activeTime"), duration(item.activeSeconds)], [t(item.loginAt ? "firstIp" : "firstObservedIp"), ipLabel(item.firstIp)], [t("lastIp"), ipLabel(item.lastIp)], [t("provider"), item.provider === "credentials" ? t("password") : item.provider === "passkey" ? t("passkey") : item.provider === "legacy" ? t("legacy") : item.provider]].map(([label, value]) => <div key={label} className="contents"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0 break-words [overflow-wrap:anywhere]">{value}</dd></div>)}
             <SessionLocationDetails location={location(item.lastIp)} title={t("lastIp")} />
             {item.firstIp !== item.lastIp && <SessionLocationDetails location={location(item.firstIp)} title={t(item.loginAt ? "firstIp" : "firstObservedIp")} />}
             <dt className="col-span-2 text-muted-foreground">{t("userAgent")}</dt><dd className="col-span-2 min-w-0 break-all rounded bg-muted/40 p-2 font-mono leading-relaxed">{item.userAgent || t("unknownDevice")}</dd>

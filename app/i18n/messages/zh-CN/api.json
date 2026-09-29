@@ -176,5 +176,19 @@
   "MAILBOX_SHARE_DISABLED": "该邮箱已暂停分享",
   "ADMIN_OPERATION_FAILED": "管理操作失败，请刷新后重试。",
   "SESSION_NOT_FOUND": "会话不存在或已退出",
-  "SESSIONS_READ_FAILED": "无法读取会话信息，请重试"
+  "SESSIONS_READ_FAILED": "无法读取会话信息，请重试",
+  "PASSKEY_UNAVAILABLE": "通行密钥需要站点通过 HTTPS 域名访问，请联系管理员检查站点地址。",
+  "PASSKEY_LIMIT_REACHED": "此账户的通行密钥已达上限，请先删除一个再添加。",
+  "PASSKEY_CHALLENGE_EXPIRED": "通行密钥请求已过期或已使用，请重试。",
+  "PASSKEY_VERIFICATION_FAILED": "通行密钥验证失败，请重试。",
+  "PASSKEY_NOT_RECOGNIZED": "本站未登记此通行密钥，可能已被删除，请改用其他方式登录。",
+  "PASSKEY_ALREADY_REGISTERED": "此设备或密码管理器已保存本账户的通行密钥。",
+  "PASSKEY_NOT_FOUND": "通行密钥不存在或已删除",
+  "PASSKEY_NAME_INVALID": "请输入 1 到 64 个字符的名称。",
+  "PASSKEYS_READ_FAILED": "无法读取通行密钥，请重试。",
+  "PASSKEY_SAVE_FAILED": "保存通行密钥失败，请重试。",
+  "PASSKEY_DELETE_FAILED": "删除通行密钥失败，请重试。",
+  "REAUTH_REQUIRED": "为保护账户安全，修改通行密钥前请先验证身份。",
+  "REAUTH_FAILED": "身份验证失败，请检查密码后重试。",
+  "REAUTH_METHOD_UNAVAILABLE": "你的账户未设置此验证方式。"
 }

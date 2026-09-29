@@ -11,9 +11,14 @@ allowBuilds:
 # Auth.js beta still declares Nodemailer <=8, but that line is affected by
 # GHSA-p6gq-j5cr-w38f. Keep the audited 9.x release; our SMTP integration uses
 # the stable createTransport/verify/sendMail surface and has a real TCP test.
+# Auth.js declares SimpleWebAuthn 9 only for its experimental Passkey provider,
+# which MoeMail does not load. Passkeys are verified by our own routes with the
+# current SimpleWebAuthn release.
 peerDependencyRules:
   allowedVersions:
     nodemailer: 9.1.1
+    '@simplewebauthn/browser': 14.0.0
+    '@simplewebauthn/server': 14.0.3
 
 overrides:
   'sharp@^0.34.3': 0.35.4

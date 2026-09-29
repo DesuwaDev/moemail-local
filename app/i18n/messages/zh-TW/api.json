@@ -176,5 +176,19 @@
   "MAILBOX_SHARE_DISABLED": "此信箱已暫停分享",
   "ADMIN_OPERATION_FAILED": "管理操作失敗，請重新整理後重試。",
   "SESSION_NOT_FOUND": "工作階段不存在或已登出",
-  "SESSIONS_READ_FAILED": "無法讀取工作階段，請重試"
+  "SESSIONS_READ_FAILED": "無法讀取工作階段，請重試",
+  "PASSKEY_UNAVAILABLE": "通行金鑰需要網站透過 HTTPS 網域存取，請聯絡管理員檢查網站位址。",
+  "PASSKEY_LIMIT_REACHED": "此帳戶的通行金鑰已達上限，請先刪除一個再新增。",
+  "PASSKEY_CHALLENGE_EXPIRED": "通行金鑰請求已過期或已使用，請重試。",
+  "PASSKEY_VERIFICATION_FAILED": "通行金鑰驗證失敗，請重試。",
+  "PASSKEY_NOT_RECOGNIZED": "本站未登記此通行金鑰，可能已被刪除，請改用其他方式登入。",
+  "PASSKEY_ALREADY_REGISTERED": "此裝置或密碼管理器已儲存本帳戶的通行金鑰。",
+  "PASSKEY_NOT_FOUND": "通行金鑰不存在或已刪除",
+  "PASSKEY_NAME_INVALID": "請輸入 1 到 64 個字元的名稱。",
+  "PASSKEYS_READ_FAILED": "無法讀取通行金鑰，請重試。",
+  "PASSKEY_SAVE_FAILED": "儲存通行金鑰失敗，請重試。",
+  "PASSKEY_DELETE_FAILED": "刪除通行金鑰失敗，請重試。",
+  "REAUTH_REQUIRED": "為保護帳戶安全，修改通行金鑰前請先驗證身分。",
+  "REAUTH_FAILED": "身分驗證失敗，請檢查密碼後重試。",
+  "REAUTH_METHOD_UNAVAILABLE": "你的帳戶未設定此驗證方式。"
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, type FormEvent } from "react"
 import { signIn } from "next-auth/react"
+import { startAuthentication, type PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser"
 import { useTranslations } from "next-intl"
 import { useToast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -19,12 +20,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Github, Loader2, KeyRound, User2 } from "lucide-react"
+import { Fingerprint, Github, Loader2, KeyRound, User2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Captcha, type CaptchaHandle } from "@/components/auth/captcha"
 import type { CaptchaClientConfig, CaptchaScope } from "@/lib/captcha/providers"
 import { useRuntimeConfig } from "@/providers"
 import { readApiErrorCode } from "@/lib/api-error-client"
+import { classifyPasskeyError, signalUnknownPasskey, usePasskeySupport } from "@/components/auth/passkey-client"
 
 interface LoginFormProps {
   captcha: CaptchaClientConfig
@@ -41,13 +43,19 @@ export function LoginForm({ captcha }: LoginFormProps) {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [activeTab, setActiveTab] = useState<CaptchaScope>("login")
   const captchaRef = useRef<CaptchaHandle | null>(null)
   const { toast } = useToast()
   const t = useTranslations("auth.loginForm")
   const tApi = useTranslations("api")
+  const tPasskey = useTranslations("auth.passkey")
   const { oauth } = useRuntimeConfig()
+  const { support: passkeySupport } = usePasskeySupport()
+  // Shown optimistically until the browser check finishes; the handlers only
+  // exist after hydration, when support is already known.
+  const passkeyVisible = activeTab === "login" && (passkeySupport === "ready" || passkeySupport === "checking")
 
   const captchaRequired = captcha.enabled && captcha.scopes[activeTab]
 
@@ -228,6 +236,46 @@ export function LoginForm({ captcha }: LoginFormProps) {
     }
   }
 
+  // Username-less sign-in: the browser lists this site's passkeys, and the
+  // authenticator checks a fingerprint, face or device PIN before signing.
+  const handlePasskeyLogin = async () => {
+    setLoading(true)
+    setPasskeyLoading(true)
+    const showFailure = (code: string) => toast({
+      title: t("toast.passkeyFailed"),
+      description: tApi.has(code as never) ? tApi(code as never) : tPasskey("failures.failed"),
+      variant: "destructive",
+    })
+    try {
+      const response = await fetch("/api/auth/passkey/options", { method: "POST", cache: "no-store" })
+      if (!response.ok) {
+        showFailure(await readApiErrorCode(response, "PASSKEY_VERIFICATION_FAILED"))
+      } else {
+        const { challengeId, options } = await response.json() as { challengeId: string; options: PublicKeyCredentialRequestOptionsJSON }
+        const assertion = await startAuthentication({ optionsJSON: options })
+        const result = await signIn("passkey", { challengeId, response: JSON.stringify(assertion), redirect: false })
+        if (!result?.error) {
+          // A full navigation clears cached anonymous server/session state.
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+          window.location.href = "/"
+          return
+        }
+        // Let the password manager hide a passkey this site has removed.
+        if (result.code === "PASSKEY_NOT_RECOGNIZED" && options.rpId) signalUnknownPasskey(options.rpId, assertion.id)
+        showFailure(result.code ?? "PASSKEY_VERIFICATION_FAILED")
+      }
+    } catch (error) {
+      const failure = classifyPasskeyError(error)
+      toast({
+        title: failure === "cancelled" ? tPasskey("cancelledTitle") : t("toast.passkeyFailed"),
+        description: tPasskey(`failures.${failure}`),
+        variant: failure === "cancelled" ? "default" : "destructive",
+      })
+    }
+    setPasskeyLoading(false)
+    setLoading(false)
+  }
+
   const handleGithubLogin = () => {
     signIn("github", { callbackUrl: "/" })
   }
@@ -380,7 +428,7 @@ export function LoginForm({ captcha }: LoginFormProps) {
               {activeTab === "login" ? t("actions.login") : t("actions.register")}
             </Button>
 
-            {(oauth.github || oauth.google) && (
+            {(passkeyVisible || oauth.github || oauth.google) && (
               <div className="mt-5 space-y-3">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -392,7 +440,21 @@ export function LoginForm({ captcha }: LoginFormProps) {
                     </span>
                   </div>
                 </div>
-                <div className={cn(
+                {passkeyVisible && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => void handlePasskeyLogin()}
+                    disabled={loading}
+                  >
+                    {passkeyLoading
+                      ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      : <Fingerprint className="mr-2 h-4 w-4" />}
+                    {t("actions.passkeyLogin")}
+                  </Button>
+                )}
+                {(oauth.github || oauth.google) && <div className={cn(
                   "grid gap-3",
                   oauth.github && oauth.google && "min-[480px]:grid-cols-2",
                 )}>
@@ -438,7 +500,7 @@ export function LoginForm({ captcha }: LoginFormProps) {
                       {t("actions.googleLogin")}
                     </Button>
                   )}
-                </div>
+                </div>}
               </div>
             )}
           </Tabs>

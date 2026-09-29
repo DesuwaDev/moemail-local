@@ -23,6 +23,7 @@
 - 按域独立配置 Worker/Mailu/IMAP 收件与 Mailu/Resend/SMTP 发件；普通邮局账号、Resend Key 和 SMTP 凭据不会跨域共用，可选 Mailu 集成则有意让所选域共用一个受管 collector。
 - 按角色和单用户配置查看、收发、创建、删除、分享、隐藏多收件人等权限，以及邮箱数、有效期、收发封数和邮件大小额度；皇帝权限固定全开且不可覆盖。
 - 临时邮箱、有效期与清理、API Key、Webhook、分享、可选 OAuth、Turnstile 和全站字体设置。
+- 通行密钥（Passkey）免密登录：用指纹、面容或设备 PIN 登录，可在个人中心添加、重命名和删除，增删前需再次验证身份；需通过 HTTPS 域名访问，详见[通行密钥说明](docs/passkeys.zh-CN.md)。
 - 周期清理、数据库备份、监控与 rclone 异地备份。
 - 提供 CLI 与 MCP 客户端，便于自动化及 AI Agent 使用。
 
@@ -190,7 +191,7 @@ mail.example.com {
 Worker 必须使用首次向导生成的同一个 `email.ingestSecret`。建议先部署直连模式；可以在安装了 Git、Node.js 24 和 Corepack 的电脑上完成，不必在 MoeMail 服务器上执行。只下载 Compose 的部署目录不含 Worker 源码，以下命令会取得完整的对应版本源码：
 
 ```bash
-git clone --branch v0.21.13 --depth 1 https://github.com/DesuwaDev/moemail-local.git
+git clone --branch v0.22.0 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile
@@ -380,7 +381,7 @@ docker compose --profile offsite up -d offsite-backup
 ## 开发与验证
 
 ```bash
-git clone --branch v0.21.13 --depth 1 https://github.com/DesuwaDev/moemail-local.git
+git clone --branch v0.22.0 --depth 1 https://github.com/DesuwaDev/moemail-local.git
 cd moemail-local
 corepack enable
 pnpm install --frozen-lockfile

@@ -556,7 +556,7 @@
       "access": "权限",
       "resources": "资源",
       "audit": "记录",
-      "sessions": "会话"
+      "sessions": "登录"
     },
     "totalMessages": "邮件总数",
     "countsHelp": "统计当前仍保存在数据库中的邮件（含过期、停用邮箱）；删除后减少，与历史收发配额用量分开计算。",
@@ -589,7 +589,9 @@
       "user_apiKeys": "停用 API Key",
       "user_webhooks": "停用 Webhook",
       "user_shares": "撤销分享",
-      "session_revoke": "退出登录会话"
+      "session_revoke": "退出登录会话",
+      "passkey_create": "添加通行密钥",
+      "passkey_delete": "删除通行密钥"
     },
     "permanent": "永久有效"
   }

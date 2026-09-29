@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm"
 import {
+  bigint,
   boolean,
   customType,
   check,
@@ -48,10 +49,36 @@ export const loginSessions = pgTable("login_session", {
   activeSeconds: integer("active_seconds").notNull().default(0),
   expiresAt: dateColumn("expires_at").notNull(),
   revokedAt: dateColumn("revoked_at"),
+  verifiedAt: dateColumn("verified_at"),
 }, table => [
   index("login_session_user_seen_idx").on(table.userId, table.lastSeenAt),
   index("login_session_expires_idx").on(table.expiresAt),
 ])
+
+export const passkeys = pgTable("passkey", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  credentialId: text("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  // WebAuthn signature counters are unsigned 32-bit values.
+  counter: bigint("counter", { mode: "number" }).notNull().default(0),
+  transports: text("transports"),
+  deviceType: text("device_type").notNull(),
+  backedUp: boolean("backed_up").notNull().default(false),
+  aaguid: text("aaguid"),
+  name: text("name").notNull(),
+  createdAt: dateColumn("created_at").notNull(),
+  lastUsedAt: dateColumn("last_used_at"),
+}, table => [index("passkey_user_idx").on(table.userId, table.createdAt)])
+
+export const passkeyChallenges = pgTable("passkey_challenge", {
+  id: text("id").primaryKey(),
+  purpose: text("purpose", { enum: ["authenticate", "register", "verify"] }).notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id"),
+  challenge: text("challenge").notNull(),
+  expiresAt: dateColumn("expires_at").notNull(),
+}, table => [index("passkey_challenge_expires_idx").on(table.expiresAt)])
 
 export const accounts = pgTable(
   "account",
