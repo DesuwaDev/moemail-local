@@ -54,31 +54,48 @@
     "issueGroup": "Needs attention",
     "unsaved": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
     "unsavedYaml": "Unsaved YAML changes",
-    "saved": "No unsaved changes"
+    "saved": "No unsaved changes",
+    "format": "Config format",
+    "initialized": "Set up",
+    "unknown": "Unknown",
+    "readOnlyHint": "Maintained by the setup wizard; edit it in raw YAML if needed.",
+    "sectionsLabel": "Sections in this group"
   },
   "sections": {
+    "signIn": {
+      "passkeys": "Passkeys",
+      "github": "GitHub sign-in",
+      "google": "Google sign-in"
+    },
+    "security": {
+      "keys": "Core keys",
+      "serviceKeys": "Service keys",
+      "rateLimit": "Sign-in and registration limits"
+    },
     "database": {
       "sqlite": "SQLite database",
       "postgres": "PostgreSQL database"
     },
-    "auth": {
-      "github": "GitHub sign-in",
-      "google": "Google sign-in",
-      "passkeys": "Passkeys",
-      "rateLimit": "Sign-in and registration limits"
+    "backup": {
+      "schedule": "Local backups",
+      "sqlite": "SQLite backups",
+      "postgres": "PostgreSQL backups",
+      "offsite": "Off-site sync"
+    },
+    "monitor": {
+      "checks": "Checks and sources",
+      "thresholds": "Alert thresholds",
+      "alerts": "Notifications"
     }
   },
   "groups": {
-    "root": "Format version",
-    "setup": "Setup state",
-    "server": "Web service",
+    "site": "Site & network",
+    "signIn": "Sign-in methods",
+    "security": "Security",
     "database": "Database",
-    "auth": "Sign-in and authentication",
-    "email": "Inbound email",
+    "backup": "Backups & sync",
     "cleanup": "Data cleanup",
-    "scheduler": "Maintenance scheduler",
-    "monitor": "Monitoring and alerts",
-    "offsite": "Offsite backup"
+    "monitor": "Monitoring & alerts"
   },
   "clientIp": {
     "title": "Client IP / CDN",

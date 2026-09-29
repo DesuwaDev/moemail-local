@@ -54,31 +54,48 @@
     "issueGroup": "有需要處理的問題",
     "unsaved": "{count} 項修改尚未儲存",
     "unsavedYaml": "YAML 有未儲存的修改",
-    "saved": "沒有未儲存的修改"
+    "saved": "沒有未儲存的修改",
+    "format": "設定格式",
+    "initialized": "初始化於",
+    "unknown": "未知",
+    "readOnlyHint": "由初始化精靈維護；如需修改請使用原始 YAML。",
+    "sectionsLabel": "本組小節"
   },
   "sections": {
+    "signIn": {
+      "passkeys": "通行金鑰",
+      "github": "GitHub 登入",
+      "google": "Google 登入"
+    },
+    "security": {
+      "keys": "核心金鑰",
+      "serviceKeys": "介面金鑰",
+      "rateLimit": "登入與註冊限流"
+    },
     "database": {
       "sqlite": "SQLite 資料庫",
       "postgres": "PostgreSQL 資料庫"
     },
-    "auth": {
-      "github": "GitHub 登入",
-      "google": "Google 登入",
-      "passkeys": "通行金鑰",
-      "rateLimit": "登入與註冊限流"
+    "backup": {
+      "schedule": "本機備份",
+      "sqlite": "SQLite 備份",
+      "postgres": "PostgreSQL 備份",
+      "offsite": "異地同步"
+    },
+    "monitor": {
+      "checks": "檢查與資料來源",
+      "thresholds": "告警門檻",
+      "alerts": "告警通知"
     }
   },
   "groups": {
-    "root": "格式版本",
-    "setup": "初始化狀態",
-    "server": "Web 服務",
+    "site": "網站與網路",
+    "signIn": "登入方式",
+    "security": "安全",
     "database": "資料庫",
-    "auth": "登入與驗證",
-    "email": "收件入口",
+    "backup": "備份與同步",
     "cleanup": "資料清理",
-    "scheduler": "維護排程",
-    "monitor": "監控與警示",
-    "offsite": "異地備份"
+    "monitor": "監控告警"
   },
   "clientIp": {
     "title": "來源 IP / CDN",

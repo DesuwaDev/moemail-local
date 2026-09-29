@@ -56,7 +56,7 @@ CF 提供的是连接到其边缘节点的访客 IP，不能揭示访客 VPN/代
 
 ## 其他 CDN / 多级反代的来源 IP
 
-皇帝打开「账户 → 运行配置 → 服务 → 来源 IP / CDN」：
+皇帝打开「账户 → 运行配置 → 站点与网络 → 来源 IP / CDN」：
 
 1. 先配置入口代理覆盖来源头、源站防火墙与端口访问限制，再打开信任开关。应用收到的 Request 不包含可用于验证可信网段的 TCP 对端信息；检测成功不代表代理可信。
 2. 选择入口实际提供的头，支持 CF-Connecting-IP、True-Client-IP、Fastly-Client-IP、X-Real-IP、X-Forwarded-For、RFC 7239 Forwarded、CloudFront-Viewer-Address、X-Azure-ClientIP 及自定义头。名称是接入契约，不代表厂商一定默认发送或自动保证其安全。

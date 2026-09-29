@@ -54,31 +54,48 @@
     "issueGroup": "有需要处理的问题",
     "unsaved": "{count} 项修改尚未保存",
     "unsavedYaml": "YAML 有未保存的修改",
-    "saved": "没有未保存的修改"
+    "saved": "没有未保存的修改",
+    "format": "配置格式",
+    "initialized": "初始化于",
+    "unknown": "未知",
+    "readOnlyHint": "由初始化向导维护；如需修改请使用原始 YAML。",
+    "sectionsLabel": "本组小节"
   },
   "sections": {
+    "signIn": {
+      "passkeys": "通行密钥",
+      "github": "GitHub 登录",
+      "google": "Google 登录"
+    },
+    "security": {
+      "keys": "核心密钥",
+      "serviceKeys": "接口密钥",
+      "rateLimit": "登录与注册限流"
+    },
     "database": {
       "sqlite": "SQLite 数据库",
       "postgres": "PostgreSQL 数据库"
     },
-    "auth": {
-      "github": "GitHub 登录",
-      "google": "Google 登录",
-      "passkeys": "通行密钥",
-      "rateLimit": "登录与注册限流"
+    "backup": {
+      "schedule": "本地备份",
+      "sqlite": "SQLite 备份",
+      "postgres": "PostgreSQL 备份",
+      "offsite": "异地同步"
+    },
+    "monitor": {
+      "checks": "检查与数据来源",
+      "thresholds": "告警阈值",
+      "alerts": "告警通知"
     }
   },
   "groups": {
-    "root": "格式版本",
-    "setup": "初始化状态",
-    "server": "Web 服务",
+    "site": "站点与网络",
+    "signIn": "登录方式",
+    "security": "安全",
     "database": "数据库",
-    "auth": "登录与鉴权",
-    "email": "收件入口",
+    "backup": "备份与同步",
     "cleanup": "数据清理",
-    "scheduler": "维护调度",
-    "monitor": "监控告警",
-    "offsite": "异地备份"
+    "monitor": "监控告警"
   },
   "clientIp": {
     "title": "来源 IP / CDN",

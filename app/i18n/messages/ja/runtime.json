@@ -54,31 +54,48 @@
     "issueGroup": "要対応の問題あり",
     "unsaved": "未保存の変更 {count} 件",
     "unsavedYaml": "YAML に未保存の変更があります",
-    "saved": "未保存の変更はありません"
+    "saved": "未保存の変更はありません",
+    "format": "設定フォーマット",
+    "initialized": "初期設定日時",
+    "unknown": "不明",
+    "readOnlyHint": "初期設定ウィザードが管理します。変更が必要な場合は YAML を編集してください。",
+    "sectionsLabel": "このグループの項目"
   },
   "sections": {
+    "signIn": {
+      "passkeys": "パスキー",
+      "github": "GitHub ログイン",
+      "google": "Google ログイン"
+    },
+    "security": {
+      "keys": "コアキー",
+      "serviceKeys": "連携用キー",
+      "rateLimit": "ログイン・登録の回数制限"
+    },
     "database": {
       "sqlite": "SQLite データベース",
       "postgres": "PostgreSQL データベース"
     },
-    "auth": {
-      "github": "GitHub ログイン",
-      "google": "Google ログイン",
-      "passkeys": "パスキー",
-      "rateLimit": "ログイン・登録の回数制限"
+    "backup": {
+      "schedule": "ローカルバックアップ",
+      "sqlite": "SQLite のバックアップ",
+      "postgres": "PostgreSQL のバックアップ",
+      "offsite": "オフサイト同期"
+    },
+    "monitor": {
+      "checks": "チェックとデータソース",
+      "thresholds": "アラートのしきい値",
+      "alerts": "アラート通知"
     }
   },
   "groups": {
-    "root": "形式バージョン",
-    "setup": "セットアップ状態",
-    "server": "Web サービス",
+    "site": "サイトとネットワーク",
+    "signIn": "ログイン方法",
+    "security": "セキュリティ",
     "database": "データベース",
-    "auth": "ログインと認証",
-    "email": "受信メール",
+    "backup": "バックアップと同期",
     "cleanup": "データ整理",
-    "scheduler": "メンテナンススケジューラー",
-    "monitor": "監視とアラート",
-    "offsite": "オフサイトバックアップ"
+    "monitor": "監視とアラート"
   },
   "clientIp": {
     "title": "接続元 IP / CDN",
